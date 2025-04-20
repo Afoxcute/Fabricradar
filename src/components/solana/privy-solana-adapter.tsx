@@ -44,46 +44,75 @@ export function PrivySolanaAdapter({ children }: { children: ReactNode }) {
     const solanaWallet = wallets.length > 0 ? wallets[0] : null
     
     if (authenticated && solanaWallet) {
-      setWallet({
-        publicKey: new PublicKey(solanaWallet.address),
-        connected: true,
-        connecting: false,
-        disconnect: async () => {
-          await logout()
-        },
-        sendTransaction: async (transaction, connection, options = {}) => {
-          // Use Privy's wallet to sign and send the transaction
-          if ('message' in transaction) {
-            // Handle VersionedTransaction
-            const signedTx = await solanaWallet.signTransaction(transaction)
-            const txid = await connection.sendRawTransaction(
-              (signedTx as VersionedTransaction).serialize(),
-              options
-            )
-            return txid
-          } else {
-            // Handle Legacy Transaction
-            const signedTx = await solanaWallet.signTransaction(transaction)
-            const txid = await connection.sendRawTransaction(
-              (signedTx as Transaction).serialize(),
-              options
-            )
-            return txid
+      try {
+        setWallet({
+          publicKey: new PublicKey(solanaWallet.address),
+          connected: true,
+          connecting: false,
+          disconnect: async () => {
+            await logout()
+          },
+          sendTransaction: async (transaction, connection, options = {}) => {
+            // Safely use Privy's wallet to sign and send the transaction
+            if (!solanaWallet) throw new Error('Wallet not connected')
+            
+            if ('message' in transaction) {
+              // Handle VersionedTransaction
+              const signedTx = await solanaWallet.signTransaction(transaction)
+              const txid = await connection.sendRawTransaction(
+                (signedTx as VersionedTransaction).serialize(),
+                options
+              )
+              return txid
+            } else {
+              // Handle Legacy Transaction
+              const signedTx = await solanaWallet.signTransaction(transaction)
+              const txid = await connection.sendRawTransaction(
+                (signedTx as Transaction).serialize(),
+                options
+              )
+              return txid
+            }
+          },
+          signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+            if (!solanaWallet) throw new Error('Wallet not connected')
+            return await solanaWallet.signTransaction(tx) as T
+          },
+          signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
+            if (!solanaWallet) throw new Error('Wallet not connected')
+            return await Promise.all(
+              txs.map(tx => solanaWallet.signTransaction(tx))
+            ) as T[]
+          },
+          signMessage: async (message) => {
+            if (!solanaWallet) throw new Error('Wallet not connected')
+            const signature = await solanaWallet.signMessage(message)
+            return signature
           }
-        },
-        signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
-          return await solanaWallet.signTransaction(tx) as T
-        },
-        signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
-          return await Promise.all(
-            txs.map(tx => solanaWallet.signTransaction(tx))
-          ) as T[]
-        },
-        signMessage: async (message) => {
-          const signature = await solanaWallet.signMessage(message)
-          return signature
-        }
-      })
+        })
+      } catch (error) {
+        console.error("Error setting up Solana wallet:", error)
+        setWallet({
+          publicKey: null,
+          connected: false,
+          connecting: false,
+          disconnect: async () => {
+            await logout()
+          },
+          sendTransaction: async () => {
+            throw new Error('Wallet not connected')
+          },
+          signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+            throw new Error('Wallet not connected')
+          },
+          signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> => {
+            throw new Error('Wallet not connected')
+          },
+          signMessage: async () => {
+            throw new Error('Wallet not connected')
+          }
+        })
+      }
     } else {
       setWallet({
         publicKey: null,

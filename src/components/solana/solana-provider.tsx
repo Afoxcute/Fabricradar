@@ -16,7 +16,7 @@ export function SolanaProvider({ children }: { children: ReactNode }) {
   return (
     <ConnectionProvider endpoint={endpoint}>
       <PrivyProvider
-      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ''}      // Replace with your Privy app ID
+        appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID || ''}  
         config={{
           embeddedWallets: {
             createOnLogin: 'users-without-wallets'

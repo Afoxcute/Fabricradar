@@ -241,7 +241,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
       {/* Client Reviews */}
       <div className="container mx-auto mt-16">
-        <h2 className="text-2xl font-bold mb-6">Client's Reviews</h2>
+        <h2 className="text-2xl font-bold mb-6">Client&apos;s Reviews</h2>
 
         <div className="bg-gray-900/30 backdrop-blur-sm rounded-xl p-8 relative">
           <div className="flex overflow-x-auto gap-6 pb-4 scrollbar-hide">

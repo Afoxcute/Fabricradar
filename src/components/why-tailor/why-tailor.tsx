@@ -15,8 +15,8 @@ const WhyTailor = () => {
           </div>
           <h3 className="font-bold mb-4">Discover Unique Style</h3>
           <p className="text-gray-400 text-sm">
-            Find designs you won't see in retail or traditional e-commerce. Own
-            truly unique fashion pieces.
+            Find designs you won&apos;t see in retail or traditional e-commerce.
+            Own truly unique fashion pieces.
           </p>
         </div>
 

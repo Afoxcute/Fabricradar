@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const ExclusiveSection = () => {
   return (
@@ -43,42 +44,43 @@ const ExclusiveSection = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* NFT Items - First Row */}
         {[
-          { name: 'Pink Midi Dress', price: '1.2 ETH', usd: '$1997' },
+          { id: '1', name: 'Pink Midi Dress', price: '1.2 ETH', usd: '$1997' },
           {
+            id: '2',
             name: 'White Kaftan With Beads',
             price: '1.5 ETH',
             usd: '$2500.12',
           },
-          { name: 'Mint Green Dress', price: '1.1 ETH', usd: '$1837' },
+          { id: '3', name: 'Mint Green Dress', price: '1.1 ETH', usd: '$1837' },
           {
+            id: '4',
             name: 'Agbada for Men With Embroidery',
             price: '1.6 ETH',
             usd: '$2667',
           },
         ].map((item, i) => (
-          <div
-            key={i}
-            className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800"
-          >
-            <div className="aspect-[3/4] relative">
-              <Image
-                src="/placeholder.svg?height=400&width=300"
-                alt={item.name}
-                width={300}
-                height={400}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="font-medium text-sm truncate">{item.name}</h3>
-              <div className="flex justify-between items-center mt-2">
-                <div>
-                  <p className="text-cyan-400 font-bold">{item.price}</p>
-                  <p className="text-gray-400 text-xs">{item.usd}</p>
+          <Link href={`/product/${item.id}`} key={i}>
+            <div className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800 transition-all hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20">
+              <div className="aspect-[3/4] relative">
+                <Image
+                  src="/placeholder.svg?height=400&width=300"
+                  alt={item.name}
+                  width={300}
+                  height={400}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <h3 className="font-medium text-sm truncate">{item.name}</h3>
+                <div className="flex justify-between items-center mt-2">
+                  <div>
+                    <p className="text-cyan-400 font-bold">{item.price}</p>
+                    <p className="text-gray-400 text-xs">{item.usd}</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
 
         {/* NFT Items - Second Row */}

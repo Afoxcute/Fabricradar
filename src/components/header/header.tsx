@@ -1,16 +1,39 @@
 'use client';
 import Link from 'next/link';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { ChevronRight } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
 import Image from 'next/image';
+import { useGetBalance } from '../account/account-data-access';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
 
 const Header = () => {
   const { ready, authenticated, login, logout } = usePrivy();
   const wallet = useWallet();
   const disableLogin = !ready || (ready && authenticated);
+  
+  // Create a state to safely store the PublicKey for the balance query
+  const [publicKeyForBalance, setPublicKeyForBalance] = useState<PublicKey | null>(null);
+  
+  // Update the publicKeyForBalance when wallet.publicKey changes
+  useEffect(() => {
+    setPublicKeyForBalance(wallet.publicKey);
+  }, [wallet.publicKey]);
+  
+  // Always call useGetBalance, but with a null check inside
+  const balanceQuery = useGetBalance({ 
+    address: publicKeyForBalance || new PublicKey('11111111111111111111111111111111')
+  });
+  
+  // Only show balance when we have a real public key
+  const showBalance = wallet.connected && publicKeyForBalance !== null;
+  
+  // Format the balance for display
+  const formattedBalance = showBalance && balanceQuery.data !== undefined 
+    ? `${(balanceQuery.data / LAMPORTS_PER_SOL).toFixed(2)} SOL` 
+    : '';
 
   return (
     <header className="max-w-[1440px] mx-auto py-4 flex items-center justify-between px-4">
@@ -53,6 +76,13 @@ const Header = () => {
               tabIndex={0}
             >
               {`${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`}
+              {showBalance && (
+                balanceQuery.isLoading ? (
+                  <span className="ml-2 text-xs opacity-70">Loading...</span>
+                ) : formattedBalance ? (
+                  <span className="ml-2 text-xs opacity-70">{formattedBalance}</span>
+                ) : null
+              )}
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">

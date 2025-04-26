@@ -6,8 +6,8 @@ import { ChevronRight } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
 import Image from 'next/image';
-import { useGetBalance } from '../account/account-data-access';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { useGetUSDCBalance } from '../account/account-data-access';
+import { PublicKey } from '@solana/web3.js';
 
 const Header = () => {
   const { ready, authenticated, login, logout } = usePrivy();
@@ -22,17 +22,17 @@ const Header = () => {
     setPublicKeyForBalance(wallet.publicKey);
   }, [wallet.publicKey]);
   
-  // Always call useGetBalance, but with a null check inside
-  const balanceQuery = useGetBalance({ 
+  // Always call useGetUSDCBalance, but with a null check inside
+  const usdcBalanceQuery = useGetUSDCBalance({ 
     address: publicKeyForBalance || new PublicKey('11111111111111111111111111111111')
   });
   
   // Only show balance when we have a real public key
   const showBalance = wallet.connected && publicKeyForBalance !== null;
   
-  // Format the balance for display
-  const formattedBalance = showBalance && balanceQuery.data !== undefined 
-    ? `${(balanceQuery.data / LAMPORTS_PER_SOL).toFixed(2)} SOL` 
+  // Format the USDC balance for display
+  const formattedBalance = showBalance && usdcBalanceQuery.data !== undefined 
+    ? `${usdcBalanceQuery.data.toFixed(2)} USDC` 
     : '';
 
   return (
@@ -77,7 +77,7 @@ const Header = () => {
             >
               {`${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`}
               {showBalance && (
-                balanceQuery.isLoading ? (
+                usdcBalanceQuery.isLoading ? (
                   <span className="ml-2 text-xs opacity-70">Loading...</span>
                 ) : formattedBalance ? (
                   <span className="ml-2 text-xs opacity-70">{formattedBalance}</span>

@@ -15,6 +15,13 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { useTransactionToast } from '../ui/ui-layout'
+import { useCluster } from '../cluster/cluster-data-access'
+
+// USDC token mint addresses for different networks
+const USDC_MINT_ADDRESS = {
+  mainnet: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // Mainnet USDC
+  devnet: 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr', // Devnet USDC
+}
 
 export function useGetBalance({ address }: { address: PublicKey }) {
   const { connection } = useConnection()
@@ -32,6 +39,48 @@ export function useGetSignatures({ address }: { address: PublicKey }) {
     queryKey: ['get-signatures', { endpoint: connection.rpcEndpoint, address }],
     queryFn: () => connection.getSignaturesForAddress(address),
   })
+}
+
+export function useGetUSDCBalance({ address }: { address: PublicKey }) {
+  const { connection } = useConnection()
+  const { cluster } = useCluster()
+  
+  return useQuery({
+    queryKey: ['get-usdc-balance', { endpoint: connection.rpcEndpoint, address }],
+    queryFn: async () => {
+      // Choose USDC mint based on network (fallback to mainnet address if not found)
+      const usdcMint = cluster.network?.includes('devnet') 
+        ? USDC_MINT_ADDRESS.devnet 
+        : USDC_MINT_ADDRESS.mainnet;
+      
+      // Get all token accounts
+      const [tokenAccounts, token2022Accounts] = await Promise.all([
+        connection.getParsedTokenAccountsByOwner(address, {
+          programId: TOKEN_PROGRAM_ID,
+        }),
+        connection.getParsedTokenAccountsByOwner(address, {
+          programId: TOKEN_2022_PROGRAM_ID,
+        }),
+      ]);
+      
+      // Combine all token accounts
+      const allTokenAccounts = [...tokenAccounts.value, ...token2022Accounts.value];
+      
+      // Find USDC account
+      const usdcAccount = allTokenAccounts.find(account => {
+        const parsedInfo = account.account.data.parsed.info;
+        return parsedInfo.mint === usdcMint;
+      });
+      
+      if (!usdcAccount) {
+        return 0; // No USDC found
+      }
+      
+      // Parse the amount (USDC has 6 decimals)
+      const parsedAmount = usdcAccount.account.data.parsed.info.tokenAmount.uiAmount;
+      return parsedAmount || 0;
+    },
+  });
 }
 
 export function useGetTokenAccounts({ address }: { address: PublicKey }) {

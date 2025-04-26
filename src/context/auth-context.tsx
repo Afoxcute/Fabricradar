@@ -16,10 +16,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { authenticated, login, logout, user } = usePrivy();
 
+    // Transform the Privy user to match our expected type
+    const transformedUser = user ? {
+        privy_id: user.id || '',
+        email: user.email?.address || '',
+        wallet_addr: user.wallet?.address || '',
+    } : null;
+
     return (
         <AuthContext.Provider
             value={{
-                user,
+                user: transformedUser,
                 isAuthenticated: authenticated,
                 login,
                 logout,

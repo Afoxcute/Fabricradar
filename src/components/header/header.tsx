@@ -1,10 +1,15 @@
+'use client';
 import Link from 'next/link';
 import React from 'react';
 import { Button } from '../ui/button';
 import { ChevronRight } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
 import Image from 'next/image';
 
 const Header = () => {
+  const { ready, authenticated, login } = usePrivy();
+  const disableLogin = !ready || (ready && authenticated);
+
   return (
     <header className="max-w-[1440px] mx-auto py-4 flex items-center justify-between px-4">
       <div className="flex items-center gap-2">
@@ -41,6 +46,8 @@ const Header = () => {
         <Button
           variant="outline"
           className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+          onClick={login}
+          disabled={disableLogin}
         >
           Connect Wallet
           <ChevronRight className="ml-1 h-4 w-4" />

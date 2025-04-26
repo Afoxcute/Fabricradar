@@ -17,9 +17,8 @@ import toast from 'react-hot-toast'
 import { useTransactionToast } from '../ui/ui-layout'
 import { useCluster } from '../cluster/cluster-data-access'
 
-// Devnet USDC token mint address (mock USDC on devnet)
-// This is a reliable devnet USDC test token
-const DEVNET_USDC_MINT = 'Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr'
+// USDC token mint address for devnet
+const USDC_MINT_ADDRESS = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
 
 export function useGetBalance({ address }: { address: PublicKey }) {
   const { connection } = useConnection()
@@ -44,32 +43,36 @@ export function useGetUSDCBalance({ address }: { address: PublicKey }) {
   const { cluster } = useCluster()
   
   return useQuery({
-    queryKey: ['get-usdc-balance', { endpoint: connection.rpcEndpoint, address }],
+    queryKey: ['get-usdc-balance', { endpoint: connection.rpcEndpoint, address, tokenMint: USDC_MINT_ADDRESS }],
     queryFn: async () => {
       try {
-        // Only support Devnet for now
+        // Only proceed if we're on devnet
         if (!cluster.network?.includes('devnet')) {
-          console.log('USDC balance is only supported on devnet for now');
-          return 0;
+          console.log('USDC balance is only available on devnet');
+          return 0; // Return 0 balance for non-devnet clusters
         }
         
-        // Get token accounts (regular SPL tokens)
-        const tokenAccounts = await connection.getParsedTokenAccountsByOwner(address, {
-          programId: TOKEN_PROGRAM_ID,
-        });
+        // Get all token accounts
+        const [tokenAccounts, token2022Accounts] = await Promise.all([
+          connection.getParsedTokenAccountsByOwner(address, {
+            programId: TOKEN_PROGRAM_ID,
+          }),
+          connection.getParsedTokenAccountsByOwner(address, {
+            programId: TOKEN_2022_PROGRAM_ID,
+          }),
+        ]);
         
-        // Find USDC account based on mint
-        const usdcAccount = tokenAccounts.value.find(account => {
-          try {
-            const parsedInfo = account.account.data.parsed.info;
-            return parsedInfo.mint === DEVNET_USDC_MINT;
-          } catch (err) {
-            console.error('Error parsing token account:', err);
-            return false;
-          }
+        // Combine all token accounts
+        const allTokenAccounts = [...tokenAccounts.value, ...token2022Accounts.value];
+        
+        // Find USDC account with the specific mint
+        const usdcAccount = allTokenAccounts.find(account => {
+          const parsedInfo = account.account.data.parsed.info;
+          return parsedInfo.mint === USDC_MINT_ADDRESS;
         });
         
         if (!usdcAccount) {
+          console.log('No USDC account found with mint:', USDC_MINT_ADDRESS);
           return 0; // No USDC found
         }
         
@@ -81,7 +84,7 @@ export function useGetUSDCBalance({ address }: { address: PublicKey }) {
         return 0;
       }
     },
-    // Poll every 15 seconds to keep balance updated
+    // Re-fetch every 15 seconds
     refetchInterval: 15000,
   });
 }
@@ -147,9 +150,6 @@ export function useTransferSol({ address }: { address: PublicKey }) {
         }),
         client.invalidateQueries({
           queryKey: ['get-signatures', { endpoint: connection.rpcEndpoint, address }],
-        }),
-        client.invalidateQueries({
-          queryKey: ['get-usdc-balance', { endpoint: connection.rpcEndpoint, address }],
         }),
       ])
     },

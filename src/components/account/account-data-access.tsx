@@ -16,6 +16,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { useTransactionToast } from '../ui/ui-layout'
 import { useCluster } from '../cluster/cluster-data-access'
+import { getAssociatedTokenAddress } from '@solana/spl-token'
+import { AccountLayout } from '@solana/spl-token'
 
 // USDC token mint address for devnet
 const USDC_MINT_ADDRESS = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
@@ -52,33 +54,55 @@ export function useGetUSDCBalance({ address }: { address: PublicKey }) {
           return 0; // Return 0 balance for non-devnet clusters
         }
         
-        // Get all token accounts
-        const [tokenAccounts, token2022Accounts] = await Promise.all([
-          connection.getParsedTokenAccountsByOwner(address, {
-            programId: TOKEN_PROGRAM_ID,
-          }),
-          connection.getParsedTokenAccountsByOwner(address, {
-            programId: TOKEN_2022_PROGRAM_ID,
-          }),
-        ]);
+        // Create a token mint public key
+        const mintPublicKey = new PublicKey(USDC_MINT_ADDRESS);
         
-        // Combine all token accounts
-        const allTokenAccounts = [...tokenAccounts.value, ...token2022Accounts.value];
+        // Find the associated token address
+        const tokenAddress = await getAssociatedTokenAddress(
+          mintPublicKey,
+          address,
+          false,   // allowOwnerOffCurve
+          TOKEN_PROGRAM_ID, // programId
+          TOKEN_PROGRAM_ID  // associatedTokenProgramId
+        );
         
-        // Find USDC account with the specific mint
-        const usdcAccount = allTokenAccounts.find(account => {
-          const parsedInfo = account.account.data.parsed.info;
-          return parsedInfo.mint === USDC_MINT_ADDRESS;
-        });
-        
-        if (!usdcAccount) {
-          console.log('No USDC account found with mint:', USDC_MINT_ADDRESS);
-          return 0; // No USDC found
+        try {
+          // Get account info directly using getAccountInfo for better accuracy
+          const accountInfo = await connection.getAccountInfo(tokenAddress);
+          
+          // If no account exists yet, return zero balance
+          if (!accountInfo) {
+            return 0;
+          }
+          
+          // Parse account data using AccountLayout from spl-token
+          const accountData = AccountLayout.decode(accountInfo.data);
+          
+          // USDC has 6 decimals, so we divide by 10^6
+          return Number(accountData.amount) / 1_000_000;
+        } catch (error) {
+          // Try alternate method for TOKEN_2022_PROGRAM_ID if first approach fails
+          try {
+            const token2022Address = await getAssociatedTokenAddress(
+              mintPublicKey,
+              address,
+              false,
+              TOKEN_2022_PROGRAM_ID,
+              TOKEN_2022_PROGRAM_ID
+            );
+            
+            const accountInfo = await connection.getAccountInfo(token2022Address);
+            if (!accountInfo) {
+              return 0;
+            }
+            
+            const accountData = AccountLayout.decode(accountInfo.data);
+            return Number(accountData.amount) / 1_000_000;
+          } catch (innerError) {
+            console.error('Error fetching TOKEN_2022 USDC balance:', innerError);
+            return 0;
+          }
         }
-        
-        // Parse the amount (USDC has 6 decimals)
-        const parsedAmount = usdcAccount.account.data.parsed.info.tokenAmount.uiAmount;
-        return parsedAmount || 0;
       } catch (error) {
         console.error('Error fetching USDC balance:', error);
         return 0;

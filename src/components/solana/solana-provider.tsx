@@ -72,7 +72,7 @@ function PrivyWalletProvider({ children }: { children: ReactNode }) {
 }
 
 export function WalletButton() {
-  const { login, authenticated, user, logout, ready } = usePrivy()
+  const { login, authenticated, logout, ready } = usePrivy()
   const wallet = useWallet()
 
   if (!ready) {

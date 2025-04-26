@@ -20,7 +20,76 @@ import { getAssociatedTokenAddress } from '@solana/spl-token'
 import { AccountLayout } from '@solana/spl-token'
 
 // USDC token mint address for devnet
-const USDC_MINT_ADDRESS = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+export const USDC_MINT_ADDRESS = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU';
+
+// Helper function to format balances with proper decimals
+export function formatBalance(lamports: number, decimals: number = 9): number {
+  return lamports / Math.pow(10, decimals);
+}
+
+// New hook to fetch both SOL and USDC balances in parallel
+export function useGetAllBalances({ address }: { address: PublicKey | null }) {
+  const { connection } = useConnection()
+  const { cluster } = useCluster()
+
+  return useQuery({
+    queryKey: ['get-all-balances', { endpoint: connection.rpcEndpoint, address: address?.toString() }],
+    queryFn: async () => {
+      // If no address is provided, return zero balances
+      if (!address) {
+        return { sol: 0, usdc: 0 };
+      }
+
+      try {
+        // Fetch SOL balance and USDC token account in parallel
+        const [solBalance, tokenAccounts] = await Promise.all([
+          connection.getBalance(address),
+          connection.getParsedTokenAccountsByOwner(address, {
+            programId: TOKEN_PROGRAM_ID,
+          }),
+        ]);
+
+        // Format SOL balance
+        const formattedSolBalance = formatBalance(solBalance);
+
+        // Only look for USDC on devnet
+        let usdcBalance = 0;
+        if (cluster.network?.includes('devnet')) {
+          // Find USDC token account in the list of token accounts
+          const usdcAccount = tokenAccounts.value.find(
+            account => 
+              account.account.data.parsed?.info?.mint?.toLowerCase() === 
+              USDC_MINT_ADDRESS.toLowerCase()
+          );
+
+          if (usdcAccount) {
+            const tokenAmount = usdcAccount.account.data.parsed?.info?.tokenAmount;
+            if (tokenAmount) {
+              // USDC has 6 decimals
+              usdcBalance = formatBalance(Number(tokenAmount.amount), 6);
+            }
+          }
+        }
+
+        return {
+          sol: formattedSolBalance,
+          usdc: usdcBalance,
+          loading: false
+        };
+      } catch (error) {
+        console.error('Error fetching balances:', error);
+        throw error;
+      }
+    },
+    // Enable the query only if we have an address
+    enabled: !!address,
+    // Refetch automatically every 15 seconds and when window regains focus
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
+    // Cache the result for 10 seconds
+    staleTime: 10000,
+  });
+}
 
 export function useGetBalance({ address }: { address: PublicKey }) {
   const { connection } = useConnection()
@@ -117,19 +186,63 @@ export function useGetTokenAccounts({ address }: { address: PublicKey }) {
   const { connection } = useConnection()
 
   return useQuery({
-    queryKey: ['get-token-accounts', { endpoint: connection.rpcEndpoint, address }],
+    queryKey: ['get-token-accounts', { endpoint: connection.rpcEndpoint, address: address?.toString() }],
     queryFn: async () => {
-      const [tokenAccounts, token2022Accounts] = await Promise.all([
-        connection.getParsedTokenAccountsByOwner(address, {
-          programId: TOKEN_PROGRAM_ID,
-        }),
-        connection.getParsedTokenAccountsByOwner(address, {
-          programId: TOKEN_2022_PROGRAM_ID,
-        }),
-      ])
-      return [...tokenAccounts.value, ...token2022Accounts.value]
+      try {
+        // Fetch token accounts from both TOKEN_PROGRAM_ID and TOKEN_2022_PROGRAM_ID in parallel
+        const [tokenAccounts, token2022Accounts] = await Promise.all([
+          connection.getParsedTokenAccountsByOwner(address, {
+            programId: TOKEN_PROGRAM_ID,
+          }).catch(err => {
+            console.error('Error fetching TOKEN_PROGRAM_ID accounts:', err);
+            return { value: [] };
+          }),
+          connection.getParsedTokenAccountsByOwner(address, {
+            programId: TOKEN_2022_PROGRAM_ID,
+          }).catch(err => {
+            console.error('Error fetching TOKEN_2022_PROGRAM_ID accounts:', err);
+            return { value: [] };
+          }),
+        ]);
+
+        // Combine and process accounts
+        const allAccounts = [...tokenAccounts.value, ...token2022Accounts.value];
+        
+        // Filter out accounts with zero balance
+        const nonEmptyAccounts = allAccounts.filter(account => {
+          const info = account.account.data.parsed?.info;
+          const tokenAmount = info?.tokenAmount;
+          return tokenAmount?.uiAmount > 0;
+        });
+        
+        // Map to a more usable format with token details
+        return nonEmptyAccounts.map(account => {
+          const info = account.account.data.parsed?.info;
+          const tokenAmount = info?.tokenAmount;
+          
+          return {
+            pubkey: account.pubkey,
+            mint: info?.mint || '',
+            owner: info?.owner || '',
+            amount: tokenAmount?.amount || '0',
+            decimals: tokenAmount?.decimals || 0,
+            uiAmount: tokenAmount?.uiAmount || 0,
+            programId: account.account.owner
+          };
+        });
+      } catch (error) {
+        console.error('Error in useGetTokenAccounts:', error);
+        // Return empty array instead of throwing to prevent UI breakage
+        return [];
+      }
     },
-  })
+    // Refetch every 15 seconds
+    refetchInterval: 15000,
+    // Use stale data while refetching
+    staleTime: 10000,
+    // Return empty array if error occurs
+    retry: 3,
+  });
 }
 
 export function useTransferSol({ address }: { address: PublicKey }) {

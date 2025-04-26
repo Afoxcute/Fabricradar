@@ -2,12 +2,13 @@
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
-import { ChevronRight, Copy, Check } from 'lucide-react';
+import { ChevronRight, Copy, Check, Loader2 } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
 import Image from 'next/image';
-import { useGetUSDCBalance } from '../account/account-data-access';
+import { useGetAllBalances } from '../account/account-data-access';
 import { PublicKey } from '@solana/web3.js';
+import { TokenBalances } from '../account/account-ui';
 
 const Header = () => {
   const { ready, authenticated, login, logout } = usePrivy();
@@ -23,17 +24,14 @@ const Header = () => {
     setPublicKeyForBalance(wallet.publicKey);
   }, [wallet.publicKey]);
   
-  // Always call useGetUSDCBalance, but with a null check inside
-  const usdcBalanceQuery = useGetUSDCBalance({ 
-    address: publicKeyForBalance || new PublicKey('11111111111111111111111111111111')
+  // Fetch balances with our useGetAllBalances hook
+  const { data: balances, isLoading: isLoadingBalances } = useGetAllBalances({ 
+    address: publicKeyForBalance
   });
-  
-  // Only show balance when we have a real public key
-  const showBalance = wallet.connected && publicKeyForBalance !== null;
-  
-  // Format the USDC balance for display
-  const formattedBalance = showBalance && usdcBalanceQuery.data !== undefined 
-    ? `${usdcBalanceQuery.data.toFixed(2)} USDC` 
+    
+  // Format the wallet address for display
+  const formattedAddress = wallet.publicKey 
+    ? `${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`
     : '';
     
   // Function to copy wallet address to clipboard
@@ -90,14 +88,23 @@ const Header = () => {
               className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
               tabIndex={0}
             >
-              {`${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`}
-              {showBalance && (
-                usdcBalanceQuery.isLoading ? (
-                  <span className="ml-2 text-xs opacity-70">Loading...</span>
-                ) : formattedBalance ? (
-                  <span className="ml-2 text-xs opacity-70">{formattedBalance}</span>
-                ) : null
-              )}
+              {formattedAddress}
+              <div className="ml-2 flex items-center">
+                {isLoadingBalances ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <div className="flex items-center gap-1 text-xs opacity-70">
+                    {balances && (
+                      <>
+                        <span>{balances.sol.toFixed(2)} SOL</span>
+                        {balances.usdc > 0 && (
+                          <span className="text-blue-300">{balances.usdc.toFixed(2)} USDC</span>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
             <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64">
@@ -116,6 +123,11 @@ const Header = () => {
                   </span>
                 </div>
               </li>
+              {wallet.publicKey && (
+                <li className="px-2 py-2">
+                  <TokenBalances address={wallet.publicKey} showDetailed={true} />
+                </li>
+              )}
               <li>
                 <button onClick={() => wallet.disconnect()}>Disconnect</button>
               </li>

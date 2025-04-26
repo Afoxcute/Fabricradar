@@ -14,7 +14,11 @@ import {
   useGetTokenAccounts,
   useRequestAirdrop,
   useTransferSol,
+  useGetAllBalances,
 } from './account-data-access'
+import { Skeleton } from '../ui/skeleton'
+import { USDC_MINT_ADDRESS } from './account-data-access'
+import Link from 'next/link'
 
 export function AccountBalance({ address }: { address: PublicKey }) {
   const query = useGetBalance({ address })
@@ -96,92 +100,76 @@ export function AccountButtons({ address }: { address: PublicKey }) {
 }
 
 export function AccountTokens({ address }: { address: PublicKey }) {
-  const [showAll, setShowAll] = useState(false)
-  const query = useGetTokenAccounts({ address })
-  const client = useQueryClient()
-  const items = useMemo(() => {
-    if (showAll) return query.data
-    return query.data?.slice(0, 5)
-  }, [query.data, showAll])
-
-  return (
-    <div className="space-y-2">
-      <div className="justify-between">
-        <div className="flex justify-between">
-          <h2 className="text-2xl font-bold">Token Accounts</h2>
-          <div className="space-x-2">
-            {query.isLoading ? (
-              <span className="loading loading-spinner"></span>
-            ) : (
-              <button
-                className="btn btn-sm btn-outline"
-                onClick={async () => {
-                  await query.refetch()
-                  await client.invalidateQueries({
-                    queryKey: ['getTokenAccountBalance'],
-                  })
-                }}
-              >
-                <IconRefresh size={16} />
-              </button>
-            )}
+  const { cluster } = useCluster()
+  const { data, isLoading } = useGetTokenAccounts({ address })
+  
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex gap-2 items-center">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-16" />
+            </div>
           </div>
+          <Skeleton className="h-4 w-24" />
         </div>
       </div>
-      {query.isError && <pre className="alert alert-error">Error: {query.error?.message.toString()}</pre>}
-      {query.isSuccess && (
-        <div>
-          {query.data.length === 0 ? (
-            <div>No token accounts found.</div>
-          ) : (
-            <table className="table border-4 rounded-lg border-separate border-base-300">
-              <thead>
-                <tr>
-                  <th>Public Key</th>
-                  <th>Mint</th>
-                  <th className="text-right">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items?.map(({ account, pubkey }) => (
-                  <tr key={pubkey.toString()}>
-                    <td>
-                      <div className="flex space-x-2">
-                        <span className="font-mono">
-                          <ExplorerLink label={ellipsify(pubkey.toString())} path={`account/${pubkey.toString()}`} />
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="flex space-x-2">
-                        <span className="font-mono">
-                          <ExplorerLink
-                            label={ellipsify(account.data.parsed.info.mint)}
-                            path={`account/${account.data.parsed.info.mint.toString()}`}
-                          />
-                        </span>
-                      </div>
-                    </td>
-                    <td className="text-right">
-                      <span className="font-mono">{account.data.parsed.info.tokenAmount.uiAmount}</span>
-                    </td>
-                  </tr>
-                ))}
-
-                {(query.data?.length ?? 0) > 5 && (
-                  <tr>
-                    <td colSpan={4} className="text-center">
-                      <button className="btn btn-xs btn-outline" onClick={() => setShowAll(!showAll)}>
-                        {showAll ? 'Show Less' : 'Show All'}
-                      </button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
-      )}
+    )
+  }
+  
+  if (!data?.length) {
+    return (
+      <div className="text-center py-4 text-muted-foreground">
+        <p>No tokens found.</p>
+        {cluster.network === 'devnet' && (
+          <p className="text-sm mt-2">
+            This wallet has no SPL tokens yet. You can get USDC on devnet by using the airdrop button.
+          </p>
+        )}
+      </div>
+    )
+  }
+  
+  return (
+    <div className="flex flex-col gap-4">
+      {data.map((account, i) => {
+        const mintAddress = account.mint;
+        const isUSDC = mintAddress?.toLowerCase() === USDC_MINT_ADDRESS.toLowerCase();
+        
+        return (
+          <div key={i} className="flex justify-between items-center gap-4">
+            <div className="flex gap-2 items-center">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isUSDC ? 'bg-blue-500' : 'bg-gray-500'}`}>
+                <span className="text-lg font-bold">{isUSDC ? '$' : 'T'}</span>
+              </div>
+              <div>
+                <div className="font-semibold">
+                  {isUSDC ? 'USDC' : `Token ${i + 1}`}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {ellipsify(mintAddress || 'Unknown')}
+                </div>
+              </div>
+            </div>
+            <div className="font-semibold text-right">
+              {account.uiAmount.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: account.decimals || 9,
+              })}
+            </div>
+          </div>
+        )
+      })}
+      <div className="text-center py-2">
+        <ExplorerLink
+          path={`account/${address.toString()}/tokens`}
+          label="View all tokens in Explorer"
+          className="text-xs text-muted-foreground hover:underline"
+        />
+      </div>
     </div>
   )
 }
@@ -349,4 +337,101 @@ function ModalSend({ hide, show, address }: { hide: () => void; show: boolean; a
       />
     </AppModal>
   )
+}
+
+export function TokenBalances({ address, showDetailed = false }: { address: PublicKey, showDetailed?: boolean }) {
+  const { 
+    data: balances = { sol: 0, usdc: 0 }, 
+    isLoading: isLoadingBalances,
+    isError: isBalancesError 
+  } = useGetAllBalances({ address });
+  
+  const {
+    data: tokenAccounts = [],
+    isLoading: isLoadingTokens,
+    isError: isTokensError
+  } = useGetTokenAccounts({ address });
+  
+  const isLoading = isLoadingBalances || isLoadingTokens;
+  const hasError = isBalancesError || isTokensError;
+  
+  if (hasError) {
+    return <div className="text-xs text-red-400">Error loading balances</div>;
+  }
+  
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+    );
+  }
+  
+  const hasBalances = balances.sol > 0 || balances.usdc > 0 || tokenAccounts.length > 0;
+  
+  if (!hasBalances) {
+    return <div className="text-xs text-gray-400">No token balances found</div>;
+  }
+  
+  return (
+    <div className={`space-y-2 ${showDetailed ? 'px-4 py-3 bg-gray-900/50 rounded-lg' : ''}`}>
+      {showDetailed && <h3 className="text-sm font-medium mb-2">Token Balances</h3>}
+      
+      {/* SOL Balance */}
+      {balances.sol > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-5 h-5 rounded-full bg-purple-500 mr-2 flex items-center justify-center">
+              <span className="text-xs font-bold">◎</span>
+            </div>
+            <span className="text-sm">SOL</span>
+          </div>
+          <span className="text-sm font-medium">
+            {balances.sol.toFixed(showDetailed ? 6 : 2)}
+          </span>
+        </div>
+      )}
+      
+      {/* USDC Balance */}
+      {balances.usdc > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-5 h-5 rounded-full bg-blue-500 mr-2 flex items-center justify-center">
+              <span className="text-xs font-bold">$</span>
+            </div>
+            <span className="text-sm">USDC</span>
+          </div>
+          <span className="text-sm font-medium">
+            {balances.usdc.toFixed(2)}
+          </span>
+        </div>
+      )}
+      
+      {/* Other SPL Tokens */}
+      {showDetailed && tokenAccounts.length > 0 && (
+        <>
+          {tokenAccounts
+            // Filter out USDC which we already displayed
+            .filter(token => token.mint && token.mint.toLowerCase() !== USDC_MINT_ADDRESS.toLowerCase())
+            .map((token, index) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className="w-5 h-5 rounded-full bg-gray-500 mr-2 flex items-center justify-center">
+                    <span className="text-xs font-bold">T</span>
+                  </div>
+                  <span className="text-sm">
+                    {token.mint ? `${token.mint.slice(0, 4)}...${token.mint.slice(-4)}` : 'Unknown'}
+                  </span>
+                </div>
+                <span className="text-sm font-medium">
+                  {token.uiAmount.toFixed(token.decimals > 2 ? 2 : token.decimals)}
+                </span>
+              </div>
+            ))
+          }
+        </>
+      )}
+    </div>
+  );
 }

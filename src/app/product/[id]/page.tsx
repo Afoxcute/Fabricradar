@@ -16,6 +16,7 @@ import Header from '@/components/header/header';
 import Footer from '@/components/footer/footer';
 import { useState } from 'react';
 import SmartContractModal from '@/components/smart-contract-modal/smart-contract-modal';
+import { TransferForm } from '@/components/paymet-transfer/paymet-transfer';
 
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const [showSmartContractModal, setShowSmartContractModal] = useState(false);
@@ -65,12 +66,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       {/* Smart Contract Modal */}
-      <SmartContractModal 
+      <SmartContractModal
         isOpen={showSmartContractModal}
         onClose={() => setShowSmartContractModal(false)}
         productName={product.name}
       />
-      
+
       {/* Stars/particles background effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
@@ -208,7 +209,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             <p className="text-gray-300 mb-8">{product.description}</p>
 
             <div className="flex flex-wrap gap-4 mb-8">
-              <Button 
+              <Button
                 className="bg-cyan-500 hover:bg-cyan-600 text-white flex items-center gap-2"
                 onClick={() => setShowSmartContractModal(true)}
               >
@@ -295,6 +296,8 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
           designerName={product.creator.name}
         />
       </div>
+
+      <TransferForm />
 
       {/* Footer */}
       <Footer />

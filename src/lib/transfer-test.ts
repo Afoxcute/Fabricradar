@@ -23,7 +23,8 @@ const SOLANA_TOKENS = {
 type TokenSymbol = keyof typeof SOLANA_TOKENS;
 
 // ------------ CONFIGURATION --------------
-const PRIVATE_KEY = ''; // from environment variable
+const PRIVATE_KEY =
+  '[29,25,61,152,22,39,27,249,16,247,18,203,3,86,90,9,62,167,69,33,1,203,160,114,50,183,66,170,161,228,238,79,56,74,149,120,27,225,201,236,58,174,220,180,78,15,8,127,178,236,7,36,128,37,121,50,153,107,25,150,179,232,167,170]'; // from environment variable
 const AMOUNT = '0.1'; // Example: transfer 0.1 SOL
 const SELECTED_TOKEN: TokenSymbol = 'SOL'; // 'SOL', 'USDC' or 'USDT'
 const RECIPIENT_ADDRESS = '23wRQUTNurqBjnRYpwiSGKaUUAZTzi5so5mmhTgaJbWf'; // <-- Put recipient address here

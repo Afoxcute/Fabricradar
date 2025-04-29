@@ -14,7 +14,7 @@ const CollectionSection = () => {
         <div className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800">
           <div className="aspect-[3/4] relative">
             <Image
-              src="/placeholder.svg?height=400&width=300"
+              src="/product1.jpeg?height=400&width=300"
               alt="Fashion Item"
               width={300}
               height={400}
@@ -28,7 +28,7 @@ const CollectionSection = () => {
               {[1, 2, 3].map((i) => (
                 <Image
                   key={i}
-                  src="/placeholder.svg?height=80&width=80"
+                  src="/product1.jpeg?height=80&width=80"
                   alt="Thumbnail"
                   width={80}
                   height={80}
@@ -49,7 +49,7 @@ const CollectionSection = () => {
         <div className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800">
           <div className="aspect-[3/4] relative">
             <Image
-              src="/placeholder.svg?height=400&width=300"
+              src="/product2.jpeg?height=400&width=300"
               alt="Fashion Item"
               width={300}
               height={400}
@@ -63,7 +63,7 @@ const CollectionSection = () => {
               {[1, 2, 3].map((i) => (
                 <Image
                   key={i}
-                  src="/placeholder.svg?height=80&width=80"
+                  src="/product2.jpeg?height=80&width=80"
                   alt="Thumbnail"
                   width={80}
                   height={80}
@@ -84,7 +84,7 @@ const CollectionSection = () => {
         <div className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800">
           <div className="aspect-[3/4] relative">
             <Image
-              src="/placeholder.svg?height=400&width=300"
+              src="/product3.jpeg?height=400&width=300"
               alt="Fashion Item"
               width={300}
               height={400}
@@ -98,7 +98,7 @@ const CollectionSection = () => {
               {[1, 2, 3].map((i) => (
                 <Image
                   key={i}
-                  src="/placeholder.svg?height=80&width=80"
+                  src="/product3.jpeg?height=80&width=80"
                   alt="Thumbnail"
                   width={80}
                   height={80}

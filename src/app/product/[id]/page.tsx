@@ -30,10 +30,10 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     description:
       'A cotton/linen three quarter sleeve kaftan featuring intricate embroidery on the chest and pocket, adorned with swarovski buttons.',
     images: [
-      '/placeholder.svg?height=600&width=450',
-      '/placeholder.svg?height=150&width=100',
-      '/placeholder.svg?height=150&width=100',
-      '/placeholder.svg?height=150&width=100',
+      '/product3.jpeg?height=600&width=450',
+      '/product3.jpeg?height=150&width=100',
+      '/product3.jpeg?height=150&width=100',
+      '/product3.jpeg?height=150&width=100',
     ],
     creator: {
       name: 'Solomon Obey Ayobalemi',
@@ -65,12 +65,12 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       {/* Smart Contract Modal */}
-      <SmartContractModal 
+      <SmartContractModal
         isOpen={showSmartContractModal}
         onClose={() => setShowSmartContractModal(false)}
         productName={product.name}
       />
-      
+
       {/* Stars/particles background effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
@@ -208,7 +208,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             <p className="text-gray-300 mb-8">{product.description}</p>
 
             <div className="flex flex-wrap gap-4 mb-8">
-              <Button 
+              <Button
                 className="bg-cyan-500 hover:bg-cyan-600 text-white flex items-center gap-2"
                 onClick={() => setShowSmartContractModal(true)}
               >

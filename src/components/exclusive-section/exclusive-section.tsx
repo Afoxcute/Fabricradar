@@ -63,7 +63,7 @@ const ExclusiveSection = () => {
             <div className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800 transition-all hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20">
               <div className="aspect-[3/4] relative">
                 <Image
-                  src="/placeholder.svg?height=400&width=300"
+                  src={`/product${i + 1}.jpeg?height=400&width=300`}
                   alt={item.name}
                   width={300}
                   height={400}
@@ -84,7 +84,7 @@ const ExclusiveSection = () => {
         ))}
 
         {/* NFT Items - Second Row */}
-        {[
+        {/* {[
           { name: 'Agbada Kaftan', price: '1.3 ETH', usd: '$2165.12' },
           { name: 'African Aso Oke', price: '1.5 ETH', usd: '$2500' },
           { name: 'Safari Suit', price: '1.1 ETH', usd: '$1837' },
@@ -113,7 +113,7 @@ const ExclusiveSection = () => {
               </div>
             </div>
           </div>
-        ))}
+        ))} */}
       </div>
 
       <div className="flex justify-center mt-12">

@@ -29,7 +29,7 @@ import { useCluster } from '../cluster/cluster-data-access'
 import { useTransactionToast } from '../ui/ui-layout'
 import env from '@/config/env'
 
-interface SmartContractModalProps {
+interface OrderModalProps {
   isOpen: boolean
   onClose: () => void
   productName: string
@@ -76,11 +76,11 @@ const femaleMeasurements = [
 // Target wallet address to receive payments - imported from environment variables
 const PAYMENT_WALLET_ADDRESS = env.PAYMENT_WALLET_ADDRESS;
 
-export default function SmartContractModal({ 
+export default function OrderModal({ 
   isOpen, 
   onClose, 
   productName 
-}: SmartContractModalProps) {
+}: OrderModalProps) {
   const [measurements, setMeasurements] = useState({
     height: '',
     chest: '',

@@ -15,10 +15,10 @@ import { ChatInterface } from '@/components/chat-interface/chat-interface';
 import Header from '@/components/header/header';
 import Footer from '@/components/footer/footer';
 import { useState } from 'react';
-import SmartContractModal from '@/components/smart-contract-modal/smart-contract-modal';
+import OrderModal from '@/components/order-modal/order-modal';
 
 export default function ProductDetail({ params }: { params: { id: string } }) {
-  const [showSmartContractModal, setShowSmartContractModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
 
   // This would normally fetch data based on the ID
   const product = {
@@ -64,10 +64,10 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
-      {/* Smart Contract Modal */}
-      <SmartContractModal
-        isOpen={showSmartContractModal}
-        onClose={() => setShowSmartContractModal(false)}
+      {/* Order Modal */}
+      <OrderModal
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
         productName={product.name}
       />
 
@@ -210,7 +210,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             <div className="flex flex-wrap gap-4 mb-8">
               <Button
                 className="bg-cyan-500 hover:bg-cyan-600 text-white flex items-center gap-2"
-                onClick={() => setShowSmartContractModal(true)}
+                onClick={() => setShowOrderModal(true)}
               >
                 <span>Start order</span>
                 <Download className="h-4 w-4" />

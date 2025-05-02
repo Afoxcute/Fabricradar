@@ -212,7 +212,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 className="bg-cyan-500 hover:bg-cyan-600 text-white flex items-center gap-2"
                 onClick={() => setShowSmartContractModal(true)}
               >
-                <span>Initiate smart contract</span>
+                <span>Start order</span>
                 <Download className="h-4 w-4" />
               </Button>
 

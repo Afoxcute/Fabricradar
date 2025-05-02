@@ -299,7 +299,7 @@ export default function SmartContractModal({
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={`Initiate Smart Contract for ${productName}`}
+      title={`Start order for ${productName}`}
     >
       <div className="space-y-6">
         {/* Gender Selection */}

@@ -190,15 +190,15 @@ export function useGetTokenAccounts({ address }: { address: PublicKey }) {
     queryFn: async () => {
       try {
         // Fetch token accounts from both TOKEN_PROGRAM_ID and TOKEN_2022_PROGRAM_ID in parallel
-        const [tokenAccounts, token2022Accounts] = await Promise.all([
-          connection.getParsedTokenAccountsByOwner(address, {
-            programId: TOKEN_PROGRAM_ID,
+      const [tokenAccounts, token2022Accounts] = await Promise.all([
+        connection.getParsedTokenAccountsByOwner(address, {
+          programId: TOKEN_PROGRAM_ID,
           }).catch(err => {
             console.error('Error fetching TOKEN_PROGRAM_ID accounts:', err);
             return { value: [] };
-          }),
-          connection.getParsedTokenAccountsByOwner(address, {
-            programId: TOKEN_2022_PROGRAM_ID,
+        }),
+        connection.getParsedTokenAccountsByOwner(address, {
+          programId: TOKEN_2022_PROGRAM_ID,
           }).catch(err => {
             console.error('Error fetching TOKEN_2022_PROGRAM_ID accounts:', err);
             return { value: [] };

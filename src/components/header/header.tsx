@@ -28,7 +28,7 @@ const Header = () => {
   const { data: balances, isLoading: isLoadingBalances } = useGetAllBalances({ 
     address: publicKeyForBalance
   });
-    
+  
   // Format the wallet address for display
   const formattedAddress = wallet.publicKey 
     ? `${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`
@@ -101,7 +101,7 @@ const Header = () => {
                           <span className="text-blue-300">{balances.usdc.toFixed(2)} USDC</span>
                         )}
                       </>
-                    )}
+              )}
                   </div>
                 )}
               </div>

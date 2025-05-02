@@ -104,12 +104,12 @@ export function AccountTokens({ address }: { address: PublicKey }) {
   const { data, isLoading } = useGetTokenAccounts({ address })
   
   if (isLoading) {
-    return (
+  return (
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center gap-4">
           <div className="flex gap-2 items-center">
             <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="space-y-2">
+    <div className="space-y-2">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-3 w-16" />
             </div>
@@ -145,7 +145,7 @@ export function AccountTokens({ address }: { address: PublicKey }) {
               <div className={`flex h-10 w-10 items-center justify-center rounded-full ${isUSDC ? 'bg-blue-500' : 'bg-gray-500'}`}>
                 <span className="text-lg font-bold">{isUSDC ? '$' : 'T'}</span>
               </div>
-              <div>
+        <div>
                 <div className="font-semibold">
                   {isUSDC ? 'USDC' : `Token ${i + 1}`}
                 </div>
@@ -160,16 +160,16 @@ export function AccountTokens({ address }: { address: PublicKey }) {
                 maximumFractionDigits: account.decimals || 9,
               })}
             </div>
-          </div>
+                      </div>
         )
       })}
       <div className="text-center py-2">
-        <ExplorerLink
+                          <ExplorerLink
           path={`account/${address.toString()}/tokens`}
           label="View all tokens in Explorer"
           className="text-xs text-muted-foreground hover:underline"
         />
-      </div>
+        </div>
     </div>
   )
 }

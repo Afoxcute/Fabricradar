@@ -27,6 +27,7 @@ import toast from 'react-hot-toast'
 import { useSendTransaction } from '@privy-io/react-auth/solana'
 import { useCluster } from '../cluster/cluster-data-access'
 import { useTransactionToast } from '../ui/ui-layout'
+import env from '@/config/env'
 
 interface SmartContractModalProps {
   isOpen: boolean
@@ -43,8 +44,37 @@ const paymentMethods = [
   { id: 'crypto', label: 'Cryptocurrency' },
 ]
 
-// Target wallet address to receive payments
-const PAYMENT_WALLET_ADDRESS = 'FrmRwmWnHHmce9HyfamcP6dc13nzWsFjANjoUTtptezx';
+const genderOptions = [
+  { id: 'male', label: 'Male' },
+  { id: 'female', label: 'Female' },
+]
+
+// Male-specific measurements
+const maleMeasurements = [
+  { id: 'height', label: 'Height (cm)', placeholder: 'e.g. 180' },
+  { id: 'chest', label: 'Chest (cm)', placeholder: 'e.g. 100' },
+  { id: 'waist', label: 'Waist (cm)', placeholder: 'e.g. 86' },
+  { id: 'hips', label: 'Hips (cm)', placeholder: 'e.g. 100' },
+  { id: 'shoulder', label: 'Shoulder Width (cm)', placeholder: 'e.g. 48' },
+  { id: 'sleeve', label: 'Sleeve Length (cm)', placeholder: 'e.g. 66' },
+  { id: 'neck', label: 'Neck (cm)', placeholder: 'e.g. 40' },
+  { id: 'inseam', label: 'Inseam (cm)', placeholder: 'e.g. 82' },
+]
+
+// Female-specific measurements
+const femaleMeasurements = [
+  { id: 'height', label: 'Height (cm)', placeholder: 'e.g. 165' },
+  { id: 'bust', label: 'Bust (cm)', placeholder: 'e.g. 92' },
+  { id: 'waist', label: 'Waist (cm)', placeholder: 'e.g. 74' },
+  { id: 'hips', label: 'Hips (cm)', placeholder: 'e.g. 98' },
+  { id: 'shoulder', label: 'Shoulder Width (cm)', placeholder: 'e.g. 40' },
+  { id: 'sleeve', label: 'Sleeve Length (cm)', placeholder: 'e.g. 60' },
+  { id: 'upperArm', label: 'Upper Arm (cm)', placeholder: 'e.g. 30' },
+  { id: 'inseam', label: 'Inseam (cm)', placeholder: 'e.g. 78' },
+]
+
+// Target wallet address to receive payments - imported from environment variables
+const PAYMENT_WALLET_ADDRESS = env.PAYMENT_WALLET_ADDRESS;
 
 export default function SmartContractModal({ 
   isOpen, 
@@ -54,22 +84,29 @@ export default function SmartContractModal({
   const [measurements, setMeasurements] = useState({
     height: '',
     chest: '',
+    bust: '',
     waist: '',
     hips: '',
     shoulder: '',
-    armLength: '',
+    sleeve: '',
+    neck: '',
+    upperArm: '',
     inseam: '',
   })
   
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    gender: 'male', // Default gender
     timeline: '14', // Default timeline (days)
     deliveryMethod: 'shipping',
     address: '',
     paymentMethod: 'crypto',
     usdcAmount: '10', // Default USDC amount
   })
+
+  // Get current measurements list based on selected gender
+  const currentMeasurements = formData.gender === 'male' ? maleMeasurements : femaleMeasurements;
 
   const [paymentStatus, setPaymentStatus] = useState({
     loading: false,
@@ -265,114 +302,46 @@ export default function SmartContractModal({
       title={`Initiate Smart Contract for ${productName}`}
     >
       <div className="space-y-6">
+        {/* Gender Selection */}
+        <div>
+          <h3 className="text-lg font-medium text-white mb-4">Your Gender</h3>
+          <div className="flex space-x-4">
+            {genderOptions.map((gender) => (
+              <label key={gender.id} className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  value={gender.id}
+                  checked={formData.gender === gender.id}
+                  onChange={handleFormChange}
+                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
+                />
+                <span className="text-sm text-gray-300">{gender.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Measurements Section */}
         <div>
-          <h3 className="text-lg font-medium text-white mb-4">Your Measurements</h3>
+          <h3 className="text-lg font-medium text-white mb-4">Your Measurements ({formData.gender === 'male' ? 'Male' : 'Female'})</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="height" className="block text-sm font-medium text-gray-300 mb-1">
-                Height (cm)
-              </label>
-              <input
-                type="text"
-                id="height"
-                name="height"
-                value={measurements.height}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 175"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="chest" className="block text-sm font-medium text-gray-300 mb-1">
-                Chest (cm)
-              </label>
-              <input
-                type="text"
-                id="chest"
-                name="chest"
-                value={measurements.chest}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 92"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="waist" className="block text-sm font-medium text-gray-300 mb-1">
-                Waist (cm)
-              </label>
-              <input
-                type="text"
-                id="waist"
-                name="waist"
-                value={measurements.waist}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 84"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="hips" className="block text-sm font-medium text-gray-300 mb-1">
-                Hips (cm)
-              </label>
-              <input
-                type="text"
-                id="hips"
-                name="hips"
-                value={measurements.hips}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 98"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="shoulder" className="block text-sm font-medium text-gray-300 mb-1">
-                Shoulder Width (cm)
-              </label>
-              <input
-                type="text"
-                id="shoulder"
-                name="shoulder"
-                value={measurements.shoulder}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 45"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="armLength" className="block text-sm font-medium text-gray-300 mb-1">
-                Arm Length (cm)
-              </label>
-              <input
-                type="text"
-                id="armLength"
-                name="armLength"
-                value={measurements.armLength}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 65"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="inseam" className="block text-sm font-medium text-gray-300 mb-1">
-                Inseam (cm)
-              </label>
-              <input
-                type="text"
-                id="inseam"
-                name="inseam"
-                value={measurements.inseam}
-                onChange={handleMeasurementChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="e.g. 80"
-              />
-            </div>
+            {currentMeasurements.map((field) => (
+              <div key={field.id}>
+                <label htmlFor={field.id} className="block text-sm font-medium text-gray-300 mb-1">
+                  {field.label}
+                </label>
+                <input
+                  type="text"
+                  id={field.id}
+                  name={field.id}
+                  value={measurements[field.id as keyof typeof measurements] || ''}
+                  onChange={handleMeasurementChange}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  placeholder={field.placeholder}
+                />
+              </div>
+            ))}
           </div>
         </div>
         

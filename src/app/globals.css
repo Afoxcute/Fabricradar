@@ -94,3 +94,26 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.ant-card-head-title {
+  color: white !important;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #111827 !important; /* Tailwind's gray-900 */
+  color: white !important;
+  border-color: #1f2937; /* Tailwind's gray-800 */
+}
+
+/* Override AntD table body rows */
+.ant-table-tbody > tr > td {
+  background-color: #111827 !important;
+  color: white !important;
+  border-color: #1f2937;
+}
+
+/* Override row hover */
+.ant-table-tbody > tr:hover > td {
+  background-color: #1f2937 !important; /* Tailwind's gray-800 */
+  border: 0 !important;
+}

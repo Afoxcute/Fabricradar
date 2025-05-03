@@ -54,7 +54,7 @@ const Header = () => {
 
   return (
     <header className="max-w-[1440px] mx-auto py-4 flex items-center justify-between px-4">
-      <div className="flex items-center gap-2">
+      <Link href="/" className="flex items-center gap-2">
         <Image
           src="/placeholder.svg"
           alt="Logo"
@@ -63,7 +63,7 @@ const Header = () => {
           className="w-8 h-8"
         />
         <span className="font-bold text-lg">Tailor Module</span>
-      </div>
+      </Link>
       <div className="flex items-center gap-6">
         <nav className="hidden md:flex items-center gap-6">
           <Link
@@ -117,6 +117,9 @@ const Header = () => {
               tabIndex={0}
               className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64"
             >
+              <li>
+                <Link href="/dashboard">Dashboard</Link>
+              </li>
               <li className="cursor-pointer">
                 <div
                   onClick={copyWalletAddress}

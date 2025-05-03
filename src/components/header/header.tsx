@@ -15,34 +15,38 @@ const Header = () => {
   const wallet = useWallet();
   const disableLogin = !ready || (ready && authenticated);
   const [copied, setCopied] = useState(false);
-  
+
   // Create a state to safely store the PublicKey for the balance query
-  const [publicKeyForBalance, setPublicKeyForBalance] = useState<PublicKey | null>(null);
-  
+  const [publicKeyForBalance, setPublicKeyForBalance] =
+    useState<PublicKey | null>(null);
+
   // Update the publicKeyForBalance when wallet.publicKey changes
   useEffect(() => {
     setPublicKeyForBalance(wallet.publicKey);
   }, [wallet.publicKey]);
-  
+
   // Fetch balances with our useGetAllBalances hook
-  const { data: balances, isLoading: isLoadingBalances } = useGetAllBalances({ 
-    address: publicKeyForBalance
+  const { data: balances, isLoading: isLoadingBalances } = useGetAllBalances({
+    address: publicKeyForBalance,
   });
-  
+
   // Format the wallet address for display
-  const formattedAddress = wallet.publicKey 
-    ? `${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`
+  const formattedAddress = wallet.publicKey
+    ? `${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey
+        .toString()
+        .slice(-4)}`
     : '';
-    
+
   // Function to copy wallet address to clipboard
   const copyWalletAddress = () => {
     if (wallet.publicKey) {
-      navigator.clipboard.writeText(wallet.publicKey.toString())
+      navigator.clipboard
+        .writeText(wallet.publicKey.toString())
         .then(() => {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
         })
-        .catch(err => {
+        .catch((err) => {
           console.error('Could not copy wallet address: ', err);
         });
     }
@@ -83,8 +87,8 @@ const Header = () => {
         </nav>
         {authenticated && wallet.connected && wallet.publicKey ? (
           <div className="dropdown dropdown-end">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
               tabIndex={0}
             >
@@ -98,21 +102,33 @@ const Header = () => {
                       <>
                         <span>{balances.sol.toFixed(2)} SOL</span>
                         {balances.usdc > 0 && (
-                          <span className="text-blue-300">{balances.usdc.toFixed(2)} USDC</span>
+                          <span className="text-blue-300">
+                            {balances.usdc.toFixed(2)} USDC
+                          </span>
                         )}
                       </>
-              )}
+                    )}
                   </div>
                 )}
               </div>
               <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64">
+            <ul
+              tabIndex={0}
+              className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64"
+            >
               <li className="cursor-pointer">
-                <div onClick={copyWalletAddress} className="flex items-center justify-between">
+                <div
+                  onClick={copyWalletAddress}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex items-center">
                     <span className="mr-2">
-                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      {copied ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </span>
                     <span className="truncate">
                       {wallet.publicKey?.toString()}
@@ -125,7 +141,10 @@ const Header = () => {
               </li>
               {wallet.publicKey && (
                 <li className="px-2 py-2">
-                  <TokenBalances address={wallet.publicKey} showDetailed={true} />
+                  <TokenBalances
+                    address={wallet.publicKey}
+                    showDetailed={true}
+                  />
                 </li>
               )}
               <li>

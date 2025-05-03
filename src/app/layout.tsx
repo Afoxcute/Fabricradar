@@ -4,6 +4,7 @@ import { SolanaProvider } from '@/components/solana/solana-provider';
 import { ADLaM_Display, Inter } from 'next/font/google';
 import { UiLayout } from '@/components/ui/ui-layout';
 import { ReactQueryProvider } from './react-query-provider';
+import BackgroundEffect from '@/components/background-effect/background-effect';
 
 export const metadata = {
   title: 'Scaffold',
@@ -40,8 +41,11 @@ export default function RootLayout({
         <ReactQueryProvider>
           <ClusterProvider>
             <SolanaProvider>
-              {/* <UiLayout links={links}>{children}</UiLayout> */}
-              {children}
+              <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
+                <BackgroundEffect />
+                {/* <UiLayout links={links}>{children}</UiLayout> */}
+                {children}
+              </div>
             </SolanaProvider>
           </ClusterProvider>
         </ReactQueryProvider>

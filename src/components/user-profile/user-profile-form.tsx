@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronsRight, Key, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/providers/auth-provider";
+import { debugProfileStatus } from "@/utils/user-profile-utils";
 
 // Form validation schema
 const userProfileSchema = z.object({
@@ -247,6 +248,7 @@ export function UserProfileForm({
       } else {
         // Ensure we save the verified user data to localStorage
         localStorage.setItem("auth_user", JSON.stringify(userData));
+        console.log("Profile verification complete. User data:", debugProfileStatus(userData));
         
         // Make sure the wallet address is associated with this user
         if (walletAddress && (!(userData as any).walletAddress || (userData as any).walletAddress !== walletAddress)) {

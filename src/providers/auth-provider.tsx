@@ -12,6 +12,7 @@ import { api } from "../trpc/react";
 import toast from "react-hot-toast";
 import { ClientTRPCErrorHandler } from "@/lib/utils";
 import { useWallet } from "@/components/solana/privy-solana-adapter";
+import { isProfileComplete, debugProfileStatus } from "@/utils/user-profile-utils";
 
 interface User {
   id: number;
@@ -43,21 +44,90 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { disconnect } = useWallet();
+  const { disconnect, publicKey, connected } = useWallet();
 
   // Initialize state from localStorage on client
   useEffect(() => {
-    const storedUser = localStorage.getItem("auth_user");
-    if (storedUser) {
+    const loadUserData = async () => {
+      setIsLoading(true);
       try {
-        setUser(JSON.parse(storedUser));
+        const storedUser = localStorage.getItem("auth_user");
+        if (storedUser) {
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+            
+            console.log("Loaded user data from localStorage:", debugProfileStatus(parsedUser));
+            
+            // If wallet is connected, ensure the user's walletAddress matches
+            if (connected && publicKey && parsedUser.id) {
+              const walletAddressStr = publicKey.toString();
+              
+              // If wallet doesn't match the stored user, check if another user exists with this wallet
+              if (parsedUser.walletAddress !== walletAddressStr) {
+                console.log("Wallet address mismatch, checking for user with connected wallet");
+                try {
+                  const response = await fetch(`/api/trpc/users.getUserByWallet?input=${encodeURIComponent(JSON.stringify({ walletAddress: walletAddressStr }))}`);
+                  const data = await response.json();
+                  
+                  if (data.result?.data) {
+                    console.log("Found user with connected wallet, updating local storage", debugProfileStatus(data.result.data));
+                    // Found a user with this wallet - update localStorage and state
+                    localStorage.setItem("auth_user", JSON.stringify(data.result.data));
+                    setUser(data.result.data);
+                  } else {
+                    // No user found with this wallet - refresh current user data instead
+                    if (parsedUser.id) {
+                      console.log("No user found with wallet, refreshing current user data");
+                      refreshUserData(parsedUser.id);
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error checking wallet user:", error);
+                }
+              } else if (parsedUser.id) {
+                // Wallet matches but let's refresh user data to ensure it's up to date
+                console.log("Refreshing user data on load");
+                refreshUserData(parsedUser.id);
+              }
+            }
+          } catch (error) {
+            console.error("Failed to parse stored user", error);
+            localStorage.removeItem("auth_user");
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+          
+          // If wallet is connected but no user in storage, check if a user exists with this wallet
+          if (connected && publicKey) {
+            const walletAddressStr = publicKey.toString();
+            console.log("No user in storage but wallet connected, checking API");
+            
+            try {
+              const response = await fetch(`/api/trpc/users.getUserByWallet?input=${encodeURIComponent(JSON.stringify({ walletAddress: walletAddressStr }))}`);
+              const data = await response.json();
+              
+              if (data.result?.data) {
+                console.log("Found user with connected wallet", debugProfileStatus(data.result.data));
+                // Found a user with this wallet - update localStorage and state
+                localStorage.setItem("auth_user", JSON.stringify(data.result.data));
+                setUser(data.result.data);
+              }
+            } catch (error) {
+              console.error("Error checking wallet user:", error);
+            }
+          }
+        }
       } catch (error) {
-        console.error("Failed to parse stored user", error);
-        localStorage.removeItem("auth_user");
+        console.error("Error loading user data:", error);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
-  }, []);
+    };
+    
+    loadUserData();
+  }, [connected, publicKey]);
 
   // Login mutation
   const loginMutation = api.users.login.useMutation({
@@ -99,6 +169,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const fetchedUser = await getUserById(userId);
       
       if (fetchedUser) {
+        console.log("Successfully refreshed user data:", debugProfileStatus(fetchedUser));
         // Update localStorage and state with fresh data
         const existingData = localStorage.getItem("auth_user");
         if (existingData) {
@@ -188,6 +259,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       
       if (userData) {
+        console.log("Successfully associated wallet with user:", userData);
         // Update localStorage and state with the updated user
         localStorage.setItem("auth_user", JSON.stringify(userData));
         setUser(userData);

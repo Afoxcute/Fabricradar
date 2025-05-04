@@ -96,9 +96,88 @@ export function UserProfileForm({
       
       let userData;
       
+      // If we have a wallet address, first check if this user already exists with provided email/phone
+      if (walletAddress && (formattedValues.email || formattedValues.phone)) {
+        try {
+          // Try to find a user with this email or phone
+          const identifier = formattedValues.email || formattedValues.phone;
+          console.log(`Checking if user exists with identifier: ${identifier}`);
+          
+          const loginResponse = await loginMutation.mutateAsync({
+            identifier: identifier as string,
+            otp: "check-only" // Special value that will just check if the user exists
+          }).catch(error => {
+            // If the error is "User not found", that's actually good for us in this case
+            if (error.message && error.message.includes("User not found")) {
+              console.log("No existing user found with this identifier, proceeding with creation");
+              return null;
+            }
+            throw error; // Otherwise rethrow the error
+          });
+          
+          if (loginResponse) {
+            console.log("Found existing user with this identifier", loginResponse);
+            // User exists, set identifier for OTP verification
+            setIdentifier(identifier!);
+            setUserId(loginResponse.id);
+            
+            // If the user already has a different wallet address, we'll associate this new one after verification
+            if (loginResponse.walletAddress && loginResponse.walletAddress !== walletAddress) {
+              console.log("User has a different wallet address, will associate this new one after verification");
+            }
+            
+            // Show OTP verification to confirm identity
+            toast.success("Account found! Please verify with OTP code to continue");
+            await requestOtp.mutateAsync({ identifier: identifier! });
+            
+            // In development, show the OTP in a toast
+            if (process.env.NODE_ENV === 'development') {
+              toast.success(`Development OTP: 000000`);
+              // Pre-fill the OTP field in development mode
+              setOtpCode('000000');
+            }
+            
+            setShowOtp(true);
+            setIsLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Error checking existing user:", error);
+          // Continue with normal flow if there was an error checking
+        }
+      }
+      
       if (isSignUp) {
         // Create a new user
-        userData = await registerUser.mutateAsync(formattedValues);
+        userData = await registerUser.mutateAsync(formattedValues)
+          .catch(error => {
+            // If error indicates user already exists, switch to verification flow
+            if (error.message && (
+                error.message.includes("already exists") || 
+                error.message.includes("duplicate key")
+            )) {
+              console.log("User already exists, switching to verification flow");
+              const identifier = formattedValues.email || formattedValues.phone;
+              if (identifier) {
+                setIdentifier(identifier);
+                requestOtp.mutateAsync({ identifier })
+                  .then(() => {
+                    if (process.env.NODE_ENV === 'development') {
+                      toast.success(`Development OTP: 000000`);
+                      setOtpCode('000000');
+                    }
+                    setShowOtp(true);
+                    toast.success("This email/phone is already registered. Please verify to continue.");
+                  })
+                  .catch(e => {
+                    console.error("Failed to request OTP:", e);
+                    toast.error("Failed to send verification code");
+                  });
+              }
+              throw new Error("Please verify your existing account");
+            }
+            throw error;
+          });
       } else if (user?.id) {
         try {
           // Attempt to update existing user
@@ -118,9 +197,41 @@ export function UserProfileForm({
           if (updateError instanceof Error && updateError.message.includes("User not found")) {
             console.warn("User not found when updating. Attempting to register as a new user.");
             try {
-              userData = await registerUser.mutateAsync(formattedValues);
+              userData = await registerUser.mutateAsync(formattedValues)
+                .catch(registerError => {
+                  // If error indicates user already exists, switch to verification flow
+                  if (registerError.message && (
+                      registerError.message.includes("already exists") || 
+                      registerError.message.includes("duplicate key")
+                  )) {
+                    console.log("User already exists, switching to verification flow");
+                    const identifier = formattedValues.email || formattedValues.phone;
+                    if (identifier) {
+                      setIdentifier(identifier);
+                      requestOtp.mutateAsync({ identifier })
+                        .then(() => {
+                          if (process.env.NODE_ENV === 'development') {
+                            toast.success(`Development OTP: 000000`);
+                            setOtpCode('000000');
+                          }
+                          setShowOtp(true);
+                          toast.success("This email/phone is already registered. Please verify to continue.");
+                        })
+                        .catch(e => {
+                          console.error("Failed to request OTP:", e);
+                          toast.error("Failed to send verification code");
+                        });
+                    }
+                    throw new Error("Please verify your existing account");
+                  }
+                  throw registerError;
+                });
               toast.success("Created a new user profile");
             } catch (registerError) {
+              if ((registerError as Error).message === "Please verify your existing account") {
+                // This is handled already by the error handler in registerUser
+                return;
+              }
               console.error("Failed to register as new user:", registerError);
               throw updateError; // Re-throw the original error if registration fails
             }
@@ -136,7 +247,41 @@ export function UserProfileForm({
           
           // Try to register as a new user with the provided info
           try {
-            userData = await registerUser.mutateAsync(formattedValues);
+            userData = await registerUser.mutateAsync(formattedValues)
+              .catch(registerError => {
+                // If error indicates user already exists, switch to verification flow
+                if (registerError.message && (
+                    registerError.message.includes("already exists") || 
+                    registerError.message.includes("duplicate key")
+                )) {
+                  console.log("User already exists, switching to verification flow");
+                  const identifier = formattedValues.email || formattedValues.phone;
+                  if (identifier) {
+                    setIdentifier(identifier);
+                    requestOtp.mutateAsync({ identifier })
+                      .then(() => {
+                        if (process.env.NODE_ENV === 'development') {
+                          toast.success(`Development OTP: 000000`);
+                          setOtpCode('000000');
+                        }
+                        setShowOtp(true);
+                        toast.success("This email/phone is already registered. Please verify to continue.");
+                      })
+                      .catch(e => {
+                        console.error("Failed to request OTP:", e);
+                        toast.error("Failed to send verification code");
+                      });
+                  }
+                  return null; // Return null to indicate we've handled this case
+                }
+                throw registerError;
+              });
+            
+            if (userData === null) {
+              // This means we've already handled the "user exists" case
+              return;
+            }
+            
             toast.success("Development mode: Created a new user");
           } catch (registerError) {
             console.error("Failed to register mock user:", registerError);
@@ -147,7 +292,41 @@ export function UserProfileForm({
           // Try to create a new user if there's no user ID
           try {
             console.warn("No user ID found. Attempting to register as a new user.");
-            userData = await registerUser.mutateAsync(formattedValues);
+            userData = await registerUser.mutateAsync(formattedValues)
+              .catch(registerError => {
+                // If error indicates user already exists, switch to verification flow
+                if (registerError.message && (
+                    registerError.message.includes("already exists") || 
+                    registerError.message.includes("duplicate key")
+                )) {
+                  console.log("User already exists, switching to verification flow");
+                  const identifier = formattedValues.email || formattedValues.phone;
+                  if (identifier) {
+                    setIdentifier(identifier);
+                    requestOtp.mutateAsync({ identifier })
+                      .then(() => {
+                        if (process.env.NODE_ENV === 'development') {
+                          toast.success(`Development OTP: 000000`);
+                          setOtpCode('000000');
+                        }
+                        setShowOtp(true);
+                        toast.success("This email/phone is already registered. Please verify to continue.");
+                      })
+                      .catch(e => {
+                        console.error("Failed to request OTP:", e);
+                        toast.error("Failed to send verification code");
+                      });
+                  }
+                  return null; // Return null to indicate we've handled this case
+                }
+                throw registerError;
+              });
+              
+            if (userData === null) {
+              // This means we've already handled the "user exists" case
+              return;
+            }
+              
             toast.success("Created a new user profile");
           } catch (registerError) {
             console.error("Failed to register as new user:", registerError);

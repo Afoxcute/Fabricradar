@@ -74,14 +74,17 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
           if (user?.walletAddress !== walletAddressStr) {
             // Wallet address doesn't match - might need to check for a different user
             try {
-              // Try to find a user with this wallet address using the API directly
-              const response = await fetch(`/api/trpc/users.getUserByWallet?input=${encodeURIComponent(JSON.stringify({ walletAddress: walletAddressStr }))}`);
+              // Check for existing user with this wallet using a direct fetch to avoid encoding issues
+              const apiUrl = `/api/user/by-wallet?walletAddress=${encodeURIComponent(walletAddressStr)}`;
+              console.log("Checking for user with wallet address:", apiUrl);
+              
+              const response = await fetch(apiUrl);
               const data = await response.json();
               
-              if (data.result?.data) {
-                console.log("Found user with this wallet, updating local storage", debugProfileStatus(data.result.data));
+              if (data.success && data.user) {
+                console.log("Found user with this wallet, updating local storage", debugProfileStatus(data.user));
                 // Found a user with this wallet - store in localStorage and refresh
-                localStorage.setItem("auth_user", JSON.stringify(data.result.data));
+                localStorage.setItem("auth_user", JSON.stringify(data.user));
                 window.location.reload(); // Force reload to update auth context
                 return;
               }
@@ -114,25 +117,28 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
           console.log("No user in local storage but wallet is connected, checking API");
           // No user in local storage but wallet is connected - check if a user exists with this wallet address
           try {
-            // Try to find a user with this wallet address
-            const response = await fetch(`/api/trpc/users.getUserByWallet?input=${encodeURIComponent(JSON.stringify({ walletAddress: walletAddressStr }))}`);
+            // Use a direct /api/user endpoint instead of trpc to avoid encoding issues
+            const apiUrl = `/api/user/by-wallet?walletAddress=${encodeURIComponent(walletAddressStr)}`;
+            console.log("Checking for user with wallet address:", apiUrl);
+            
+            const response = await fetch(apiUrl);
             const data = await response.json();
             
-            if (data.result?.data) {
-              console.log("Found user with this wallet in API", debugProfileStatus(data.result.data));
+            if (data.success && data.user) {
+              console.log("Found user with this wallet in API", debugProfileStatus(data.user));
               
               // Check if this user has a complete profile
-              if (isProfileComplete(data.result.data)) {
+              if (isProfileComplete(data.user)) {
                 console.log("User from API has complete profile");
                 // Found a user with this wallet and complete profile - store in localStorage
-                localStorage.setItem("auth_user", JSON.stringify(data.result.data));
+                localStorage.setItem("auth_user", JSON.stringify(data.user));
                 // Refresh the page to update auth context
                 window.location.reload();
                 return;
               } else {
                 console.log("User from API has incomplete profile");
                 // Store user in localStorage but mark as needing completion
-                localStorage.setItem("auth_user", JSON.stringify(data.result.data));
+                localStorage.setItem("auth_user", JSON.stringify(data.user));
                 setNeedsCompletion(true);
               }
             } else {

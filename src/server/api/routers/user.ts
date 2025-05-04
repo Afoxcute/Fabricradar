@@ -212,6 +212,13 @@ export const userRouter = createTRPCRouter({
         });
       }
 
+      // Special case: if otp is "check-only", just return the user without verifying OTP
+      // This is used for checking if a user exists with a given email/phone
+      if (input.otp === "check-only") {
+        console.log(`Check-only login for user ID ${user.id} with identifier ${input.identifier}`);
+        return user;
+      }
+
       // Verify OTP
       const isValid = await authService.verifyOtp(user.id, input.otp);
       
@@ -247,6 +254,15 @@ export const userRouter = createTRPCRouter({
     .input(z.object({ walletAddress: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
+        if (!input.walletAddress) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Wallet address is required",
+          });
+        }
+
+        console.log(`Looking up user with wallet address: ${input.walletAddress}`);
+        
         // @ts-ignore - walletAddress might not be recognized by TypeScript due to missing prisma migration
         const user = await ctx.db.user.findFirst({
           where: { 
@@ -255,10 +271,20 @@ export const userRouter = createTRPCRouter({
           },
         });
         
+        if (!user) {
+          console.log(`No user found with wallet address: ${input.walletAddress}`);
+        } else {
+          console.log(`Found user ID ${user.id} with wallet address: ${input.walletAddress}`);
+        }
+        
         return user; // May be null if no user found with this wallet
       } catch (error) {
         console.error("Error finding user by wallet address:", error);
-        return null;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to lookup user by wallet address",
+          cause: error,
+        });
       }
     }),
 });

@@ -31,33 +31,23 @@ const HeroSection = () => {
       </div>
       {/* Blockchain Partners */}
       <div className="mt-16 flex flex-wrap items-center gap-8 md:gap-16 max-w-[1440px] mx-auto justify-between px-4">
-        <div className="flex items-center gap-2">
-          <Image
-            src="/placeholder.svg?height=24&width=24"
-            alt="Solana"
-            width={24}
-            height={24}
-          />
-          <span className="font-bold">SOLANA</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Image
-            src="/placeholder.svg?height=24&width=24"
-            alt="Ethereum"
-            width={24}
-            height={24}
-          />
-          <span className="font-bold">ethereum</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Image
-            src="/placeholder.svg?height=24&width=24"
-            alt="Blockchain.io"
-            width={24}
-            height={24}
-          />
-          <span className="font-bold">blockchain.io</span>
-        </div>
+        {[
+          { src: '/solanaLogo.svg', label: 'SOLANA', width: 120 },
+          { src: '/superteam.svg', label: 'Superteam', width: 120 },
+          { src: '/usdcLogo.png', label: 'USDC', width: 120 },
+        ].map((logo, idx) => (
+          <div key={idx} className="flex items-center gap-2">
+            <div className="w-[120px] h-[50px] flex items-center justify-center relative">
+              <Image
+                src={logo.src}
+                alt={logo.label}
+                fill
+                className="object-contain"
+              />
+            </div>
+            <span className="font-bold">{logo.label}</span>
+          </div>
+        ))}
       </div>
     </section>
   );

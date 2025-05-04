@@ -117,7 +117,9 @@ export default function SignIn() {
       // In development mode, try with the default OTP code as fallback
       if (process.env.NODE_ENV === 'development' && codeToUse !== '000000') {
         try {
-          toast.info("Trying with default development OTP as fallback...");
+          toast("Trying with default development OTP as fallback...", {
+            icon: '🔑',
+          });
           await login(identifier, '000000');
           toast.success("Login successful with default OTP!");
           router.push("/");

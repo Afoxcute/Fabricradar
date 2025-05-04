@@ -260,7 +260,9 @@ export function UserProfileForm({
       // In development mode, try with the default OTP code as fallback
       if (process.env.NODE_ENV === 'development' && codeToVerify !== '000000') {
         try {
-          toast.info("Trying with default development OTP as fallback...");
+          toast("Trying with default development OTP as fallback...", {
+            icon: '🔑',
+          });
           const userData = await loginMutation.mutateAsync({
             identifier,
             otp: '000000',

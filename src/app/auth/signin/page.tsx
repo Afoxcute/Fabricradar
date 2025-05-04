@@ -84,11 +84,14 @@ export default function SignIn() {
   };
 
   const handleVerifyOtp = async () => {
-    // In development, use '000000' as default OTP
+    // In development, always use '000000' as default OTP
     let codeToUse = otpCode;
-    if (process.env.NODE_ENV === 'development' && (!codeToUse || codeToUse.length < 6)) {
-      codeToUse = '000000';
-      toast.success("Using default development OTP: 000000");
+    if (process.env.NODE_ENV === 'development') {
+      // If using the default code or no code, show a message
+      if (!codeToUse || codeToUse.length < 6 || codeToUse === '000000') {
+        codeToUse = '000000';
+        toast.success("Using default development OTP: 000000");
+      }
     } else if (!otpCode || otpCode.length < 6) {
       toast.error("Please enter a valid OTP code");
       return;
@@ -102,12 +105,28 @@ export default function SignIn() {
 
     setIsLoading(true);
     try {
+      console.log(`Attempting login with identifier: ${identifier}, OTP: ${codeToUse}`);
+      
       // Call the login function from auth provider
       await login(identifier, codeToUse);
       toast.success("Login successful!");
       router.push("/");
     } catch (error) {
       console.error("Login error:", error);
+      
+      // In development mode, try with the default OTP code as fallback
+      if (process.env.NODE_ENV === 'development' && codeToUse !== '000000') {
+        try {
+          toast.info("Trying with default development OTP as fallback...");
+          await login(identifier, '000000');
+          toast.success("Login successful with default OTP!");
+          router.push("/");
+          return;
+        } catch (fallbackError) {
+          console.error("Fallback login also failed:", fallbackError);
+        }
+      }
+      
       toast.error("Failed to verify OTP. Please check the code and try again");
     } finally {
       setIsLoading(false);

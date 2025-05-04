@@ -58,9 +58,15 @@ export class AuthService extends BaseService {
    */
   async verifyOtp(userId: number, otpCode: string): Promise<boolean> {
     try {
-      // Always allow "000000" as a valid OTP for testing in any environment
-      if (otpCode === "000000" && process.env.NODE_ENV !== "production") {
-        return true;
+      // Always allow "000000" as a valid OTP for testing in development environment
+      if (process.env.NODE_ENV === "development") {
+        console.log(`Development mode: Verifying OTP ${otpCode} for user ${userId}`);
+        
+        // In development mode, always accept "000000" as valid
+        if (otpCode === "000000") {
+          console.log("Development mode: Using default OTP 000000 - auto-validating");
+          return true;
+        }
       }
       
       // Find the OTP verification record
@@ -76,6 +82,22 @@ export class AuthService extends BaseService {
       });
       
       if (!otpVerification) {
+        console.log(`OTP verification failed for user ${userId}: No valid OTP record found for code ${otpCode}`);
+        
+        // In development, if it's not the default code but OTP verification fails, check if any OTP exists
+        if (process.env.NODE_ENV === "development") {
+          const anyOtp = await this.db.oTPVerification.findFirst({
+            where: { userId },
+            orderBy: { createdAt: 'desc' },
+          });
+          
+          if (anyOtp) {
+            console.log(`Development mode: Latest OTP for user ${userId} is ${anyOtp.otpCode} (expires ${anyOtp.expiresAt})`);
+          } else {
+            console.log(`Development mode: No OTP records found for user ${userId}`);
+          }
+        }
+        
         return false;
       }
       
@@ -89,9 +111,10 @@ export class AuthService extends BaseService {
         },
       });
       
+      console.log(`OTP verification successful for user ${userId}`);
       return true;
     } catch (e) {
-      console.error(e);
+      console.error(`Error verifying OTP for user ${userId}:`, e);
       return false;
     }
   }

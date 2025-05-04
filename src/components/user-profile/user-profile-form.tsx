@@ -207,11 +207,14 @@ export function UserProfileForm({
   };
 
   const handleVerifyOtp = async () => {
-    // In development, always use '000000' as default OTP if not provided
+    // In development, always use '000000' as default OTP
     let codeToVerify = otpCode;
-    if (process.env.NODE_ENV === 'development' && (!codeToVerify || codeToVerify.length < 6)) {
-      codeToVerify = '000000';
-      toast.success("Using default development OTP: 000000");
+    if (process.env.NODE_ENV === 'development') {
+      // If using the default code or no code, show a message
+      if (!codeToVerify || codeToVerify.length < 6 || codeToVerify === '000000') {
+        codeToVerify = '000000';
+        toast.success("Using default development OTP: 000000");
+      }
     } else if (!otpCode || otpCode.length < 6) {
       toast.error("Please enter a valid OTP code");
       return;
@@ -219,6 +222,8 @@ export function UserProfileForm({
 
     setIsLoading(true);
     try {
+      console.log(`Attempting OTP verification with identifier: ${identifier}, OTP: ${codeToVerify}`);
+      
       // Use the login procedure to verify the OTP
       const userData = await loginMutation.mutateAsync({
         identifier,
@@ -250,8 +255,48 @@ export function UserProfileForm({
         }
       }
     } catch (error) {
+      console.error("OTP verification error:", error);
+      
+      // In development mode, try with the default OTP code as fallback
+      if (process.env.NODE_ENV === 'development' && codeToVerify !== '000000') {
+        try {
+          toast.info("Trying with default development OTP as fallback...");
+          const userData = await loginMutation.mutateAsync({
+            identifier,
+            otp: '000000',
+          });
+          
+          if (isSignUp) {
+            toast.success("Account verified successfully with default OTP!");
+            router.push("/auth/signin");
+          } else {
+            // Ensure we save the verified user data to localStorage
+            localStorage.setItem("auth_user", JSON.stringify(userData));
+            
+            // Make sure the wallet address is associated with this user
+            if (walletAddress && (!(userData as any).walletAddress || (userData as any).walletAddress !== walletAddress)) {
+              try {
+                await updateUser.mutateAsync({
+                  userId: userData.id,
+                  walletAddress,
+                });
+              } catch (walletError) {
+                console.error("Failed to associate wallet with verified account:", walletError);
+              }
+            }
+            
+            toast.success("Profile updated and verified successfully with default OTP!");
+            if (onSuccess) {
+              onSuccess(userData);
+            }
+          }
+          return;
+        } catch (fallbackError) {
+          console.error("Fallback OTP verification also failed:", fallbackError);
+        }
+      }
+      
       toast.error("Failed to verify OTP");
-      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -400,7 +445,7 @@ export function UserProfileForm({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>Verifying...</span>
+                <span>Verify OTP</span>
               </>
             ) : (
               <>

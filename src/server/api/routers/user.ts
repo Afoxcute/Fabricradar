@@ -156,9 +156,12 @@ export const userRouter = createTRPCRouter({
         });
       }
 
+      // Check if we're in development mode with SMS disabled
+      const isDev = process.env.NODE_ENV === "development";
+      const isSmsDisabled = process.env.ENABLE_SMS === "false";
+      
       // Generate OTP code (6 digits)
-      // In development, always use "000000" as the OTP code
-      const otpCode = process.env.NODE_ENV === "development" 
+      const otpCode = isDev || isSmsDisabled 
         ? "000000" 
         : Math.floor(100000 + Math.random() * 900000).toString();
       
@@ -166,10 +169,20 @@ export const userRouter = createTRPCRouter({
       await authService.createOtp(user.id, otpCode);
       
       // In development, return the OTP code for testing
-      const devResponse = process.env.NODE_ENV === "development" 
+      const devResponse = isDev 
         ? { otp: otpCode }
         : {};
-        
+      
+      // If we're in development with SMS disabled, return early with success
+      if (isDev && isSmsDisabled) {
+        console.log(`Development mode with SMS disabled - Using default OTP: 000000 for ${input.identifier}`);
+        return {
+          success: true,
+          userId: user.id,
+          otp: "000000",
+        };
+      }
+      
       // In production, this would send an email or SMS with the OTP
       // For now, we'll just return success
       return {

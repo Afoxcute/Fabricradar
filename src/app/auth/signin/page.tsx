@@ -59,33 +59,31 @@ export default function SignIn() {
       // Store the formatted identifier
       setIdentifier(formattedIdentifier);
       
-      // Request OTP
-      const response = await requestOtp.mutateAsync({
-        identifier: formattedIdentifier,
-      });
-
-      // Check if we're in development mode but calling a production API
-      const isProductionApi = window.location.hostname === 'fabricradar.vercel.app';
+      // Check if we're in development mode with SMS disabled
+      const isDev = process.env.NODE_ENV === 'development';
+      const isSmsDisabled = process.env.ENABLE_SMS === 'false';
       
-      // In development, show the OTP in a toast
-      if (process.env.NODE_ENV === 'development') {
-        if (isProductionApi) {
-          console.warn("Development mode with production API: Default OTP may not work");
-          toast("Production API detected. Check SMS/Email for actual OTP.", {
-            icon: '📱',
-            duration: 5000
-          });
-          // Don't pre-fill OTP if using production API
-          setOtpCode("");
-        } else if (response.otp) {
+      if (isDev && isSmsDisabled) {
+        // Use default OTP code in development with SMS disabled
+        const defaultOtp = '000000';
+        toast.success(`Development mode with SMS disabled: Using default OTP: ${defaultOtp}`);
+        setOtpCode(defaultOtp);
+        setShowOtp(true);
+      } else {
+        // Request OTP
+        const response = await requestOtp.mutateAsync({
+          identifier: formattedIdentifier,
+        });
+
+        // In development, show the OTP in a toast
+        if (isDev && response.otp) {
           toast.success(`Development OTP: ${response.otp}`);
-          // Pre-fill the OTP in development mode with local API
           setOtpCode(response.otp);
         }
-      }
 
-      toast.success(`Verification code sent to your ${formattedIdentifier.includes('@') ? 'email' : 'phone'}`);
-      setShowOtp(true);
+        toast.success(`Verification code sent to your ${formattedIdentifier.includes('@') ? 'email' : 'phone'}`);
+        setShowOtp(true);
+      }
     } catch (error) {
       console.error("Login request error:", error);
       if (error instanceof Error) {
@@ -99,27 +97,15 @@ export default function SignIn() {
   };
 
   const handleVerifyOtp = async () => {
-    // In development, use '000000' as default OTP
-    let codeToUse = otpCode;
+    // Check for development mode with SMS disabled
+    const isDev = process.env.NODE_ENV === 'development';
+    const isSmsDisabled = process.env.ENABLE_SMS === 'false';
     
-    // Check if we're in development mode but calling a production API
-    const isProductionApi = window.location.hostname === 'fabricradar.vercel.app';
-    
-    if (process.env.NODE_ENV === 'development') {
-      // Log a warning if we're using development code with production API
-      if (isProductionApi) {
-        console.warn("Warning: Running in development mode but using production API. OTP verification may fail.");
-        toast("Warning: Using production API. Default OTP may not work.", {
-          icon: '⚠️',
-          duration: 5000
-        });
-      }
-      
-      // If using the default code or no code, show a message
-      if (!codeToUse || codeToUse.length < 6 || codeToUse === '000000') {
-        codeToUse = '000000';
-        toast.success("Using default development OTP: 000000");
-      }
+    // Use default OTP code in development mode or SMS disabled if not provided
+    let codeToVerify = otpCode;
+    if ((isDev && isSmsDisabled) || (isDev && (!codeToVerify || codeToVerify.length < 6))) {
+      codeToVerify = '000000';
+      toast.success("Using default development OTP: 000000");
     } else if (!otpCode || otpCode.length < 6) {
       toast.error("Please enter a valid OTP code");
       return;
@@ -133,30 +119,12 @@ export default function SignIn() {
 
     setIsLoading(true);
     try {
-      console.log(`Attempting login with identifier: ${identifier}, OTP: ${codeToUse}, API: ${window.location.origin}`);
-      
       // Call the login function from auth provider
-      await login(identifier, codeToUse);
+      await login(identifier, codeToVerify);
       toast.success("Login successful!");
       router.push("/");
     } catch (error) {
       console.error("Login error:", error);
-      
-      // In development mode, try with the default OTP code as fallback
-      if (process.env.NODE_ENV === 'development' && codeToUse !== '000000') {
-        try {
-          toast("Trying with default development OTP as fallback...", {
-            icon: '🔑',
-          });
-          await login(identifier, '000000');
-          toast.success("Login successful with default OTP!");
-          router.push("/");
-          return;
-        } catch (fallbackError) {
-          console.error("Fallback login also failed:", fallbackError);
-        }
-      }
-      
       toast.error("Failed to verify OTP. Please check the code and try again");
     } finally {
       setIsLoading(false);

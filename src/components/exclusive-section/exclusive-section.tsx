@@ -48,14 +48,14 @@ const ExclusiveSection = () => {
           {
             id: '2',
             name: 'White Kaftan With Beads',
-            price: '1.5 ETH',
+            price: '1.5 SOL',
             usd: '$2500.12',
           },
           { id: '3', name: 'Mint Green Dress', price: '1.1 ETH', usd: '$1837' },
           {
             id: '4',
             name: 'Agbada for Men With Embroidery',
-            price: '1.6 ETH',
+            price: '1.6 SOL',
             usd: '$2667',
           },
         ].map((item, i) => (

@@ -5,6 +5,7 @@ import { SidebarNavItem } from '../SidebarNavItem';
 import { FaHouse } from 'react-icons/fa6';
 import { CiStickyNote } from 'react-icons/ci';
 import { IoChevronBackCircle } from 'react-icons/io5';
+import { AiFillProduct } from 'react-icons/ai';
 
 export const NAVIGATIONS = [
   {
@@ -16,6 +17,11 @@ export const NAVIGATIONS = [
     title: 'Orders',
     href: '/orders',
     icon: <CiStickyNote size={24} />,
+  },
+  {
+    title: 'Products',
+    href: '/products',
+    icon: <AiFillProduct size={24} />,
   },
 ];
 

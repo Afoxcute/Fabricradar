@@ -117,3 +117,9 @@ body {
   background-color: #1f2937 !important; /* Tailwind's gray-800 */
   border: 0 !important;
 }
+
+.ant-upload-list-item-actions .ant-btn {
+  background-color: #ffffff !important;
+  color: white !important;
+  border-color: #e61818; /* Tailwind's gray-800 */
+}

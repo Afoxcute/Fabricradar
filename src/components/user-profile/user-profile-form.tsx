@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
@@ -98,17 +99,34 @@ export function UserProfileForm({
         // Create a new user
         userData = await registerUser.mutateAsync(formattedValues);
       } else if (user?.id) {
-        // Update existing user
-        userData = await updateUser.mutateAsync({
-          userId: user.id,
-          ...formattedValues,
-        });
-        
-        // If update was successful and no verification needed
-        if (userData && !showOtp && onSuccess) {
-          onSuccess(userData);
-          toast.success("Profile updated successfully!");
-          return;
+        try {
+          // Attempt to update existing user
+          userData = await updateUser.mutateAsync({
+            userId: user.id,
+            ...formattedValues,
+          });
+          
+          // If update was successful and no verification needed
+          if (userData && !showOtp && onSuccess) {
+            onSuccess(userData);
+            toast.success("Profile updated successfully!");
+            return;
+          }
+        } catch (updateError) {
+          // If updating user fails with "User not found", try registering as a new user
+          if (updateError instanceof Error && updateError.message.includes("User not found")) {
+            console.warn("User not found when updating. Attempting to register as a new user.");
+            try {
+              userData = await registerUser.mutateAsync(formattedValues);
+              toast.success("Created a new user profile");
+            } catch (registerError) {
+              console.error("Failed to register as new user:", registerError);
+              throw updateError; // Re-throw the original error if registration fails
+            }
+          } else {
+            // If it's a different error, rethrow it
+            throw updateError;
+          }
         }
       } else {
         // In development mode, provide a workaround for missing user
@@ -125,7 +143,15 @@ export function UserProfileForm({
             userData = { id: 9999, ...formattedValues };
           }
         } else {
-          throw new Error("User not found");
+          // Try to create a new user if there's no user ID
+          try {
+            console.warn("No user ID found. Attempting to register as a new user.");
+            userData = await registerUser.mutateAsync(formattedValues);
+            toast.success("Created a new user profile");
+          } catch (registerError) {
+            console.error("Failed to register as new user:", registerError);
+            throw new Error("Could not update or create user profile");
+          }
         }
       }
 

@@ -23,11 +23,39 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
   const router = useRouter();
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
   const [needsCompletion, setNeedsCompletion] = useState(false);
+  const [justLoggedOut, setJustLoggedOut] = useState(false);
+
+  // Track logout state
+  useEffect(() => {
+    // If user is null but the wallet is connected, check if this was due to a logout
+    if (!user && connected && publicKey) {
+      const isLogout = sessionStorage.getItem("just_logged_out");
+      if (isLogout === "true") {
+        // Clear the flag and set our state
+        sessionStorage.removeItem("just_logged_out");
+        setJustLoggedOut(true);
+        
+        // Reset the flag after navigation completes (3 seconds should be enough)
+        setTimeout(() => {
+          setJustLoggedOut(false);
+        }, 3000);
+      }
+    } else {
+      setJustLoggedOut(false);
+    }
+  }, [user, connected, publicKey]);
 
   useEffect(() => {
     async function checkUserProfile() {
       // If wallet is not connected, always show the main content
       if (!connected || !publicKey) {
+        setIsCheckingProfile(false);
+        setNeedsCompletion(false);
+        return;
+      }
+
+      // If user just logged out, don't redirect to profile completion
+      if (justLoggedOut) {
         setIsCheckingProfile(false);
         setNeedsCompletion(false);
         return;
@@ -111,7 +139,7 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
     }
 
     checkUserProfile();
-  }, [connected, publicKey, user, refreshUserData, associateWalletWithUser]);
+  }, [connected, publicKey, user, refreshUserData, associateWalletWithUser, justLoggedOut]);
 
   // Link wallet with user when both are available but not yet linked
   useEffect(() => {
@@ -167,7 +195,7 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
   }
 
   // If profile needs completion, show the profile completion form
-  if (needsCompletion) {
+  if (needsCompletion && !justLoggedOut) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden flex items-center justify-center">
         <BackgroundEffect />

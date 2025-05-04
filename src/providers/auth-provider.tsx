@@ -11,6 +11,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { api } from "../trpc/react";
 import toast from "react-hot-toast";
 import { ClientTRPCErrorHandler } from "@/lib/utils";
+import { useWallet } from "@/components/solana/privy-solana-adapter";
 
 interface User {
   id: number;
@@ -42,6 +43,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { disconnect } = useWallet();
 
   // Initialize state from localStorage on client
   useEffect(() => {
@@ -150,8 +152,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Function to handle logout
   const logout = () => {
+    // Clear user data
     localStorage.removeItem("auth_user");
     setUser(null);
+    
+    // Set a flag in sessionStorage to indicate the user just logged out
+    sessionStorage.setItem("just_logged_out", "true");
+    
+    // Disconnect wallet to prevent profile completion redirect
+    try {
+      if (disconnect) {
+        disconnect();
+      }
+    } catch (error) {
+      console.error("Error disconnecting wallet during logout:", error);
+    }
     
     // Navigate to home page unless already there
     if (pathname !== "/") {

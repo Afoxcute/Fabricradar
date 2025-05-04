@@ -9,10 +9,16 @@ import Image from 'next/image';
 import { useGetAllBalances } from '../account/account-data-access';
 import { PublicKey } from '@solana/web3.js';
 import { TokenBalances } from '../account/account-ui';
+import { useRouter } from 'next/navigation';
+import { shortenAddress, copyToClipboard } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
+import { AuthNav } from '../user-profile/auth-nav';
 
 const Header = () => {
-  const { ready, authenticated, login, logout } = usePrivy();
+  const { ready, authenticated, login } = usePrivy();
   const wallet = useWallet();
+  const { user } = useAuth();
+  const router = useRouter();
   const disableLogin = !ready || (ready && authenticated);
   const [copied, setCopied] = useState(false);
   
@@ -29,22 +35,17 @@ const Header = () => {
     address: publicKeyForBalance
   });
   
-  // Format the wallet address for display
+  // Format the wallet address for display using the utility function
   const formattedAddress = wallet.publicKey 
-    ? `${wallet.publicKey.toString().slice(0, 4)}...${wallet.publicKey.toString().slice(-4)}`
+    ? shortenAddress(wallet.publicKey.toString(), 4, 4)
     : '';
     
   // Function to copy wallet address to clipboard
-  const copyWalletAddress = () => {
+  const handleCopyWalletAddress = () => {
     if (wallet.publicKey) {
-      navigator.clipboard.writeText(wallet.publicKey.toString())
-        .then(() => {
+      copyToClipboard(wallet.publicKey.toString());
           setCopied(true);
           setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
-        })
-        .catch(err => {
-          console.error('Could not copy wallet address: ', err);
-        });
     }
   };
 
@@ -81,19 +82,18 @@ const Header = () => {
             Marketplace
           </Link>
         </nav>
+        
         {authenticated && wallet.connected && wallet.publicKey ? (
-          <div className="dropdown dropdown-end">
-            <Button 
-              variant="outline" 
-              className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
-              tabIndex={0}
-            >
-              {formattedAddress}
-              <div className="ml-2 flex items-center">
+          <div className="flex items-center gap-2">
+            {/* Wallet Balance Display */}
+            <div className="text-sm bg-gray-800/50 rounded-lg px-3 py-2">
                 {isLoadingBalances ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
+                <div className="flex items-center">
+                  <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                  <span>Loading...</span>
+                </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs opacity-70">
+                <div className="flex items-center gap-2">
                     {balances && (
                       <>
                         <span>{balances.sol.toFixed(2)} SOL</span>
@@ -105,33 +105,9 @@ const Header = () => {
                   </div>
                 )}
               </div>
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-            <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-64">
-              <li className="cursor-pointer">
-                <div onClick={copyWalletAddress} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="mr-2">
-                      {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                    </span>
-                    <span className="truncate">
-                      {wallet.publicKey?.toString()}
-                    </span>
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    {copied ? 'Copied!' : 'Copy'}
-                  </span>
-                </div>
-              </li>
-              {wallet.publicKey && (
-                <li className="px-2 py-2">
-                  <TokenBalances address={wallet.publicKey} showDetailed={true} />
-                </li>
-              )}
-              <li>
-                <button onClick={() => wallet.disconnect()}>Disconnect</button>
-              </li>
-            </ul>
+            
+            {/* Auth Navigation */}
+            <AuthNav />
           </div>
         ) : (
           <Button

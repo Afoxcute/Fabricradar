@@ -64,9 +64,24 @@ export default function SignIn() {
         identifier: formattedIdentifier,
       });
 
+      // Check if we're in development mode but calling a production API
+      const isProductionApi = window.location.hostname === 'fabricradar.vercel.app';
+      
       // In development, show the OTP in a toast
-      if (process.env.NODE_ENV === 'development' && response.otp) {
-        toast.success(`Development OTP: ${response.otp}`);
+      if (process.env.NODE_ENV === 'development') {
+        if (isProductionApi) {
+          console.warn("Development mode with production API: Default OTP may not work");
+          toast("Production API detected. Check SMS/Email for actual OTP.", {
+            icon: '📱',
+            duration: 5000
+          });
+          // Don't pre-fill OTP if using production API
+          setOtpCode("");
+        } else if (response.otp) {
+          toast.success(`Development OTP: ${response.otp}`);
+          // Pre-fill the OTP in development mode with local API
+          setOtpCode(response.otp);
+        }
       }
 
       toast.success(`Verification code sent to your ${formattedIdentifier.includes('@') ? 'email' : 'phone'}`);
@@ -84,9 +99,22 @@ export default function SignIn() {
   };
 
   const handleVerifyOtp = async () => {
-    // In development, always use '000000' as default OTP
+    // In development, use '000000' as default OTP
     let codeToUse = otpCode;
+    
+    // Check if we're in development mode but calling a production API
+    const isProductionApi = window.location.hostname === 'fabricradar.vercel.app';
+    
     if (process.env.NODE_ENV === 'development') {
+      // Log a warning if we're using development code with production API
+      if (isProductionApi) {
+        console.warn("Warning: Running in development mode but using production API. OTP verification may fail.");
+        toast("Warning: Using production API. Default OTP may not work.", {
+          icon: '⚠️',
+          duration: 5000
+        });
+      }
+      
       // If using the default code or no code, show a message
       if (!codeToUse || codeToUse.length < 6 || codeToUse === '000000') {
         codeToUse = '000000';
@@ -105,7 +133,7 @@ export default function SignIn() {
 
     setIsLoading(true);
     try {
-      console.log(`Attempting login with identifier: ${identifier}, OTP: ${codeToUse}`);
+      console.log(`Attempting login with identifier: ${identifier}, OTP: ${codeToUse}, API: ${window.location.origin}`);
       
       // Call the login function from auth provider
       await login(identifier, codeToUse);

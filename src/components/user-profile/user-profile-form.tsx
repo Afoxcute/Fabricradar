@@ -182,14 +182,28 @@ export function UserProfileForm({
         identifier: formattedIdentifier,
       });
 
+      // Check if we're in development mode but calling a production API
+      const isProductionApi = window.location.hostname === 'fabricradar.vercel.app';
+      
       // In development, show the OTP in a toast
       if (process.env.NODE_ENV === 'development') {
-        // Use the OTP from the response if available, otherwise use default '000000'
-        const devOtp = response.otp || '000000';
-        toast.success(`Development OTP: ${devOtp}`);
-        
-        // Pre-fill the OTP field in development mode
-        setOtpCode(devOtp);
+        if (isProductionApi) {
+          console.warn("Development mode with production API: Default OTP may not work");
+          toast("Production API detected. Check SMS/Email for actual OTP.", {
+            icon: '📱',
+            duration: 5000
+          });
+          
+          // In production API, we don't get the OTP back, so don't pre-fill
+          setOtpCode("");
+        } else {
+          // Use the OTP from the response if available, otherwise use default '000000'
+          const devOtp = response.otp || '000000';
+          toast.success(`Development OTP: ${devOtp}`);
+          
+          // Pre-fill the OTP field in development mode
+          setOtpCode(devOtp);
+        }
       }
 
       toast.success(isSignUp ? "Account created! Please verify with OTP code" : "Profile updated! Please verify with OTP code");
@@ -209,7 +223,20 @@ export function UserProfileForm({
   const handleVerifyOtp = async () => {
     // In development, always use '000000' as default OTP
     let codeToVerify = otpCode;
+    
+    // Check if we're in development mode but calling a production API
+    const isProductionApi = window.location.hostname === 'fabricradar.vercel.app';
+    
     if (process.env.NODE_ENV === 'development') {
+      // Log a warning if we're using development code with production API
+      if (isProductionApi) {
+        console.warn("Warning: Running in development mode but using production API. OTP verification may fail.");
+        toast("Warning: Using production API. Default OTP may not work.", {
+          icon: '⚠️',
+          duration: 5000
+        });
+      }
+      
       // If using the default code or no code, show a message
       if (!codeToVerify || codeToVerify.length < 6 || codeToVerify === '000000') {
         codeToVerify = '000000';
@@ -222,7 +249,7 @@ export function UserProfileForm({
 
     setIsLoading(true);
     try {
-      console.log(`Attempting OTP verification with identifier: ${identifier}, OTP: ${codeToVerify}`);
+      console.log(`Attempting OTP verification with identifier: ${identifier}, OTP: ${codeToVerify}, API: ${window.location.origin}`);
       
       // Use the login procedure to verify the OTP
       const userData = await loginMutation.mutateAsync({

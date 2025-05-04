@@ -207,18 +207,29 @@ export function UserProfileForm({
   };
 
   const handleVerifyOtp = async () => {
-    // In development, use '000000' as default OTP if not provided
+    // Always allow using "000000" as a test OTP in non-production
     let codeToVerify = otpCode;
-    if (process.env.NODE_ENV === 'development' && (!codeToVerify || codeToVerify.length < 6)) {
-      codeToVerify = '000000';
+    
+    // If the user entered "000000" directly, use it
+    if (otpCode === "000000" && process.env.NODE_ENV !== "production") {
+      codeToVerify = "000000";
+    }
+    // If no OTP is entered, but we're in development mode, use the default
+    else if (process.env.NODE_ENV === "development" && (!codeToVerify || codeToVerify.length < 6)) {
+      codeToVerify = "000000";
       toast.success("Using default development OTP: 000000");
-    } else if (!otpCode || otpCode.length < 6) {
+      setOtpCode("000000"); // Update the field to show the code being used
+    } 
+    // Regular validation for production or when a non-default code is entered
+    else if (!otpCode || otpCode.length < 6) {
       toast.error("Please enter a valid OTP code");
       return;
     }
 
     setIsLoading(true);
     try {
+      console.log(`Verifying OTP: ${codeToVerify} for identifier: ${identifier}`);
+      
       // Use the login procedure to verify the OTP
       const userData = await loginMutation.mutateAsync({
         identifier,
@@ -250,8 +261,20 @@ export function UserProfileForm({
         }
       }
     } catch (error) {
-      toast.error("Failed to verify OTP");
-      console.error(error);
+      console.error("OTP verification error:", error);
+      
+      // Provide more detailed error messages
+      if (error instanceof Error) {
+        if (error.message.includes("UNAUTHORIZED") || error.message.includes("Invalid OTP")) {
+          toast.error("Invalid verification code. Please try again.");
+        } else if (error.message.includes("NOT_FOUND") || error.message.includes("User not found")) {
+          toast.error("User not found. Please try again or contact support.");
+        } else {
+          toast.error(`Verification failed: ${error.message}`);
+        }
+      } else {
+        toast.error("Failed to verify OTP. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -400,7 +423,7 @@ export function UserProfileForm({
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>Verifying...</span>
+                <span>Verify OTP</span>
               </>
             ) : (
               <>

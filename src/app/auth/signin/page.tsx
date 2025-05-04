@@ -84,7 +84,12 @@ export default function SignIn() {
   };
 
   const handleVerifyOtp = async () => {
-    if (!otpCode || otpCode.length < 6) {
+    // In development, use '000000' as default OTP
+    let codeToUse = otpCode;
+    if (process.env.NODE_ENV === 'development' && (!codeToUse || codeToUse.length < 6)) {
+      codeToUse = '000000';
+      toast.success("Using default development OTP: 000000");
+    } else if (!otpCode || otpCode.length < 6) {
       toast.error("Please enter a valid OTP code");
       return;
     }
@@ -98,7 +103,7 @@ export default function SignIn() {
     setIsLoading(true);
     try {
       // Call the login function from auth provider
-      await login(identifier, otpCode);
+      await login(identifier, codeToUse);
       toast.success("Login successful!");
       router.push("/");
     } catch (error) {

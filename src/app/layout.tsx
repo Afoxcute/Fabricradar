@@ -45,8 +45,8 @@ export default function RootLayout({
             <SolanaProvider>
               <AuthProvider>
                 <ProfileRedirectWrapper>
-                  {/* <UiLayout links={links}>{children}</UiLayout> */}
-                  {children}
+              {/* <UiLayout links={links}>{children}</UiLayout> */}
+              {children}
                 </ProfileRedirectWrapper>
               </AuthProvider>
               <Toaster position="bottom-right" />

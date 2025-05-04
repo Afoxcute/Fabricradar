@@ -157,7 +157,10 @@ export const userRouter = createTRPCRouter({
       }
 
       // Generate OTP code (6 digits)
-      const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // In development, always use "000000" as the OTP code
+      const otpCode = process.env.NODE_ENV === "development" 
+        ? "000000" 
+        : Math.floor(100000 + Math.random() * 900000).toString();
       
       // Store OTP in database
       await authService.createOtp(user.id, otpCode);

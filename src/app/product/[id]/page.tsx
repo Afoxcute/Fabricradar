@@ -200,7 +200,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 {product.priceChange}
               </span>
               <div className="ml-auto">
-                <span className="text-xl font-bold">{product.eth} ETH</span>
+                <span className="text-xl font-bold">{product.eth} USDC</span>
                 <p className="text-gray-400 text-sm">Floor Price</p>
               </div>
             </div>

@@ -55,7 +55,7 @@ export function ChatInterface({
     {
       id: '6',
       sender: 'designer',
-      text: `The full package costs 0.45 ETH, including fabric, tailoring, and delivery. You'll receive it within 12 business days once your payment is confirmed.`,
+      text: `The full package costs 0.45 USDC, including fabric, tailoring, and delivery. You'll receive it within 12 business days once your payment is confirmed.`,
       timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
     },
     {

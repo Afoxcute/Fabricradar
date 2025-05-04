@@ -44,18 +44,18 @@ const ExclusiveSection = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* NFT Items - First Row */}
         {[
-          { id: '1', name: 'Pink Midi Dress', price: '1.2 ETH', usd: '$1997' },
+          { id: '1', name: 'Pink Midi Dress', price: '1.2 USDC', usd: '$1997' },
           {
             id: '2',
             name: 'White Kaftan With Beads',
-            price: '1.5 ETH',
+            price: '1.5 USDC',
             usd: '$2500.12',
           },
-          { id: '3', name: 'Mint Green Dress', price: '1.1 ETH', usd: '$1837' },
+          { id: '3', name: 'Mint Green Dress', price: '1.1 USDC', usd: '$1837' },
           {
             id: '4',
             name: 'Agbada for Men With Embroidery',
-            price: '1.6 ETH',
+            price: '1.6 USDC',
             usd: '$2667',
           },
         ].map((item, i) => (
@@ -85,10 +85,10 @@ const ExclusiveSection = () => {
 
         {/* NFT Items - Second Row */}
         {/* {[
-          { name: 'Agbada Kaftan', price: '1.3 ETH', usd: '$2165.12' },
-          { name: 'African Aso Oke', price: '1.5 ETH', usd: '$2500' },
-          { name: 'Safari Suit', price: '1.1 ETH', usd: '$1837' },
-          { name: 'Brocaded Pocket Kaftan', price: '1.8 ETH', usd: '$3000.12' },
+          { name: 'Agbada Kaftan', price: '1.3 USDC', usd: '$2165.12' },
+          { name: 'African Aso Oke', price: '1.5 USDC', usd: '$2500' },
+          { name: 'Safari Suit', price: '1.1 USDC', usd: '$1837' },
+          { name: 'Brocaded Pocket Kaftan', price: '1.8 USDC', usd: '$3000.12' },
         ].map((item, i) => (
           <div
             key={i}

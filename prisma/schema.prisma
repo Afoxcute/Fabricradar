@@ -35,6 +35,7 @@ model User {
   accountType     AccountType      @default(USER)
   OTPVerification OTPVerification?
   orders          Order[]          // Relation to orders
+  designs         Design[]         // Relation to designs
   
   @@index([phone], map: "phone_idx")
   @@index([email], map: "email_idx")
@@ -69,6 +70,21 @@ model Order {
   
   @@index([status], name: "status_idx")
   @@index([tailorId], name: "tailor_idx")
+}
+
+model Design {
+  id               Int      @id @default(autoincrement())
+  title            String
+  description      String
+  price            Float
+  imageUrl         String?
+  averageTimeline  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  tailorId         Int      // Tailor user ID
+  tailor           User     @relation(fields: [tailorId], references: [id])
+  
+  @@index([tailorId], name: "design_tailor_idx")
 }
 
 model Waitlist {

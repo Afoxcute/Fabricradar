@@ -1,0 +1,60 @@
+/* Dashboard custom styles for antd components */
+
+/* Table styles for dark theme */
+.tailor-dashboard-table .ant-table {
+  background-color: transparent !important;
+  color: white !important;
+}
+
+.tailor-dashboard-table .ant-table-thead > tr > th {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+  color: #d1d5db !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+.tailor-dashboard-table .ant-table-tbody > tr > td {
+  background-color: transparent !important;
+  color: white !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+.tailor-dashboard-table .ant-table-tbody > tr:hover > td {
+  background-color: rgba(31, 41, 55, 0.7) !important;
+}
+
+/* Pagination styles */
+.tailor-dashboard-table .ant-pagination-item {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+  border-color: #374151 !important;
+}
+
+.tailor-dashboard-table .ant-pagination-item a {
+  color: white !important;
+}
+
+.tailor-dashboard-table .ant-pagination-item-active {
+  border-color: #06b6d4 !important;
+}
+
+.tailor-dashboard-table .ant-pagination-item-active a {
+  color: #06b6d4 !important;
+}
+
+.tailor-dashboard-table .ant-pagination-prev button,
+.tailor-dashboard-table .ant-pagination-next button {
+  color: white !important;
+}
+
+/* Empty state */
+.tailor-dashboard-table .ant-empty-description {
+  color: #9ca3af !important;
+}
+
+/* Button overrides */
+.ant-btn-primary {
+  background-color: #06b6d4 !important;
+}
+
+.ant-btn-primary:hover {
+  background-color: #0891b2 !important;
+} 

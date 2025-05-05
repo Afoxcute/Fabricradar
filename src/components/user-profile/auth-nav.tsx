@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "../solana/privy-solana-adapter";
 import { shortenAddress } from "@/lib/utils";
-import { User, LogOut, ChevronDown } from "lucide-react";
+import { User, LogOut, ChevronDown, Scissors, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 
 export function AuthNav() {
@@ -27,6 +27,11 @@ export function AuthNav() {
     router.push("/profile");
     setDropdownOpen(false);
   };
+  
+  const navigateToTailorDashboard = () => {
+    router.push("/tailor/dashboard");
+    setDropdownOpen(false);
+  };
 
   return (
     <div className="relative">
@@ -34,7 +39,11 @@ export function AuthNav() {
         onClick={toggleDropdown}
         className="flex items-center space-x-2 text-sm px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
       >
-        <User className="h-4 w-4" />
+        {user?.accountType === 'TAILOR' ? (
+          <Scissors className="h-4 w-4" />
+        ) : (
+          <User className="h-4 w-4" />
+        )}
         <span>
           {user?.firstName || (publicKey ? shortenAddress(publicKey.toString()) : "Account")}
         </span>
@@ -57,6 +66,17 @@ export function AuthNav() {
                     {shortenAddress(publicKey.toString())}
                   </p>
                 )}
+                {user.accountType && (
+                  <div className="mt-1">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      user.accountType === 'TAILOR' 
+                        ? 'bg-cyan-500/20 text-cyan-400' 
+                        : 'bg-green-500/20 text-green-400'
+                    }`}>
+                      {user.accountType === 'TAILOR' ? 'Tailor' : 'Customer'}
+                    </span>
+                  </div>
+                )}
               </div>
               <button
                 onClick={navigateToProfile}
@@ -65,6 +85,17 @@ export function AuthNav() {
                 <User className="h-4 w-4 mr-2" />
                 Your Profile
               </button>
+              
+              {user.accountType === 'TAILOR' && (
+                <button
+                  onClick={navigateToTailorDashboard}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Tailor Dashboard
+                </button>
+              )}
+              
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center"

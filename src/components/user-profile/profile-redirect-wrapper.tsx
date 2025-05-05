@@ -46,6 +46,18 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
     }
   }, [user, connected, publicKey]);
 
+  // Redirect tailor to dashboard when profile is complete and they've connected wallet
+  useEffect(() => {
+    if (user && 
+        connected && 
+        publicKey && 
+        isProfileComplete(user) && 
+        user.accountType === 'TAILOR' &&
+        !isCheckingProfile) {
+      router.push('/tailor/dashboard');
+    }
+  }, [user, connected, publicKey, isCheckingProfile, router]);
+
   useEffect(() => {
     async function checkUserProfile() {
       try {

@@ -115,6 +115,9 @@ importers:
       '@trpc/server':
         specifier: ^11.0.0-rc.446
         version: 11.1.2(typescript@5.4.5)
+      '@types/node-cron':
+        specifier: ^3.0.11
+        version: 3.0.11
       '@vercel/og':
         specifier: ^0.6.4
         version: 0.6.8
@@ -123,7 +126,7 @@ importers:
         version: 1.16.1(@types/react@18.3.20)(axios@1.9.0)(bufferutil@4.0.9)(encoding@0.1.13)(got@11.8.6)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5)(utf-8-validate@5.0.10)
       antd:
         specifier: ^5.24.9
-        version: 5.24.9(date-fns@3.6.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: 5.24.9(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       aws-sdk:
         specifier: ^2.1692.0
         version: 2.1692.0
@@ -149,8 +152,8 @@ importers:
         specifier: ^4.12.24
         version: 4.12.24(postcss@8.5.3)
       date-fns:
-        specifier: ^3.6.0
-        version: 3.6.0
+        specifier: ^4.1.0
+        version: 4.1.0
       dayjs:
         specifier: ^1.11.13
         version: 1.11.13
@@ -230,9 +233,6 @@ importers:
       '@types/node':
         specifier: ^22
         version: 22.15.2
-      '@types/node-cron':
-        specifier: ^3.0.11
-        version: 3.0.11
       '@types/react':
         specifier: ^18
         version: 18.3.20
@@ -3852,8 +3852,8 @@ packages:
   dataloader@2.2.3:
     resolution: {integrity: sha512-y2krtASINtPFS1rSDjacrFgn1dcUuoREVabwlOGOe4SdxenREqwjwjElAdwvbGM7kgZz9a3KVicWR7vcz8rnzA==}
 
-  date-fns@3.6.0:
-    resolution: {integrity: sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==}
+  date-fns@4.1.0:
+    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
   dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
@@ -12397,7 +12397,7 @@ snapshots:
 
   ansicolors@0.3.2: {}
 
-  antd@5.24.9(date-fns@3.6.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  antd@5.24.9(date-fns@4.1.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@ant-design/colors': 7.2.0
       '@ant-design/cssinjs': 1.23.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -12429,7 +12429,7 @@ snapshots:
       rc-motion: 2.9.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-notification: 5.6.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-pagination: 5.1.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      rc-picker: 4.11.3(date-fns@3.6.0)(dayjs@1.11.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      rc-picker: 4.11.3(date-fns@4.1.0)(dayjs@1.11.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-progress: 4.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-rate: 2.13.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       rc-resize-observer: 1.4.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -13219,7 +13219,7 @@ snapshots:
 
   dataloader@2.2.3: {}
 
-  date-fns@3.6.0: {}
+  date-fns@4.1.0: {}
 
   dateformat@4.6.3: {}
 
@@ -16213,7 +16213,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
 
-  rc-picker@4.11.3(date-fns@3.6.0)(dayjs@1.11.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  rc-picker@4.11.3(date-fns@4.1.0)(dayjs@1.11.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@babel/runtime': 7.27.0
       '@rc-component/trigger': 2.2.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -16224,7 +16224,7 @@ snapshots:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     optionalDependencies:
-      date-fns: 3.6.0
+      date-fns: 4.1.0
       dayjs: 1.11.13
 
   rc-progress@4.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1):

@@ -17,7 +17,7 @@ const dataSource = [
     customer: 'Jane Doe',
     status: 'Pending',
     date: '2025-05-01',
-    price: '₦10,000',
+    price: '10.00 USDC',
     txHash: '0xabc123456789def',
   },
   {
@@ -26,7 +26,7 @@ const dataSource = [
     customer: 'John Smith',
     status: 'Completed',
     date: '2025-04-28',
-    price: '₦15,000',
+    price: '15.00 USDC',
     txHash: '0xdef456789abc123',
   },
 ];
@@ -154,7 +154,7 @@ const TailorDashboard = () => {
             
             <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
               <h3 className="text-gray-400 mb-2">Total Revenue</h3>
-              <p className="text-3xl font-bold text-white">₦530,000</p>
+              <p className="text-3xl font-bold text-white">530.00 USDC</p>
             </div>
           </div>
 

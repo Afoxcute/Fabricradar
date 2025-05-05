@@ -199,7 +199,8 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
       lastName: user.lastName || '',
       email: user.email || undefined,
       phone: user.phone || undefined,
-      walletAddress: user.walletAddress || undefined
+      walletAddress: user.walletAddress || undefined,
+      accountType: (user.accountType as "USER" | "TAILOR") || "USER"
     };
   };
 

@@ -9,6 +9,7 @@ interface UserProfile {
   email?: string | null;
   phone?: string | null;
   walletAddress?: string | null;
+  accountType?: "USER" | "TAILOR" | null;
 }
 
 /**
@@ -21,7 +22,8 @@ export function isProfileComplete(profile: UserProfile | null): boolean {
     profile && 
     profile.firstName && 
     profile.lastName && 
-    (profile.email || profile.phone)
+    (profile.email || profile.phone) &&
+    profile.accountType // Ensure account type is set
   );
 }
 
@@ -40,6 +42,7 @@ export function debugProfileStatus(profile: UserProfile | null): object {
   if (!profile.firstName) missingFields.push('firstName');
   if (!profile.lastName) missingFields.push('lastName');
   if (!profile.email && !profile.phone) missingFields.push('email/phone');
+  if (!profile.accountType) missingFields.push('accountType');
   
   const isComplete = missingFields.length === 0;
   
@@ -52,7 +55,8 @@ export function debugProfileStatus(profile: UserProfile | null): object {
       hasLastName: !!profile.lastName,
       hasEmail: !!profile.email,
       hasPhone: !!profile.phone,
-      hasWallet: !!profile.walletAddress
+      hasWallet: !!profile.walletAddress,
+      accountType: profile.accountType || 'not set'
     }
   };
 }

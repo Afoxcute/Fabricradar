@@ -22,6 +22,7 @@ interface User {
   lastName?: string | null;
   middleName?: string | null;
   walletAddress?: string | null;
+  accountType?: "USER" | "TAILOR" | null;
 }
 
 interface AuthContextType {
@@ -45,6 +46,72 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { disconnect, publicKey, connected } = useWallet();
+
+  // Login mutation
+  const loginMutation = api.users.login.useMutation({
+    onError: ClientTRPCErrorHandler,
+  });
+
+  // Update user mutation for wallet association
+  const updateUserMutation = api.users.updateUser.useMutation({
+    onError: ClientTRPCErrorHandler,
+  });
+
+  // Create a query function for fetching user data
+  // TODO: Replace this workaround with proper tRPC client usage once the correct syntax is determined
+  // This is a temporary solution to bypass TypeScript errors with the tRPC client
+  const getUserById = async (userId: number) => {
+    try {
+      // Use traditional fetch API call to the tRPC endpoint
+      const response = await fetch(`/api/trpc/users.getUserById?input=${encodeURIComponent(JSON.stringify({ userId }))}`);
+      const data = await response.json();
+      
+      if (data.result?.data) {
+        return data.result.data;
+      }
+      
+      throw new Error(data.error?.message || 'Failed to fetch user data');
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      throw error;
+    }
+  };
+
+  // Function to fetch the latest user data from server
+  const refreshUserData = async (userId: number) => {
+    if (!userId) return null;
+    
+    try {
+      setIsLoading(true);
+      
+      const fetchedUser = await getUserById(userId);
+      
+      if (fetchedUser) {
+        console.log("Successfully refreshed user data:", debugProfileStatus(fetchedUser));
+        // Update localStorage and state with fresh data
+        const existingData = localStorage.getItem("auth_user");
+        if (existingData) {
+          // Merge with existing data to preserve client-side fields
+          const existingUser = JSON.parse(existingData);
+          const mergedUser = { ...existingUser, ...fetchedUser };
+          localStorage.setItem("auth_user", JSON.stringify(mergedUser));
+          setUser(mergedUser);
+          return mergedUser;
+        } else {
+          localStorage.setItem("auth_user", JSON.stringify(fetchedUser));
+          setUser(fetchedUser);
+          return fetchedUser;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Initialize state from localStorage on client
   useEffect(() => {
@@ -149,73 +216,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
     
     loadUserData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, publicKey]);
-
-  // Login mutation
-  const loginMutation = api.users.login.useMutation({
-    onError: ClientTRPCErrorHandler,
-  });
-
-  // Update user mutation for wallet association
-  const updateUserMutation = api.users.updateUser.useMutation({
-    onError: ClientTRPCErrorHandler,
-  });
-
-  // Create a query function for fetching user data
-  // TODO: Replace this workaround with proper tRPC client usage once the correct syntax is determined
-  // This is a temporary solution to bypass TypeScript errors with the tRPC client
-  const getUserById = async (userId: number) => {
-    try {
-      // Use traditional fetch API call to the tRPC endpoint
-      const response = await fetch(`/api/trpc/users.getUserById?input=${encodeURIComponent(JSON.stringify({ userId }))}`);
-      const data = await response.json();
-      
-      if (data.result?.data) {
-        return data.result.data;
-      }
-      
-      throw new Error(data.error?.message || 'Failed to fetch user data');
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      throw error;
-    }
-  };
-
-  // Function to fetch the latest user data from server
-  const refreshUserData = async (userId: number) => {
-    if (!userId) return null;
-    
-    try {
-      setIsLoading(true);
-      
-      const fetchedUser = await getUserById(userId);
-      
-      if (fetchedUser) {
-        console.log("Successfully refreshed user data:", debugProfileStatus(fetchedUser));
-        // Update localStorage and state with fresh data
-        const existingData = localStorage.getItem("auth_user");
-        if (existingData) {
-          // Merge with existing data to preserve client-side fields
-          const existingUser = JSON.parse(existingData);
-          const mergedUser = { ...existingUser, ...fetchedUser };
-          localStorage.setItem("auth_user", JSON.stringify(mergedUser));
-          setUser(mergedUser);
-          return mergedUser;
-        } else {
-          localStorage.setItem("auth_user", JSON.stringify(fetchedUser));
-          setUser(fetchedUser);
-          return fetchedUser;
-        }
-      }
-      
-      return null;
-    } catch (error) {
-      console.error("Error refreshing user data:", error);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Function to handle login
   const login = async (identifier: string, otp: string) => {

@@ -29,65 +29,36 @@ export default function UserProfileFeature() {
   }, [connected, publicKey, router, user])
 
   const handleProfileSuccess = () => {
-    console.log('Profile updated successfully')
     // Redirect to home after profile completion
     router.push('/')
   }
 
   // Convert user data to the format expected by UserProfileForm
   const getUserFormValues = (): Partial<UserProfileFormValues> | undefined => {
-    if (!user) {
-      // Return defaults when no user is available but wallet is connected
-      if (connected && publicKey) {
-        return {
-          firstName: '',
-          lastName: '',
-          email: '',
-          phone: '',
-          walletAddress: publicKey.toString(),
-          role: 'user', // Default role
-        };
-      }
-      return undefined;
-    }
+    if (!user) return undefined;
     
-    // Map existing User fields and provide default values for new fields
     return {
-      firstName: user.firstName ?? '',
-      lastName: user.lastName ?? '',
-      email: user.email ?? undefined,
-      phone: user.phone ?? undefined,
-      walletAddress: user.walletAddress ?? (publicKey ? publicKey.toString() : undefined),
-      role: 'user', // Default role since it's not in the User type
-      businessName: '',
-      specialization: '',
-      businessDescription: ''
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || undefined,
+      phone: user.phone || undefined,
+      walletAddress: user.walletAddress || undefined
     };
-  }
-
-  if (!connected) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="text-center py-12">
-          <h1 className="text-3xl font-bold mb-6">Connect Your Wallet</h1>
-          <p className="text-gray-400 mb-8">
-            Please connect your wallet to view or update your profile.
-          </p>
-          <div className="flex justify-center">
-            <WalletButton />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white">
       <BackgroundEffect />
       <AppHero
-        title="User Profile"
-        subtitle="Manage your personal information and settings"
-      />
+        title="Complete Your Profile"
+        subtitle="Please provide your information to continue using the platform."
+      >
+        {!connected && (
+          <div className="mt-6">
+            <WalletButton />
+          </div>
+        )}
+      </AppHero>
 
       <div className="max-w-4xl mx-auto py-8 px-4">
         {connected ? (

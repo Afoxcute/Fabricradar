@@ -4,6 +4,12 @@ import { AuthService } from "../../../services/AuthService";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
 
+// AccountType string literal type matching the Prisma schema enum
+type AccountTypeValue = "USER" | "TAILOR";
+
+// Add AccountType enum for validation
+const AccountTypeEnum = z.enum(["USER", "TAILOR"]);
+
 export const userRouter = createTRPCRouter({
   addToWaitlist: publicProcedure
     .input(z.object({ contact: z.string(), name: z.string() }))
@@ -29,13 +35,14 @@ export const userRouter = createTRPCRouter({
         firstName: z.string().optional(),
         lastName: z.string().optional(),
         walletAddress: z.string().optional(),
+        accountType: AccountTypeEnum.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       // Make sure at least one contact method is provided
-      if (!input.email && !input.phone) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
+        if (!input.email && !input.phone) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
           message: "Either email or phone is required",
         });
       }
@@ -55,24 +62,29 @@ export const userRouter = createTRPCRouter({
 
       // If user already exists, return error
       if (user) {
-        throw new TRPCError({
-          code: "CONFLICT",
+            throw new TRPCError({
+              code: "CONFLICT",
           message: "User with this email or phone already exists",
         });
       }
 
       // Create user data object with proper typing
-      const userData = {
+      const userData: Prisma.UserCreateInput = {
         email: input.email,
         phone: input.phone,
         firstName: input.firstName,
         lastName: input.lastName,
       };
       
-      // Handle wallet address separately to avoid type issues
-      // This is a workaround until the Prisma migration is properly applied
+      // Create database record
       try {
-        // Try with wallet address first
+        // Add accountType if provided
+        if (input.accountType) {
+          // Using a type cast to handle the accountType properly
+          (userData as any).accountType = input.accountType;
+        }
+
+        // Add wallet address if provided
         if (input.walletAddress) {
           // @ts-ignore - walletAddress might not be recognized by TypeScript due to missing prisma migration
           userData.walletAddress = input.walletAddress;
@@ -83,16 +95,19 @@ export const userRouter = createTRPCRouter({
           data: userData,
         });
       } catch (error) {
-        console.error("Error creating user with wallet address:", error);
+        console.error("Error creating user with advanced fields:", error);
         
-        // Fallback: Try without wallet address if there was an error
+        // Fallback: Try with basic fields only
+        const fallbackData = {
+          email: input.email,
+          phone: input.phone,
+          firstName: input.firstName,
+          lastName: input.lastName,
+        };
+        
         user = await ctx.db.user.create({
-          data: {
-            email: input.email,
-            phone: input.phone,
-            firstName: input.firstName,
-            lastName: input.lastName,
-          },
+          // @ts-ignore - Using a basic object to avoid type conflicts
+          data: fallbackData,
         });
       }
 
@@ -108,22 +123,28 @@ export const userRouter = createTRPCRouter({
         firstName: z.string().optional(),
         lastName: z.string().optional(),
         walletAddress: z.string().optional(),
+        accountType: AccountTypeEnum.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const { userId, ...inputData } = input;
       
-      // Create update data object with proper typing
-      const updateData = {
+      // Create update data object
+      // Using any type to bypass TypeScript strict checks until Prisma types are fully updated
+      const updateData: any = {
         email: inputData.email,
         phone: inputData.phone,
         firstName: inputData.firstName,
         lastName: inputData.lastName,
       };
       
-      // Handle wallet address separately to avoid type issues
+      // Add accountType if provided
+      if (inputData.accountType) {
+        updateData.accountType = inputData.accountType;
+      }
+      
+      // Handle wallet address
       if (inputData.walletAddress) {
-        // @ts-ignore - walletAddress might not be recognized by TypeScript due to missing prisma migration
         updateData.walletAddress = inputData.walletAddress;
       }
       
@@ -148,7 +169,7 @@ export const userRouter = createTRPCRouter({
       } else {
         user = await authService.findUserByPhone(input.identifier);
       }
-
+      
       if (!user) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -204,7 +225,7 @@ export const userRouter = createTRPCRouter({
       } else {
         user = await authService.findUserByPhone(input.identifier);
       }
-
+      
       if (!user) {
         throw new TRPCError({
           code: "NOT_FOUND",

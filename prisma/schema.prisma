@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Define AccountType enum
+enum AccountType {
+  USER
+  TAILOR
+}
+
 model User {
   id              Int              @id @default(autoincrement())
   createdAt       DateTime         @default(now())
@@ -17,6 +23,7 @@ model User {
   lastName        String?
   phone           String?          @unique
   walletAddress   String?          @unique
+  accountType     AccountType      @default(USER)
   OTPVerification OTPVerification?
 
   @@index([phone], map: "phone_idx")

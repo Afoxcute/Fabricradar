@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { api } from "../../trpc/react";
 import { ClientTRPCErrorHandler, parsePhoneNumber } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ChevronsRight, Key, Loader2 } from "lucide-react";
+import { ChevronsRight, Key, Loader2, UserCircle, Scissors } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/providers/auth-provider";
 import { debugProfileStatus } from "@/utils/user-profile-utils";
@@ -20,10 +20,7 @@ const userProfileSchema = z.object({
   email: z.string().email("Invalid email address").optional(),
   phone: z.string().min(10, "Phone number must be at least 10 digits").optional(),
   walletAddress: z.string().optional(),
-  role: z.enum(['user', 'tailor']).optional(),
-  businessName: z.string().optional(),
-  specialization: z.string().optional(),
-  businessDescription: z.string().optional(),
+  accountType: z.enum(["USER", "TAILOR"]).default("USER"),
 }).refine(data => data.email || data.phone, {
   message: "Either email or phone is required",
   path: ["email"],
@@ -48,11 +45,8 @@ export function UserProfileForm({
   const { user, login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
-  const [otpValue, setOtpValue] = useState('');
+  const [otpCode, setOtpCode] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
-  const [showRoleFields, setShowRoleFields] = useState(
-    initialValues?.role === 'tailor'
-  );
   const [identifier, setIdentifier] = useState("");
   
   // Initialize form with provided values or defaults
@@ -64,10 +58,7 @@ export function UserProfileForm({
       email: initialValues?.email || "",
       phone: initialValues?.phone || "",
       walletAddress: walletAddress || initialValues?.walletAddress || "",
-      role: initialValues?.role || "user",
-      businessName: initialValues?.businessName || "",
-      specialization: initialValues?.specialization || "",
-      businessDescription: initialValues?.businessDescription || "",
+      accountType: initialValues?.accountType || "USER",
     },
   });
 
@@ -145,7 +136,7 @@ export function UserProfileForm({
             if (process.env.NODE_ENV === 'development') {
               toast.success(`Development OTP: 000000`);
               // Pre-fill the OTP field in development mode
-              setOtpValue('000000');
+              setOtpCode('000000');
             }
             
             setShowOtp(true);
@@ -175,7 +166,7 @@ export function UserProfileForm({
                   .then(() => {
                     if (process.env.NODE_ENV === 'development') {
                       toast.success(`Development OTP: 000000`);
-                      setOtpValue('000000');
+                      setOtpCode('000000');
                     }
                     setShowOtp(true);
                     toast.success("This email/phone is already registered. Please verify to continue.");
@@ -223,7 +214,7 @@ export function UserProfileForm({
                         .then(() => {
                           if (process.env.NODE_ENV === 'development') {
                             toast.success(`Development OTP: 000000`);
-                            setOtpValue('000000');
+                            setOtpCode('000000');
                           }
                           setShowOtp(true);
                           toast.success("This email/phone is already registered. Please verify to continue.");
@@ -273,7 +264,7 @@ export function UserProfileForm({
                       .then(() => {
                         if (process.env.NODE_ENV === 'development') {
                           toast.success(`Development OTP: 000000`);
-                          setOtpValue('000000');
+                          setOtpCode('000000');
                         }
                         setShowOtp(true);
                         toast.success("This email/phone is already registered. Please verify to continue.");
@@ -318,7 +309,7 @@ export function UserProfileForm({
                       .then(() => {
                         if (process.env.NODE_ENV === 'development') {
                           toast.success(`Development OTP: 000000`);
-                          setOtpValue('000000');
+                          setOtpCode('000000');
                         }
                         setShowOtp(true);
                         toast.success("This email/phone is already registered. Please verify to continue.");
@@ -376,7 +367,7 @@ export function UserProfileForm({
         // Use default OTP code
         const defaultOtp = '000000';
         toast.success(`Development mode with SMS disabled: Using default OTP: ${defaultOtp}`);
-        setOtpValue(defaultOtp);
+        setOtpCode(defaultOtp);
         setShowOtp(true);
       } else {
         // Request OTP for verification
@@ -391,7 +382,7 @@ export function UserProfileForm({
           toast.success(`Development OTP: ${devOtp}`);
           
           // Pre-fill the OTP field in development mode
-          setOtpValue(devOtp);
+          setOtpCode(devOtp);
         }
       }
 
@@ -415,11 +406,11 @@ export function UserProfileForm({
     const isSmsDisabled = process.env.ENABLE_SMS === 'false';
     
     // In development with SMS disabled or if OTP is not provided, use the default OTP
-    let codeToVerify = otpValue;
+    let codeToVerify = otpCode;
     if ((isDev && isSmsDisabled) || (isDev && (!codeToVerify || codeToVerify.length < 6))) {
       codeToVerify = '000000';
       toast.success("Using default development OTP: 000000");
-    } else if (!otpValue || otpValue.length < 6) {
+    } else if (!otpCode || otpCode.length < 6) {
       toast.error("Please enter a valid OTP code");
       return;
     }
@@ -505,163 +496,118 @@ export function UserProfileForm({
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Email Address
+          {/* Account Type Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Account Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex space-x-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="USER"
+                  {...form.register("accountType")}
+                  checked={form.watch("accountType") === "USER"}
+                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
+                />
+                <div className="flex items-center gap-2">
+                  <UserCircle className="h-5 w-5 text-cyan-400" />
+                  <span className="text-gray-300">Customer</span>
+                </div>
               </label>
-              <input
-                {...form.register("email")}
-                type="email"
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="Enter your email address"
-              />
-              {form.formState.errors.email && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.email.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Phone Number <span className="text-red-500">*</span>
+              
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value="TAILOR"
+                  {...form.register("accountType")}
+                  checked={form.watch("accountType") === "TAILOR"}
+                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
+                />
+                <div className="flex items-center gap-2">
+                  <Scissors className="h-5 w-5 text-cyan-400" />
+                  <span className="text-gray-300">Tailor</span>
+                </div>
               </label>
-              <input
-                {...form.register("phone")}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="Enter your phone number"
-              />
-              {form.formState.errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.phone.message}</p>
-              )}
-              <p className="text-xs text-gray-500 mt-1">At least one contact method (email or phone) is required</p>
             </div>
+            <p className="text-xs text-gray-500 mt-1">Select &quot;Customer&quot; if you want to order clothes, or &quot;Tailor&quot; if you want to offer tailoring services</p>
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Wallet Address
+              Email {!form.watch("phone") && <span className="text-red-500">*</span>}
             </label>
             <input
-              {...form.register("walletAddress")}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 disabled:opacity-70"
-              placeholder="Connect wallet to auto-populate"
-              disabled={!!walletAddress}
+              type="email"
+              {...form.register("email")}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              placeholder="Enter your email address"
             />
-            {form.formState.errors.walletAddress && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.walletAddress.message}</p>
+            {form.formState.errors.email && (
+              <p className="text-red-500 text-xs mt-1">{form.formState.errors.email.message}</p>
             )}
           </div>
-
+          
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
-              Role
+              Phone Number {!form.watch("email") && <span className="text-red-500">*</span>}
             </label>
-            <div className="flex space-x-4">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  value="user"
-                  {...form.register("role")}
-                  onChange={(e) => {
-                    form.setValue("role", "user");
-                    setShowRoleFields(false);
-                  }}
-                  checked={form.watch("role") === "user"}
-                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
-                />
-                <span className="text-sm text-gray-300">User</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  value="tailor"
-                  {...form.register("role")}
-                  onChange={(e) => {
-                    form.setValue("role", "tailor");
-                    setShowRoleFields(true);
-                  }}
-                  checked={form.watch("role") === "tailor"}
-                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
-                />
-                <span className="text-sm text-gray-300">Tailor</span>
-              </label>
-            </div>
+            <input
+              type="tel"
+              {...form.register("phone")}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+              placeholder="Enter your phone number"
+            />
+            {form.formState.errors.phone && (
+              <p className="text-red-500 text-xs mt-1">{form.formState.errors.phone.message}</p>
+            )}
+            <p className="text-xs text-gray-500 mt-1">At least one contact method (email or phone) is required</p>
           </div>
-
-          {showRoleFields && (
-            <div className="border border-gray-700 rounded-lg p-6 mt-4">
-              <h4 className="text-lg font-medium mb-4">Business Information</h4>
-              
-              <div className="grid gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Business Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    {...form.register("businessName")}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Enter your business name"
-                  />
-                  {form.formState.errors.businessName && (
-                    <p className="text-red-500 text-xs mt-1">{form.formState.errors.businessName.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Specialization <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    {...form.register("specialization")}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  >
-                    <option value="">Select your specialization</option>
-                    <option value="Traditional">Traditional Wear</option>
-                    <option value="Modern">Modern Fashion</option>
-                    <option value="Casual">Casual Wear</option>
-                    <option value="Formal">Formal Wear</option>
-                    <option value="Bridal">Bridal & Ceremonial</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {form.formState.errors.specialization && (
-                    <p className="text-red-500 text-xs mt-1">{form.formState.errors.specialization.message}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
-                    Business Description <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    {...form.register("businessDescription")}
-                    rows={4}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    placeholder="Describe your business and services"
-                  />
-                  {form.formState.errors.businessDescription && (
-                    <p className="text-red-500 text-xs mt-1">{form.formState.errors.businessDescription.message}</p>
-                  )}
-                </div>
-              </div>
+          
+          {walletAddress && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1">
+                Wallet Address
+              </label>
+              <input
+                type="text"
+                value={walletAddress}
+                disabled
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 opacity-70"
+              />
             </div>
           )}
           
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin">⧗</span>
-                  Processing...
-                </>
-              ) : (
-                <>{initialValues ? "Update Profile" : "Complete Profile"}</>
-              )}
-            </button>
-          </div>
+          <Button 
+            type="submit" 
+            className="w-full mt-6 bg-cyan-500 hover:bg-cyan-600 text-white flex items-center justify-center py-3" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <span>{isSignUp ? "Creating Account..." : "Updating Profile..."}</span>
+              </>
+            ) : (
+              <>
+                <span>{isSignUp ? "Create Account" : "Save Profile"}</span>
+                <ChevronsRight className="ml-2 h-4 w-4" />
+              </>
+            )}
+          </Button>
+          
+          {isSignUp && (
+            <div className="text-center text-sm mt-4">
+              <span className="text-gray-400">Already have an account?</span>{" "}
+              <button 
+                type="button"
+                className="text-cyan-400 hover:underline" 
+                onClick={() => router.push("/auth/signin")}
+              >
+                Sign in
+              </button>
+            </div>
+          )}
         </form>
       ) : (
         <div className="space-y-6">
@@ -672,8 +618,8 @@ export function UserProfileForm({
             <input 
               type="text"
               placeholder="Enter 6-digit code" 
-              value={otpValue}
-              onChange={(e) => setOtpValue(e.target.value)}
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
               maxLength={6}
               className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
             />

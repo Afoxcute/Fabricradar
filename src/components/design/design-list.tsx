@@ -9,17 +9,18 @@ import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 interface DesignListProps {
   tailorId?: number;
   showActions?: boolean;
+  limit?: number;
 }
 
-export default function DesignList({ tailorId, showActions = false }: DesignListProps) {
+export default function DesignList({ tailorId, showActions = false, limit = 20 }: DesignListProps) {
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   
   // Query designs based on whether we need all designs or just one tailor's designs
   const designsQuery = tailorId 
-    ? api.designs.getTailorDesigns.useQuery({ tailorId, limit: 20 })
-    : api.designs.getAllDesigns.useQuery({ limit: 20 });
+    ? api.designs.getTailorDesigns.useQuery({ tailorId, limit })
+    : api.designs.getAllDesigns.useQuery({ limit });
   
   // Delete mutation
   const deleteMutation = api.designs.deleteDesign.useMutation({
@@ -88,7 +89,7 @@ export default function DesignList({ tailorId, showActions = false }: DesignList
             ))}
           </div>
           
-          {/* Refresh button */}
+          {/* Refresh and view more buttons */}
           <div className="mt-6 flex justify-center">
             <button
               onClick={() => designsQuery.refetch()}

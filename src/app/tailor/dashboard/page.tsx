@@ -11,6 +11,7 @@ import './dashboard.css';  // Import custom CSS for styling antd components
 import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
 import { JsonValue } from '@prisma/client/runtime/library';
+import DesignList from '@/components/design/design-list';
 
 // Define our local OrderStatus enum to match Prisma's enum
 enum OrderStatusEnum {
@@ -256,7 +257,23 @@ const TailorDashboard = () => {
       </div>
     );
   }
-
+  
+  // Check if user is not logged in or not a tailor
+  if (!user || user.accountType !== 'TAILOR') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-3xl font-bold mb-4">Access Denied</h1>
+          <p className="mb-8">This dashboard is only available for tailor accounts.</p>
+          <Link href="/" className="text-cyan-500 hover:text-cyan-400">
+            Return to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
       <BackgroundEffect />
@@ -266,74 +283,102 @@ const TailorDashboard = () => {
         <TailorNav />
         
         <div className="ml-64 flex-1 p-8 relative z-10">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white">Welcome back, {user?.firstName}!</h1>
-            <p className="text-gray-400 mt-2">
-              Here&apos;s what&apos;s happening in your tailor shop today.
-            </p>
-          </div>
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <h3 className="text-gray-400 mb-2">Total Orders</h3>
-              {isSummaryLoading ? (
-                <Spin size="small" />
-              ) : (
-                <p className="text-3xl font-bold text-white">{orderSummary.totalOrders}</p>
-              )}
-            </div>
-            
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <h3 className="text-gray-400 mb-2">Pending Orders</h3>
-              {isSummaryLoading ? (
-                <Spin size="small" />
-              ) : (
-                <p className="text-3xl font-bold text-cyan-500">{orderSummary.pendingOrders}</p>
-              )}
-            </div>
-            
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <h3 className="text-gray-400 mb-2">Completed Orders</h3>
-              {isSummaryLoading ? (
-                <Spin size="small" />
-              ) : (
-                <p className="text-3xl font-bold text-green-500">{orderSummary.completedOrders}</p>
-              )}
-            </div>
-            
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <h3 className="text-gray-400 mb-2">Total Revenue</h3>
-              {isSummaryLoading ? (
-                <Spin size="small" />
-              ) : (
-                <p className="text-3xl font-bold text-white">{orderSummary.totalRevenue.toFixed(2)} USDC</p>
-              )}
-            </div>
-          </div>
-
+          <h1 className="text-3xl font-bold text-white mb-8">Tailor Dashboard</h1>
+          
+          {/* Stats Cards */}
+          <Row gutter={[16, 16]} className="mb-8">
+            <Col span={6}>
+              <Card className="dashboard-card">
+                <h3 className="text-lg mb-2 text-gray-400">Total Orders</h3>
+                {isSummaryLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <p className="text-2xl font-bold">{orderSummary.totalOrders}</p>
+                )}
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card className="dashboard-card">
+                <h3 className="text-lg mb-2 text-gray-400">Pending Orders</h3>
+                {isSummaryLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <p className="text-2xl font-bold">{orderSummary.pendingOrders}</p>
+                )}
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card className="dashboard-card">
+                <h3 className="text-lg mb-2 text-gray-400">Completed Orders</h3>
+                {isSummaryLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <p className="text-2xl font-bold">{orderSummary.completedOrders}</p>
+                )}
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card className="dashboard-card">
+                <h3 className="text-lg mb-2 text-gray-400">Total Revenue</h3>
+                {isSummaryLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <p className="text-2xl font-bold">{orderSummary.totalRevenue.toFixed(2)} USDC</p>
+                )}
+              </Card>
+            </Col>
+          </Row>
+          
           {/* Recent Orders */}
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6">Recent Orders</h2>
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold">Recent Orders</h2>
+              <Link 
+                href="/tailor/orders" 
+                className="text-cyan-500 hover:text-cyan-400 hover:underline"
+              >
+                View All Orders
+              </Link>
+            </div>
             
-            <div className="overflow-x-auto">
+            <Card className="dashboard-card">
               {isLoadingOrders ? (
-                <div className="flex justify-center py-8">
-                  <Spin />
+                <div className="text-center py-8">
+                  <Spin size="large" />
+                  <p className="mt-4 text-gray-400">Loading orders...</p>
                 </div>
               ) : recentOrders.length > 0 ? (
                 <Table 
                   dataSource={recentOrders} 
                   columns={columns} 
                   pagination={false}
-                  className="tailor-dashboard-table"
+                  className="custom-table"
                 />
               ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <p>No orders found. Orders will appear here once customers place them.</p>
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No orders found</p>
                 </div>
               )}
+            </Card>
+          </div>
+          
+          {/* Recent Designs */}
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold">Your Designs</h2>
+              <Link 
+                href="/tailor/designs" 
+                className="text-cyan-500 hover:text-cyan-400 hover:underline"
+              >
+                Manage Designs
+              </Link>
             </div>
+            
+            <Card className="dashboard-card">
+              {user && (
+                <DesignList tailorId={user.id} showActions={false} limit={3} />
+              )}
+            </Card>
           </div>
         </div>
       </div>

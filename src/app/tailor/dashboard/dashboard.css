@@ -22,6 +22,40 @@
   background-color: rgba(31, 41, 55, 0.7) !important;
 }
 
+/* Custom table styles */
+.custom-table .ant-table {
+  background-color: transparent !important;
+  color: white !important;
+}
+
+.custom-table .ant-table-thead > tr > th {
+  background-color: rgba(17, 24, 39, 0.8) !important;
+  color: #d1d5db !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+.custom-table .ant-table-tbody > tr > td {
+  background-color: transparent !important;
+  color: white !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+.custom-table .ant-table-tbody > tr:hover > td {
+  background-color: rgba(31, 41, 55, 0.7) !important;
+}
+
+/* Card styles */
+.dashboard-card {
+  background-color: rgba(17, 24, 39, 0.6) !important;
+  border: 1px solid #374151 !important;
+  color: white !important;
+  backdrop-filter: blur(8px);
+}
+
+.dashboard-card .ant-card-body {
+  padding: 20px !important;
+}
+
 /* Pagination styles */
 .tailor-dashboard-table .ant-pagination-item {
   background-color: rgba(17, 24, 39, 0.8) !important;

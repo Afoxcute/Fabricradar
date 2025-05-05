@@ -83,17 +83,17 @@ const CollectionSection = () => {
               
             return (
               <div key={design.id} className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800 transition-transform hover:scale-[1.02]">
-                <div className="aspect-[3/4] relative">
-                  <Image
+          <div className="aspect-[3/4] relative">
+            <Image
                     src={imageUrl}
                     alt={design.title}
                     width={400}
                     height={533}
-                    className="w-full h-full object-cover"
+              className="w-full h-full object-cover"
                     unoptimized={imageUrl.startsWith('http')}
-                  />
-                </div>
-                <div className="p-4">
+            />
+          </div>
+          <div className="p-4">
                   <h3 className="font-bold">{design.title}</h3>
                   <p className="text-sm text-gray-400">by {tailorName}</p>
                   
@@ -103,24 +103,24 @@ const CollectionSection = () => {
                     <div className="flex items-center text-cyan-500">
                       <DollarSign size={16} className="mr-1" />
                       <span className="font-semibold">${design.price.toFixed(2)}</span>
-                    </div>
+            </div>
                     
                     <div className="flex items-center text-gray-400 text-sm">
                       <Clock size={16} className="mr-1" />
                       <span>{design.averageTimeline}</span>
-                    </div>
-                  </div>
-                  
+          </div>
+        </div>
+
                   <Link href={`/product/${design.id}`}>
-                    <Button
-                      variant="outline"
-                      className="w-full mt-4 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
-                    >
+            <Button
+              variant="outline"
+              className="w-full mt-4 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+            >
                       View Details
-                    </Button>
+            </Button>
                   </Link>
                 </div>
-              </div>
+          </div>
             );
           })}
         </div>

@@ -2,59 +2,76 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 import { OrderStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { addHours } from "date-fns";
+import { syncData } from "@/lib/data-sync";
 
 export const orderRouter = createTRPCRouter({
-  // Create a new order
+  // Create a new order with enhanced synchronization
   createOrder: publicProcedure
     .input(z.object({
       productName: z.string(),
       customerName: z.string(),
-      userId: z.number().optional(),
-      tailorId: z.number(),
+      userId: z.number().optional().nullable(),
+      tailorId: z.number().optional().nullable(),
       price: z.number(),
-      txHash: z.string().optional(),
+      txHash: z.string(),
       description: z.string().optional(),
       measurements: z.record(z.string(), z.string()).optional(),
       delivery: z.object({
         method: z.string(),
-        address: z.string().optional(),
+        address: z.string().optional().nullable(),
         timeline: z.string().optional(),
       }).optional(),
       paymentMethod: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        // Generate unique order number with format ORD-YYYYMMDD-XXXX (where XXXX is a random alphanumeric string)
+        // Generate unique order number with format ORD-YYYYMMDD-XXXX
         const date = new Date();
         const datePart = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
         const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
         const orderNumber = `ORD-${datePart}-${randomPart}`;
 
-        // Create the order
-        const order = await ctx.db.order.create({
+        // Set acceptance deadline to 48 hours from now
+        const acceptanceDeadline = addHours(new Date(), 48);
+
+        // Prepare order data for synchronization
+        const orderData = {
+          model: 'Order',
           data: {
             orderNumber,
             customerName: input.customerName,
-            userId: input.userId || 0, // Use 0 as default if no user ID (guest checkout)
-            tailorId: input.tailorId,
+            userId: input.userId || 0,
+            tailorId: input.tailorId || 0,
             status: OrderStatus.PENDING,
             price: input.price,
             txHash: input.txHash,
-            description: input.description,
+            description: input.description || `Order for ${input.productName}`,
             measurements: input.measurements || {},
+            delivery: {
+              method: input.delivery?.method || 'shipping',
+              address: input.delivery?.address || null,
+              timeline: input.delivery?.timeline || '14',
+            },
+            paymentMethod: input.paymentMethod || 'crypto',
+            acceptanceDeadline: acceptanceDeadline,
           },
-        });
+          uniqueIdentifier: 'orderNumber',
+        }
+
+        // Synchronize order data
+        const order = await syncData(orderData)
 
         return {
           success: true,
           order,
-          message: 'Order created successfully',
+          message: 'Order created and synchronized successfully. Waiting for tailor acceptance.',
         };
       } catch (error) {
         console.error('Error creating order:', error);
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create order',
+          message: 'Failed to create and synchronize order',
         });
       }
     }),
@@ -234,5 +251,29 @@ export const orderRouter = createTRPCRouter({
       });
 
       return updatedOrder;
+    }),
+
+  // Add a method to check and update expired pending orders
+  checkExpiredPendingOrders: publicProcedure
+    .mutation(async ({ ctx }) => {
+      const now = new Date();
+      
+      // Find and update orders that have passed their acceptance deadline
+      const expiredOrders = await ctx.db.order.updateMany({
+        where: {
+          status: OrderStatus.PENDING,
+          acceptanceDeadline: {
+            lt: now,
+          },
+        },
+        data: {
+          status: OrderStatus.REJECTED,
+        },
+      });
+
+      return {
+        updatedCount: expiredOrders.count,
+        message: 'Expired pending orders have been updated',
+      };
     }),
 }); 

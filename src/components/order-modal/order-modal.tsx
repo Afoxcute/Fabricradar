@@ -28,6 +28,8 @@ import { useSendTransaction } from '@privy-io/react-auth/solana'
 import { useCluster } from '../cluster/cluster-data-access'
 import { useTransactionToast } from '../ui/ui-layout'
 import env from '@/config/env'
+import { api } from '@/trpc/react'
+import { useRouter } from 'next/navigation'
 
 interface OrderModalProps {
   isOpen: boolean
@@ -156,6 +158,44 @@ export default function OrderModal({
     setFormData(prev => ({ ...prev, [name]: value }))
   }
   
+  const router = useRouter()
+  const createOrderMutation = api.orders.createOrder.useMutation()
+
+  const handleOrderCreation = async (txHash: string) => {
+    try {
+      // Prepare order data
+      const orderData = {
+        productName,
+        customerName: formData.name,
+        userId: null, // Replace with actual user ID if available
+        tailorId: null, // Replace with actual tailor ID 
+        price: parseFloat(formData.usdcAmount),
+        txHash,
+        description: `Custom order for ${productName}`,
+        measurements: measurements,
+        delivery: {
+          method: formData.deliveryMethod,
+          address: formData.deliveryMethod === 'shipping' ? formData.address : null,
+          timeline: formData.timeline,
+        },
+        paymentMethod: formData.paymentMethod,
+      }
+
+      // Create order via API
+      const order = await createOrderMutation.mutateAsync(orderData)
+
+      // Show success toast
+      toast.success('Order placed successfully! Waiting for tailor acceptance.')
+
+      // Close modal and potentially redirect
+      onClose()
+      router.push('/orders') // Optional: redirect to orders page
+    } catch (error) {
+      console.error('Order creation failed:', error)
+      toast.error('Failed to create order. Please try again.')
+    }
+  }
+
   const handlePaymentClick = async () => {
     if (!wallet.connected || !wallet.publicKey) {
       toast.error('Please connect your wallet first')
@@ -203,19 +243,16 @@ export default function OrderModal({
         error: false, 
         signature: receipt.signature 
       })
-      
-      // Show success toast with transaction signature
+
+      // Create order after successful payment
+      await handleOrderCreation(receipt.signature)
+
+      // Optional: Show transaction details
       transactionToast(receipt.signature)
-      
-      // Close modal after a delay
-      setTimeout(() => {
-        onClose()
-      }, 3000)
-      
-    } catch (error: any) {
-      console.error('Payment error:', error)
+    } catch (error) {
+      console.error('Payment failed:', error)
       setPaymentStatus({ loading: false, success: false, error: true, signature: '' })
-      toast.error(`Payment failed: ${error.message || 'Unknown error'}`)
+      toast.error('Payment failed. Please try again.')
     }
   }
 

@@ -28,9 +28,15 @@ interface DesignListProps {
   tailorId?: number;
   showActions?: boolean;
   limit?: number;
+  onEditDesign?: (design: Design) => void;
 }
 
-export default function DesignList({ tailorId, showActions = false, limit = 12 }: DesignListProps) {
+export default function DesignList({ 
+  tailorId, 
+  showActions = false, 
+  limit = 12,
+  onEditDesign
+}: DesignListProps) {
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -99,9 +105,14 @@ export default function DesignList({ tailorId, showActions = false, limit = 12 }
     }
   };
   
-  const handleEdit = (designId: number) => {
-    // For now, we'll just show an alert
-    alert(`Edit design ${designId} (Edit functionality to be implemented)`);
+  const handleEdit = (design: Design) => {
+    // If onEditDesign is provided, call it with the design
+    if (onEditDesign) {
+      onEditDesign(design);
+    } else {
+      // Fallback for backward compatibility
+      alert(`Edit design ${design.id} (Edit functionality to be implemented)`);
+    }
   };
   
   // Check if user is the owner of designs
@@ -142,7 +153,7 @@ export default function DesignList({ tailorId, showActions = false, limit = 12 }
                 key={design.id}
                 design={design}
                 showActions={showActionsAdjusted}
-                onEdit={() => handleEdit(design.id)}
+                onEdit={() => handleEdit(design)}
                 onDelete={() => handleDelete(design.id)}
               />
             ))}

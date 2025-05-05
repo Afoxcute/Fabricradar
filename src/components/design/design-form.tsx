@@ -1,17 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/trpc/react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import ImageUpload from './image-upload';
 
-interface DesignFormProps {
-  onSuccess?: () => void;
+interface Design {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string | null;
+  averageTimeline: string;
+  tailorId: number;
 }
 
-export default function DesignForm({ onSuccess }: DesignFormProps) {
+interface DesignFormProps {
+  onSuccess?: () => void;
+  designToEdit?: Design | null;
+  isEditing?: boolean;
+}
+
+export default function DesignForm({ 
+  onSuccess, 
+  designToEdit = null, 
+  isEditing = false 
+}: DesignFormProps) {
   const { user } = useAuth();
   const router = useRouter();
   
@@ -24,37 +40,62 @@ export default function DesignForm({ onSuccess }: DesignFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   
-  const mutation = api.designs.createDesign.useMutation({
-    onSuccess: () => {
-      // Reset form
-      setTitle('');
-      setDescription('');
-      setPrice('');
-      setAverageTimeline('');
-      setImageUrl('');
-      
-      // Show success message
-      setSuccess(true);
-      setError(null);
-      
-      // Call onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-      
-      // Refresh the page after a delay
-      setTimeout(() => {
-        router.refresh();
-      }, 1000);
-    },
+  // Fill form when editing
+  useEffect(() => {
+    if (isEditing && designToEdit) {
+      setTitle(designToEdit.title);
+      setDescription(designToEdit.description);
+      setPrice(designToEdit.price.toString());
+      setAverageTimeline(designToEdit.averageTimeline);
+      setImageUrl(designToEdit.imageUrl || '');
+    }
+  }, [isEditing, designToEdit]);
+  
+  // Create design mutation
+  const createMutation = api.designs.createDesign.useMutation({
+    onSuccess: () => handleSuccess('Design created successfully!'),
     onError: (error) => {
       setError(error.message || 'Failed to create design');
       setSuccess(false);
     },
   });
   
-  // Check if the mutation is currently loading
-  const isLoading = mutation.status === 'pending';
+  // Update design mutation
+  const updateMutation = api.designs.updateDesign.useMutation({
+    onSuccess: () => handleSuccess('Design updated successfully!'),
+    onError: (error) => {
+      setError(error.message || 'Failed to update design');
+      setSuccess(false);
+    },
+  });
+  
+  const handleSuccess = (message: string) => {
+    // Reset form if creating new design
+    if (!isEditing) {
+      setTitle('');
+      setDescription('');
+      setPrice('');
+      setAverageTimeline('');
+      setImageUrl('');
+    }
+    
+    // Show success message
+    setSuccess(true);
+    setError(null);
+    
+    // Call onSuccess callback if provided
+    if (onSuccess) {
+      onSuccess();
+    }
+    
+    // Refresh the page after a delay
+    setTimeout(() => {
+      router.refresh();
+    }, 1000);
+  };
+  
+  // Check if any mutation is currently loading
+  const isLoading = createMutation.status === 'pending' || updateMutation.status === 'pending';
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,24 +127,36 @@ export default function DesignForm({ onSuccess }: DesignFormProps) {
     
     // Check if user is signed in and is a tailor
     if (!user) {
-      setError('You must be signed in to create a design');
+      setError('You must be signed in to manage designs');
       return;
     }
     
     if (user.accountType !== 'TAILOR') {
-      setError('Only tailors can create designs');
+      setError('Only tailors can manage designs');
       return;
     }
     
-    // Submit design
-    mutation.mutate({
+    // Prepare design data
+    const designData = {
       title,
       description,
       price: Number(price),
       averageTimeline,
       imageUrl: imageUrl || undefined,
-      tailorId: user.id,
-    });
+    };
+    
+    // Submit design - create or update
+    if (isEditing && designToEdit) {
+      updateMutation.mutate({
+        designId: designToEdit.id,
+        ...designData
+      });
+    } else {
+      createMutation.mutate({
+        ...designData,
+        tailorId: user.id,
+      });
+    }
   };
   
   return (
@@ -177,7 +230,10 @@ export default function DesignForm({ onSuccess }: DesignFormProps) {
           </div>
           
           {/* Image Upload */}
-          <ImageUpload onImageUrlChange={setImageUrl} />
+          <ImageUpload 
+            onImageUrlChange={setImageUrl} 
+            initialImageUrl={isEditing && designToEdit ? designToEdit.imageUrl || '' : ''}
+          />
           
           {/* Error Message */}
           {error && (
@@ -191,7 +247,7 @@ export default function DesignForm({ onSuccess }: DesignFormProps) {
           {success && (
             <div className="bg-green-900/30 border border-green-800 text-green-500 px-4 py-3 rounded-lg flex items-start gap-2">
               <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0" />
-              <span>Design added successfully!</span>
+              <span>{isEditing ? 'Design updated successfully!' : 'Design created successfully!'}</span>
             </div>
           )}
           
@@ -205,10 +261,10 @@ export default function DesignForm({ onSuccess }: DesignFormProps) {
               {isLoading ? (
                 <>
                   <Loader2 size={18} className="animate-spin mr-2" />
-                  Creating Design...
+                  {isEditing ? 'Updating Design...' : 'Creating Design...'}
                 </>
               ) : (
-                'Create Design'
+                isEditing ? 'Update Design' : 'Create Design'
               )}
             </button>
           </div>

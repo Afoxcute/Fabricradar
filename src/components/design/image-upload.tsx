@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, ChangeEvent } from 'react';
+import React, { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { CloudUpload, X, Check, Image as ImageIcon } from 'lucide-react';
 import { generateUniqueFileName } from '@/utils/s3-upload';
 import axios from 'axios';
@@ -8,14 +8,22 @@ import Image from 'next/image';
 
 interface ImageUploadProps {
   onImageUrlChange: (url: string) => void;
+  initialImageUrl?: string;
 }
 
-export default function ImageUpload({ onImageUrlChange }: ImageUploadProps) {
+export default function ImageUpload({ onImageUrlChange, initialImageUrl = '' }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Set initial image URL if provided
+  useEffect(() => {
+    if (initialImageUrl) {
+      setImageUrl(initialImageUrl);
+    }
+  }, [initialImageUrl]);
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

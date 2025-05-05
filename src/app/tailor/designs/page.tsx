@@ -9,10 +9,24 @@ import DesignForm from '@/components/design/design-form';
 import DesignList from '@/components/design/design-list';
 import { AlertCircle, PlusCircle, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { api } from '@/trpc/react';
+
+// Define the Design type
+interface Design {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string | null;
+  averageTimeline: string;
+  tailorId: number;
+}
 
 const DesignsPage = () => {
   const { user, isLoading } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const [designToEdit, setDesignToEdit] = useState<Design | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
   
   // If still loading, show loading state
@@ -83,7 +97,23 @@ const DesignsPage = () => {
   const handleDesignSuccess = () => {
     // Hide form after successful submission
     setShowForm(false);
-    // Optionally show a success message here
+    // Reset editing state
+    setIsEditing(false);
+    setDesignToEdit(null);
+  };
+  
+  const handleEditDesign = (design: Design) => {
+    setDesignToEdit(design);
+    setIsEditing(true);
+    setShowForm(true);
+    // Scroll to the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setDesignToEdit(null);
   };
 
   return (
@@ -104,7 +134,7 @@ const DesignsPage = () => {
             </div>
             
             <button
-              onClick={() => setShowForm(!showForm)}
+              onClick={handleCancelForm}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 showForm 
                   ? 'bg-red-900/30 text-red-500 hover:bg-red-900/50' 
@@ -114,7 +144,7 @@ const DesignsPage = () => {
               {showForm ? (
                 <>
                   <XCircle size={18} />
-                  <span>Cancel</span>
+                  <span>Cancel {isEditing ? 'Edit' : 'New Design'}</span>
                 </>
               ) : (
                 <>
@@ -128,8 +158,14 @@ const DesignsPage = () => {
           {/* Design Form */}
           {showForm && (
             <div className="mb-8 bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Create New Design</h2>
-              <DesignForm onSuccess={handleDesignSuccess} />
+              <h2 className="text-xl font-semibold mb-4">
+                {isEditing ? 'Edit Design' : 'Create New Design'}
+              </h2>
+              <DesignForm 
+                onSuccess={handleDesignSuccess} 
+                designToEdit={designToEdit}
+                isEditing={isEditing}
+              />
             </div>
           )}
 
@@ -141,7 +177,11 @@ const DesignsPage = () => {
             </p>
             
             {user && (
-              <DesignList tailorId={user.id} showActions={true} />
+              <DesignList 
+                tailorId={user.id} 
+                showActions={true} 
+                onEditDesign={handleEditDesign}
+              />
             )}
           </div>
         </div>

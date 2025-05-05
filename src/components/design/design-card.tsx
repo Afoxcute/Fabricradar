@@ -21,7 +21,7 @@ interface DesignCardProps {
     };
   };
   showActions?: boolean;
-  onEdit?: (id: number) => void;
+  onEdit?: (design: any) => void;
   onDelete?: (id: number) => void;
 }
 
@@ -89,7 +89,7 @@ export default function DesignCard({
           <div className="mt-4 pt-4 border-t border-gray-800 flex gap-2">
             {onEdit && (
               <button
-                onClick={() => onEdit(design.id)}
+                onClick={() => onEdit(design)}
                 className="flex-1 bg-cyan-900/60 hover:bg-cyan-800 text-cyan-500 font-medium py-1.5 px-3 rounded-lg text-sm"
               >
                 Edit

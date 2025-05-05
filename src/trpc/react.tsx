@@ -51,8 +51,25 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           transformer: SuperJSON,
           url: getBaseUrl() + "/api/trpc",
           headers() {
+            // Get auth token from localStorage if available
+            let authToken = null;
+            if (typeof window !== 'undefined') {
+              const storedUser = localStorage.getItem("auth_user");
+              if (storedUser) {
+                try {
+                  const user = JSON.parse(storedUser);
+                  if (user && user.id) {
+                    authToken = `Bearer ${user.id}`;
+                  }
+                } catch (error) {
+                  console.error("Failed to parse auth user from localStorage", error);
+                }
+              }
+            }
+
             return {
               "x-trpc-source": "nextjs-react",
+              ...(authToken ? { authorization: authToken } : {}),
             };
           },
         }),

@@ -2,165 +2,273 @@
 
 import React, { useEffect, useState } from 'react';
 import Header from '@/components/header/header';
-import { Table, Tag, Button, Spin } from 'antd';
+import { Table, Card, Col, Row, Tag, Button, Spin } from 'antd';
 import Link from 'next/link';
 import { useAuth } from '@/providers/auth-provider';
 import { redirect } from 'next/navigation';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import { TailorNav } from '@/components/tailor/tailor-nav';
 import './dashboard.css';  // Import custom CSS for styling antd components
-import axios from 'axios';
-import { formatMoney } from '@/lib/utils';
+import { api } from '@/trpc/react';
+import toast from 'react-hot-toast';
+import { JsonValue } from '@prisma/client/runtime/library';
 
-// Interface for order metrics
-interface OrderMetrics {
+// Define our local OrderStatus enum to match Prisma's enum
+enum OrderStatusEnum {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED'
+}
+
+interface OrderSummary {
   totalOrders: number;
   pendingOrders: number;
   completedOrders: number;
   totalRevenue: number;
 }
 
-// Interface for order data
-interface OrderData {
+// Interface matching the Prisma model structure
+interface PrismaOrder {
+  id: number;
+  orderNumber: string;
+  customerName: string;
+  status: string; // This will be the Prisma enum value as a string
+  price: number;
+  txHash: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: number;
+  tailorId: number;
+  description: string | null;
+  measurements: JsonValue;
+}
+
+// Define the interface for the table row data
+interface OrderTableRow {
   key: string;
   id: string;
   customer: string;
   status: string;
   date: string;
   price: string;
-  txHash?: string;
+  txHash: string;
+  orderId: number;
 }
 
-const columns = [
-  {
-    title: 'Order ID',
-    dataIndex: 'id',
-    key: 'id',
-  },
-  {
-    title: 'Customer',
-    dataIndex: 'customer',
-    key: 'customer',
-  },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
-    render: (status: string) => (
-      <Tag color={status === 'COMPLETED' ? 'green' : status === 'PENDING' ? 'orange' : 'blue'}>{status}</Tag>
-    ),
-  },
-  {
-    title: 'Date',
-    dataIndex: 'date',
-    key: 'date',
-  },
-  {
-    title: 'Price',
-    dataIndex: 'price',
-    key: 'price',
-  },
-  {
-    title: 'Tx Hash',
-    dataIndex: 'txHash',
-    key: 'txHash',
-    render: (hash: string) => (
-      hash ? (
-        <Link
-          href={`https://solscan.io/tx/${hash}`}
-          target="_blank"
-          className="text-blue-400 underline"
-        >
-          {hash.slice(0, 10)}...
-        </Link>
-      ) : (
-        <span className="text-gray-500">Not available</span>
-      )
-    ),
-  },
-  {
-    title: 'Actions',
-    key: 'actions',
-    render: (_: any, record: OrderData) => (
-      <div className="flex gap-2">
-        {record.status === 'PENDING' ? (
-          <>
-            <Button
-              size="small"
-              type="primary"
-              className="bg-cyan-500 hover:bg-cyan-600 border-none"
-            >
-              Accept
-            </Button>
-            <Button size="small" danger>
-              Reject
-            </Button>
-          </>
-        ) : (
-          <span className="text-gray-400">No Actions</span>
-        )}
-      </div>
-    ),
-  },
-];
-
 const TailorDashboard = () => {
-  const { user, isLoading } = useAuth();
-  const [metrics, setMetrics] = useState<OrderMetrics>({
+  const { user, isLoading: authLoading } = useAuth();
+  const [orderSummary, setOrderSummary] = useState<OrderSummary>({
     totalOrders: 0,
     pendingOrders: 0,
     completedOrders: 0,
     totalRevenue: 0,
   });
-  const [orders, setOrders] = useState<OrderData[]>([]);
-  const [isLoadingMetrics, setIsLoadingMetrics] = useState(true);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   
-  useEffect(() => {
-    // Only fetch data if user is logged in and is a tailor
-    if (user && user.id && user.accountType === 'TAILOR') {
-      fetchOrderMetrics(user.id);
-      fetchRecentOrders(user.id);
-    }
-  }, [user]);
+  // Fetch order summary data using tRPC
+  const { 
+    data: summaryData, 
+    isLoading: isSummaryLoading,
+    refetch: refetchSummary
+  } = api.orders.getTailorOrderSummary.useQuery(
+    { tailorId: user?.id || 0 },
+    { enabled: !!user?.id }
+  );
   
-  const fetchOrderMetrics = async (userId: number) => {
+  // Fetch recent orders using tRPC
+  const { 
+    data: ordersData, 
+    isLoading: isOrdersLoading,
+    refetch: refetchOrders
+  } = api.orders.getTailorRecentOrders.useQuery(
+    { tailorId: user?.id || 0, limit: 10 },
+    { enabled: !!user?.id }
+  );
+  
+  // Update order status mutation
+  const updateOrderStatus = api.orders.updateOrderStatus.useMutation({
+    onSuccess: () => {
+      toast.success('Order status updated successfully');
+      // Refetch order data
+      void refetchOrderData();
+    },
+    onError: (error) => {
+      console.error('Error updating order status:', error);
+      toast.error('Failed to update order status');
+    }
+  });
+  
+  // Function to refetch order data
+  const refetchOrderData = async () => {
     try {
-      setIsLoadingMetrics(true);
-      const response = await axios.get(`/api/orders/metrics?userId=${userId}`);
-      setMetrics(response.data);
+      await refetchSummary();
+      await refetchOrders();
     } catch (error) {
-      console.error('Error fetching order metrics:', error);
-    } finally {
-      setIsLoadingMetrics(false);
+      console.error('Error refetching data:', error);
     }
   };
   
-  const fetchRecentOrders = async (userId: number) => {
-    try {
-      setIsLoadingOrders(true);
-      const response = await axios.get(`/api/orders/recent?userId=${userId}`);
-      
-      // Transform the data to match the expected format
-      const formattedOrders: OrderData[] = response.data.map((order: any) => ({
-        key: order.id.toString(),
-        id: order.orderId,
-        customer: `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() || 'Unknown Customer',
-        status: order.status,
-        date: new Date(order.date).toLocaleDateString(),
-        price: `${order.price.toFixed(2)} USDC`,
-        txHash: order.txHash,
-      }));
-      
-      setOrders(formattedOrders);
-    } catch (error) {
-      console.error('Error fetching recent orders:', error);
-    } finally {
+  // Handle accepting an order
+  const handleAcceptOrder = (orderId: number) => {
+    updateOrderStatus.mutate({
+      orderId,
+      status: OrderStatusEnum.ACCEPTED
+    });
+  };
+  
+  // Handle rejecting an order
+  const handleRejectOrder = (orderId: number) => {
+    updateOrderStatus.mutate({
+      orderId,
+      status: OrderStatusEnum.REJECTED
+    });
+  };
+  
+  // Handle completing an order
+  const handleCompleteOrder = (orderId: number) => {
+    updateOrderStatus.mutate({
+      orderId,
+      status: OrderStatusEnum.COMPLETED
+    });
+  };
+  
+  // Process summary data when it changes
+  useEffect(() => {
+    if (summaryData) {
+      try {
+        setOrderSummary(summaryData);
+      } catch (error) {
+        console.error('Error processing summary data:', error);
+        toast.error('Failed to process order summary');
+      }
+    }
+  }, [summaryData]);
+  
+  // Process orders data when it changes
+  useEffect(() => {
+    if (ordersData) {
+      try {
+        setRecentOrders(ordersData.orders.map((order: PrismaOrder) => ({
+          key: order.id.toString(),
+          id: order.orderNumber,
+          customer: order.customerName,
+          status: order.status,
+          date: new Date(order.createdAt).toISOString().split('T')[0],
+          price: `${order.price.toFixed(2)} USDC`,
+          txHash: order.txHash || 'N/A',
+          orderId: order.id,
+        })));
+      } catch (error) {
+        console.error('Error processing orders data:', error);
+        toast.error('Failed to process order data');
+      } finally {
+        setIsLoadingOrders(false);
+      }
+    } else if (!isOrdersLoading) {
       setIsLoadingOrders(false);
     }
-  };
+  }, [ordersData, isOrdersLoading]);
   
-  if (isLoading) {
+  const columns = [
+    {
+      title: 'Order ID',
+      dataIndex: 'id',
+      key: 'id',
+    },
+    {
+      title: 'Customer',
+      dataIndex: 'customer',
+      key: 'customer',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => {
+        let color = 'orange';
+        if (status === OrderStatusEnum.COMPLETED) color = 'green';
+        if (status === OrderStatusEnum.REJECTED) color = 'red';
+        if (status === OrderStatusEnum.ACCEPTED) color = 'blue';
+        
+        return <Tag color={color}>{status}</Tag>;
+      },
+    },
+    {
+      title: 'Date',
+      dataIndex: 'date',
+      key: 'date',
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+    },
+    {
+      title: 'Tx Hash',
+      dataIndex: 'txHash',
+      key: 'txHash',
+      render: (hash: string) => {
+        if (hash === 'N/A') return <span className="text-gray-400">N/A</span>;
+        
+        return (
+          <Link
+            href={`https://solscan.io/tx/${hash}`}
+            target="_blank"
+            className="text-blue-400 underline"
+          >
+            {hash.slice(0, 10)}...
+          </Link>
+        );
+      },
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_: any, record: OrderTableRow) => {
+        if (record.status === OrderStatusEnum.PENDING) {
+          return (
+            <div className="flex gap-2">
+              <Button
+                size="small"
+                type="primary"
+                className="bg-cyan-500 hover:bg-cyan-600 border-none"
+                onClick={() => handleAcceptOrder(record.orderId)}
+                loading={updateOrderStatus.isPending}
+              >
+                Accept
+              </Button>
+              <Button 
+                size="small" 
+                danger 
+                onClick={() => handleRejectOrder(record.orderId)}
+                loading={updateOrderStatus.isPending}
+              >
+                Reject
+              </Button>
+            </div>
+          );
+        } else if (record.status === OrderStatusEnum.ACCEPTED) {
+          return (
+            <Button
+              size="small"
+              type="primary"
+              className="bg-green-500 hover:bg-green-600 border-none"
+              onClick={() => handleCompleteOrder(record.orderId)}
+              loading={updateOrderStatus.isPending}
+            >
+              Complete
+            </Button>
+          );
+        } else {
+          return <span className="text-gray-400">No Actions</span>;
+        }
+      },
+    },
+  ];
+  
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050b18] to-[#0a1428]">
         <div className="text-center">
@@ -196,37 +304,37 @@ const TailorDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
               <h3 className="text-gray-400 mb-2">Total Orders</h3>
-              {isLoadingMetrics ? (
+              {isSummaryLoading ? (
                 <Spin size="small" />
               ) : (
-                <p className="text-3xl font-bold text-white">{metrics.totalOrders}</p>
+                <p className="text-3xl font-bold text-white">{orderSummary.totalOrders}</p>
               )}
             </div>
             
             <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
               <h3 className="text-gray-400 mb-2">Pending Orders</h3>
-              {isLoadingMetrics ? (
+              {isSummaryLoading ? (
                 <Spin size="small" />
               ) : (
-                <p className="text-3xl font-bold text-cyan-500">{metrics.pendingOrders}</p>
+                <p className="text-3xl font-bold text-cyan-500">{orderSummary.pendingOrders}</p>
               )}
             </div>
             
             <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
               <h3 className="text-gray-400 mb-2">Completed Orders</h3>
-              {isLoadingMetrics ? (
+              {isSummaryLoading ? (
                 <Spin size="small" />
               ) : (
-                <p className="text-3xl font-bold text-green-500">{metrics.completedOrders}</p>
+                <p className="text-3xl font-bold text-green-500">{orderSummary.completedOrders}</p>
               )}
             </div>
             
             <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
               <h3 className="text-gray-400 mb-2">Total Revenue</h3>
-              {isLoadingMetrics ? (
+              {isSummaryLoading ? (
                 <Spin size="small" />
               ) : (
-                <p className="text-3xl font-bold text-white">{metrics.totalRevenue.toFixed(2)} USDC</p>
+                <p className="text-3xl font-bold text-white">{orderSummary.totalRevenue.toFixed(2)} USDC</p>
               )}
             </div>
           </div>
@@ -236,29 +344,22 @@ const TailorDashboard = () => {
             <h2 className="text-xl font-bold mb-6">Recent Orders</h2>
             
             <div className="overflow-x-auto">
-              <Table 
-                dataSource={orders} 
-                columns={columns} 
-                pagination={false}
-                className="tailor-dashboard-table"
-                loading={isLoadingOrders}
-                locale={{ emptyText: 'No orders found' }}
-              />
-            </div>
-            
-            {/* Refresh button */}
-            <div className="mt-4 flex justify-end">
-              <Button 
-                onClick={() => {
-                  if (user && user.id) {
-                    fetchOrderMetrics(user.id);
-                    fetchRecentOrders(user.id);
-                  }
-                }}
-                className="bg-gray-800 text-white border-gray-700 hover:bg-gray-700"
-              >
-                Refresh Data
-              </Button>
+              {isLoadingOrders ? (
+                <div className="flex justify-center py-8">
+                  <Spin />
+                </div>
+              ) : recentOrders.length > 0 ? (
+                <Table 
+                  dataSource={recentOrders} 
+                  columns={columns} 
+                  pagination={false}
+                  className="tailor-dashboard-table"
+                />
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <p>No orders found. Orders will appear here once customers place them.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -5,7 +5,6 @@ import Header from '@/components/header/header';
 import { Table, Card, Col, Row, Tag, Button, Spin } from 'antd';
 import Link from 'next/link';
 import { useAuth } from '@/providers/auth-provider';
-import { redirect } from 'next/navigation';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import { TailorNav } from '@/components/tailor/tailor-nav';
 import './dashboard.css';  // Import custom CSS for styling antd components
@@ -44,7 +43,7 @@ interface PrismaOrder {
   measurements: JsonValue;
 }
 
-// Define the interface for the table row data
+// Transformed interface for order table rows
 interface OrderTableRow {
   key: string;
   id: string;
@@ -134,48 +133,40 @@ const TailorDashboard = () => {
     });
   };
   
-  // Process summary data when it changes
+  // Effect to update state when data is loaded
   useEffect(() => {
-    if (summaryData) {
-      try {
-        setOrderSummary(summaryData);
-      } catch (error) {
-        console.error('Error processing summary data:', error);
-        toast.error('Failed to process order summary');
-      }
+    if (summaryData && !isSummaryLoading) {
+      setOrderSummary(summaryData);
     }
-  }, [summaryData]);
+  }, [summaryData, isSummaryLoading]);
   
-  // Process orders data when it changes
+  // Effect to process order data when loaded
   useEffect(() => {
-    if (ordersData) {
-      try {
-        setRecentOrders(ordersData.orders.map((order: PrismaOrder) => ({
-          key: order.id.toString(),
-          id: order.orderNumber,
-          customer: order.customerName,
-          status: order.status,
-          date: new Date(order.createdAt).toISOString().split('T')[0],
-          price: `${order.price.toFixed(2)} USDC`,
-          txHash: order.txHash || 'N/A',
-          orderId: order.id,
-        })));
-      } catch (error) {
-        console.error('Error processing orders data:', error);
-        toast.error('Failed to process order data');
-      } finally {
-        setIsLoadingOrders(false);
-      }
-    } else if (!isOrdersLoading) {
+    if (ordersData && !isOrdersLoading) {
+      // Transform orders into table format
+      const formattedOrders = ordersData.orders.map((order: PrismaOrder) => ({
+        key: order.id.toString(),
+        id: order.orderNumber,
+        customer: order.customerName,
+        status: order.status,
+        date: new Date(order.createdAt).toLocaleDateString(),
+        price: `${order.price.toFixed(2)} USDC`,
+        txHash: order.txHash || 'N/A',
+        orderId: order.id
+      }));
+      
+      setRecentOrders(formattedOrders);
       setIsLoadingOrders(false);
     }
   }, [ordersData, isOrdersLoading]);
   
+  // Column definitions for the order table
   const columns = [
     {
       title: 'Order ID',
       dataIndex: 'id',
       key: 'id',
+      render: (text: string) => <span className="text-cyan-500">{text}</span>,
     },
     {
       title: 'Customer',
@@ -187,12 +178,17 @@ const TailorDashboard = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
-        let color = 'orange';
-        if (status === OrderStatusEnum.COMPLETED) color = 'green';
-        if (status === OrderStatusEnum.REJECTED) color = 'red';
-        if (status === OrderStatusEnum.ACCEPTED) color = 'blue';
+        let color = 'blue';
+        if (status === OrderStatusEnum.PENDING) color = 'gold';
+        else if (status === OrderStatusEnum.COMPLETED) color = 'green';
+        else if (status === OrderStatusEnum.ACCEPTED) color = 'cyan';
+        else if (status === OrderStatusEnum.REJECTED) color = 'red';
         
-        return <Tag color={color}>{status}</Tag>;
+        return (
+          <Tag color={color}>
+            {status.charAt(0) + status.slice(1).toLowerCase()}
+          </Tag>
+        );
       },
     },
     {
@@ -204,24 +200,6 @@ const TailorDashboard = () => {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
-    },
-    {
-      title: 'Tx Hash',
-      dataIndex: 'txHash',
-      key: 'txHash',
-      render: (hash: string) => {
-        if (hash === 'N/A') return <span className="text-gray-400">N/A</span>;
-        
-        return (
-          <Link
-            href={`https://solscan.io/tx/${hash}`}
-            target="_blank"
-            className="text-blue-400 underline"
-          >
-            {hash.slice(0, 10)}...
-          </Link>
-        );
-      },
     },
     {
       title: 'Actions',
@@ -278,11 +256,6 @@ const TailorDashboard = () => {
       </div>
     );
   }
-  
-  // Redirect if not a tailor
-  if (!user || user.accountType !== 'TAILOR') {
-    redirect('/');
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
@@ -294,7 +267,7 @@ const TailorDashboard = () => {
         
         <div className="ml-64 flex-1 p-8 relative z-10">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-white">Welcome back, {user.firstName}!</h1>
+            <h1 className="text-3xl font-bold text-white">Welcome back, {user?.firstName}!</h1>
             <p className="text-gray-400 mt-2">
               Here&apos;s what&apos;s happening in your tailor shop today.
             </p>

@@ -3,7 +3,6 @@
 import React from 'react';
 import Header from '@/components/header/header';
 import { useAuth } from '@/providers/auth-provider';
-import { redirect } from 'next/navigation';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import { TailorNav } from '@/components/tailor/tailor-nav';
 
@@ -19,11 +18,6 @@ const DesignsPage = () => {
         </div>
       </div>
     );
-  }
-  
-  // Redirect if not a tailor
-  if (!user || user.accountType !== 'TAILOR') {
-    redirect('/');
   }
 
   return (

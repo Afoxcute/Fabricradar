@@ -8,6 +8,8 @@ import { UserProfileForm, UserProfileFormValues } from './user-profile-form'
 import { useRouter } from 'next/navigation'
 import BackgroundEffect from '../background-effect/background-effect'
 import { useAuth } from '@/providers/auth-provider'
+import { Button } from '@/components/ui/button'
+import { Scissors } from 'lucide-react'
 
 export default function UserProfileFeature() {
   const { publicKey, connected } = useWallet()
@@ -28,23 +30,39 @@ export default function UserProfileFeature() {
     }
   }, [connected, publicKey, router, user])
 
+  useEffect(() => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      router.push('/auth/login')
+    }
+  }, [user, router])
+
   const handleProfileSuccess = () => {
-    // Redirect to home after profile completion
-    router.push('/')
+    if (user?.id) {
+      refreshUserData(user.id)
+    }
   }
 
   // Convert user data to the format expected by UserProfileForm
   const getUserFormValues = (): Partial<UserProfileFormValues> | undefined => {
     if (!user) return undefined;
-    
+
     return {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
-      email: user.email || undefined,
-      phone: user.phone || undefined,
-      walletAddress: user.walletAddress || undefined
+      email: user.email || '',
+      phone: user.phone || '',
     };
   };
+
+  // If user not loaded yet, show loading
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-cyan-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white">
@@ -63,12 +81,34 @@ export default function UserProfileFeature() {
       <div className="max-w-4xl mx-auto py-8 px-4">
         {connected ? (
           showProfileForm ? (
-            <div className="bg-gray-900/30 backdrop-blur-sm shadow-xl max-w-lg mx-auto p-6 rounded-xl">
-              <UserProfileForm 
-                initialValues={getUserFormValues()}
-                walletAddress={publicKey?.toString()}
-                onSuccess={handleProfileSuccess}
-              />
+            <div className="max-w-3xl mx-auto">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-white">Your Profile</h1>
+                  <p className="text-gray-400 mt-1">
+                    Manage your personal information
+                  </p>
+                </div>
+                
+                {/* Show View Designs button for tailor accounts */}
+                {user.accountType === 'TAILOR' && (
+                  <Button
+                    onClick={() => router.push('/tailor/designs')}
+                    className="bg-cyan-900/30 text-cyan-500 hover:bg-cyan-800/30 border border-cyan-900 flex items-center gap-2"
+                  >
+                    <Scissors size={16} />
+                    <span>View Your Designs</span>
+                  </Button>
+                )}
+              </div>
+
+              <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+                <UserProfileForm 
+                  initialValues={getUserFormValues()}
+                  walletAddress={publicKey?.toString()}
+                  onSuccess={handleProfileSuccess}
+                />
+              </div>
             </div>
           ) : (
             <div className="flex justify-center">

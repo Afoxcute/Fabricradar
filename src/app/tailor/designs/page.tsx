@@ -7,12 +7,15 @@ import BackgroundEffect from '@/components/background-effect/background-effect';
 import { TailorNav } from '@/components/tailor/tailor-nav';
 import DesignForm from '@/components/design/design-form';
 import DesignList from '@/components/design/design-list';
-import { PlusCircle, XCircle } from 'lucide-react';
+import { AlertCircle, PlusCircle, XCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const DesignsPage = () => {
   const { user, isLoading } = useAuth();
   const [showForm, setShowForm] = useState(false);
+  const router = useRouter();
   
+  // If still loading, show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050b18] to-[#0a1428]">
@@ -23,10 +26,64 @@ const DesignsPage = () => {
       </div>
     );
   }
+  
+  // If user is not a tailor, show access denied
+  if (user && user.accountType !== 'TAILOR') {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
+        <BackgroundEffect />
+        <Header />
+        
+        <div className="container mx-auto px-4 py-12">
+          <div className="bg-red-900/30 border border-red-800 text-white px-6 py-8 rounded-lg flex flex-col items-center text-center max-w-2xl mx-auto">
+            <AlertCircle size={48} className="text-red-500 mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
+            <p className="text-gray-300 mb-6">
+              This area is only accessible to tailor accounts. 
+              Please contact support if you believe this is an error.
+            </p>
+            <button 
+              onClick={() => router.push('/')}
+              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              Return to Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // If not logged in, prompt to log in
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
+        <BackgroundEffect />
+        <Header />
+        
+        <div className="container mx-auto px-4 py-12">
+          <div className="bg-blue-900/30 border border-blue-800 text-white px-6 py-8 rounded-lg flex flex-col items-center text-center max-w-2xl mx-auto">
+            <AlertCircle size={48} className="text-blue-500 mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Login Required</h1>
+            <p className="text-gray-300 mb-6">
+              Please log in to access the tailor dashboard.
+            </p>
+            <button 
+              onClick={() => router.push('/auth/login')}
+              className="px-4 py-2 bg-cyan-700 hover:bg-cyan-600 rounded-lg transition-colors"
+            >
+              Log In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleDesignSuccess = () => {
     // Hide form after successful submission
     setShowForm(false);
+    // Optionally show a success message here
   };
 
   return (
@@ -38,11 +95,11 @@ const DesignsPage = () => {
         <TailorNav />
         
         <div className="ml-64 flex-1 p-8 relative z-10">
-          <div className="mb-8 flex justify-between items-center">
+          <div className="mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white">Designs</h1>
+              <h1 className="text-3xl font-bold text-white">My Designs</h1>
               <p className="text-gray-400 mt-2">
-                Manage your design portfolio here.
+                Create and manage your design portfolio
               </p>
             </div>
             
@@ -70,14 +127,19 @@ const DesignsPage = () => {
 
           {/* Design Form */}
           {showForm && (
-            <div className="mb-8">
+            <div className="mb-8 bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">Create New Design</h2>
               <DesignForm onSuccess={handleDesignSuccess} />
             </div>
           )}
 
           {/* Design List */}
           <div className="mt-6">
-            <h2 className="text-2xl font-semibold mb-4">Your Designs</h2>
+            <h2 className="text-2xl font-semibold mb-4">Your Design Collection</h2>
+            <p className="text-gray-400 mb-6">
+              These designs are visible to customers on the platform.
+            </p>
+            
             {user && (
               <DesignList tailorId={user.id} showActions={true} />
             )}

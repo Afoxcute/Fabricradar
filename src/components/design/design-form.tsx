@@ -161,7 +161,9 @@ export default function DesignForm({
   
   return (
     <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-      <h2 className="text-xl font-semibold text-white mb-4">Add New Design</h2>
+      <h2 className="text-xl font-semibold text-white mb-4">
+        {isEditing ? 'Edit Design' : 'Add New Design'}
+      </h2>
       
       <form onSubmit={handleSubmit}>
         <div className="space-y-4">

@@ -115,6 +115,13 @@ const DesignsPage = () => {
     setIsEditing(false);
     setDesignToEdit(null);
   };
+  
+  // Add a new function to handle showing the form for a new design
+  const handleAddNewDesign = () => {
+    setIsEditing(false);
+    setDesignToEdit(null);
+    setShowForm(true);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
@@ -134,7 +141,7 @@ const DesignsPage = () => {
             </div>
             
             <button
-              onClick={handleCancelForm}
+              onClick={showForm ? handleCancelForm : handleAddNewDesign}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 showForm 
                   ? 'bg-red-900/30 text-red-500 hover:bg-red-900/50' 

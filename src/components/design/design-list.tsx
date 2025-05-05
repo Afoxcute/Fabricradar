@@ -82,7 +82,7 @@ export default function DesignList({
       newCursors[currentPage + 1] = designsQuery.data.nextCursor;
       setCursors(newCursors);
     }
-  }, [designsQuery.data?.nextCursor]);
+  }, [designsQuery.data?.nextCursor, currentPage, cursors]);
 
   const goToNextPage = () => {
     if (designsQuery.data?.nextCursor) {

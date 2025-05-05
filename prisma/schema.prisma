@@ -23,64 +23,59 @@ enum OrderStatus {
 }
 
 model User {
-  id                  Int             @id @default(autoincrement())
-  email               String?         @unique
-  phone               String?         @unique
-  firstName           String?
-  lastName            String?
-  middleName          String?
-  walletAddress       String?         @unique
-  accountType         AccountType     @default(USER)
-  createdAt           DateTime        @default(now())
-  updatedAt           DateTime        @updatedAt
+  id              Int              @id @default(autoincrement())
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  email           String?          @unique
+  firstName       String?
+  middleName      String?
+  lastName        String?
+  phone           String?          @unique
+  walletAddress   String?          @unique
+  accountType     AccountType      @default(USER)
+  OTPVerification OTPVerification?
+  orders          Order[]          // Relation to orders
+  designs         Design[]         // Relation to designs
   
-  // Relation to OTP verification
-  otpVerification     OTPVerification?
-  
-  // Relation to customer orders
-  customerOrders      Order[]         @relation
-  
-  // Relation to tailor orders
-  tailorOrders        Order[]         @relation("TailorOrders")
-  
-  // Optional relations to other models
-  designs             Design[]
-  waitlist            Waitlist?
+  @@index([phone], map: "phone_idx")
+  @@index([email], map: "email_idx")
+  @@index([walletAddress], map: "wallet_idx")
 }
 
 model OTPVerification {
-  id                  Int             @id @default(autoincrement())
-  userId              Int             @unique
-  otp                 String
-  expiresAt           DateTime
-  createdAt           DateTime        @default(now())
-  
-  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  otpCode   String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Order {
-  id                  Int         @id @default(autoincrement())
-  orderNumber         String      @unique
-  customerName        String
-  userId              Int?        // Optional user ID
-  tailorId            Int?        // Optional tailor ID
-  status              OrderStatus @default(PENDING)
-  price               Float
-  txHash              String?
-  description         String?
-  measurements        Json?
-  delivery            Json?       // Store delivery details as JSON
-  paymentMethod       String?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-  acceptanceDeadline  DateTime?   // Deadline for tailor to accept the order
-  
-  // Optional relations
-  user                User?       @relation(fields: [userId], references: [id])
-  tailor              User?       @relation("TailorOrders", fields: [tailorId], references: [id])
+  id                 Int         @id @default(autoincrement())
+  orderNumber        String      @unique
+  customerName       String
+  userId             Int         // Customer user ID
+  tailorId           Int         // Tailor user ID
+  status             OrderStatus @default(PENDING)
+  price              Float
+  txHash             String?
+  description        String?
+  measurements       Json?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  user               User        @relation(fields: [userId], references: [id])
+  designId           Int?        // Reference to the design
+  isAccepted         Boolean     @default(false)
+  acceptanceDeadline DateTime?   // 48-hour deadline for tailor to accept
+  acceptedAt         DateTime?   // When the tailor accepted the order
   
   @@index([status], name: "status_idx")
-  @@index([orderNumber], name: "order_number_idx")
+  @@index([tailorId], name: "tailor_idx")
+  @@index([isAccepted], name: "accepted_idx")
+  @@index([acceptanceDeadline], name: "deadline_idx")
 }
 
 model Design {

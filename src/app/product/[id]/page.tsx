@@ -14,29 +14,64 @@ import { Badge } from '@/components/ui/badge';
 import { ChatInterface } from '@/components/chat-interface/chat-interface';
 import Header from '@/components/header/header';
 import Footer from '@/components/footer/footer';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import OrderModal from '@/components/order-modal/order-modal';
+import { api } from '@/trpc/react';
+import { useAuth } from '@/providers/auth-provider';
+import toast from 'react-hot-toast';
 
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const { user } = useAuth();
+  
+  // Fetch design data based on the ID
+  const { data: designData, isLoading, error } = api.designs.getDesignById.useQuery({
+    designId: parseInt(params.id)
+  }, {
+    enabled: Boolean(params.id) && /^\d+$/.test(params.id),
+    staleTime: 30000, // 30 seconds
+    retry: 2
+  });
 
-  // This would normally fetch data based on the ID
-  const product = {
-    id: params.id,
-    name: 'Sobby Attire',
-    price: 1907,
-    eth: 1.5,
+  // Handle the case where we're fetching a design that doesn't exist
+  if (error) {
+    console.error('Error loading design:', error);
+  }
+
+  // If we have a valid design, use it, otherwise use fallback data
+  const design = designData?.design;
+
+  // Handle start order click
+  const handleStartOrder = () => {
+    if (!user) {
+      toast.error('Please sign in to place an order');
+      return;
+    }
+    
+    if (!user.walletAddress) {
+      toast.error('Please connect your wallet to place an order');
+      return;
+    }
+    
+    setShowOrderModal(true);
+  };
+
+  // Fallback if design isn't loaded yet
+  const product = design ? {
+    id: design.id,
+    name: design.title,
+    price: design.price,
+    eth: design.price,
     priceChange: '+1.6%',
-    description:
-      'A cotton/linen three quarter sleeve kaftan featuring intricate embroidery on the chest and pocket, adorned with swarovski buttons.',
+    description: design.description,
     images: [
-      '/product3.jpeg?height=600&width=450',
+      design.imageUrl || '/product3.jpeg?height=600&width=450',
       '/product3.jpeg?height=150&width=100',
       '/product3.jpeg?height=150&width=100',
       '/product3.jpeg?height=150&width=100',
     ],
     creator: {
-      name: 'Solomon Obey Ayobalemi',
+      name: design.tailor ? `${design.tailor.firstName || ''} ${design.tailor.lastName || ''}`.trim() || 'Anonymous Designer' : 'Anonymous Designer',
       avatar: '/placeholder.svg?height=40&width=40',
       rating: 4.8,
       reviews: 23,
@@ -45,31 +80,59 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     },
     reviews: [
       {
-        text: '"Sobby Attire brought my dream outfit to life! The attention to detail was extraordinary, an NFT, but wearing it in real life was a whole new level. The stitching, fit, and fabric were perfect. So glad I found Sobby on Tailor Module!"',
+        text: '"The tailor brought my dream outfit to life! The attention to detail was extraordinary, an NFT, but wearing it in real life was a whole new level. The stitching, fit, and fabric were perfect. So glad I found this on Tailor Module!"',
         author: '@mark_glow',
         avatar: '/placeholder.svg?height=30&width=30',
       },
       {
-        text: '"Absolutely blown away by the quality and craftsmanship of this piece. The NFT design was unique, and the finished outfit got me compliments all night at a wedding. 10/10, would recommend!"',
+        text: '"Absolutely blown away by the quality and craftsmanship of this piece. The design was unique, and the finished outfit got me compliments all night at a wedding. 10/10, would recommend!"',
         author: '@fashiontrends',
         avatar: '/placeholder.svg?height=30&width=30',
       },
       {
-        text: '"What I love about Sobby Attire is the attention to detail. The kaftan I bought was elegant and classic—and the tailoring was flawless. She\'s truly setting the bar for fashion in Web3!"',
+        text: '"What I love about this design is the attention to detail. The piece I bought was elegant and classic—and the tailoring was flawless. They\'re truly setting the bar for fashion in Web3!"',
         author: '@mia_love',
         avatar: '/placeholder.svg?height=30&width=30',
       },
     ],
+  } : {
+    id: params.id,
+    name: 'Loading Design...',
+    price: 0,
+    eth: 0,
+    priceChange: '+0.0%',
+    description: 'Loading design details...',
+    images: [
+      '/placeholder.svg?height=600&width=450',
+      '/placeholder.svg?height=150&width=100',
+      '/placeholder.svg?height=150&width=100',
+      '/placeholder.svg?height=150&width=100',
+    ],
+    creator: {
+      name: 'Unknown Designer',
+      avatar: '/placeholder.svg?height=40&width=40',
+      rating: 0,
+      reviews: 0,
+      projectsCompleted: 0,
+      uniqueDesigns: 0,
+    },
+    reviews: [],
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       {/* Order Modal */}
-      <OrderModal
-        isOpen={showOrderModal}
-        onClose={() => setShowOrderModal(false)}
-        productName={product.name}
-      />
+      {design && (
+        <OrderModal
+          isOpen={showOrderModal}
+          onClose={() => setShowOrderModal(false)}
+          productName={product.name}
+          designId={design.id}
+          tailorId={design.tailorId}
+          price={design.price}
+          designDescription={design.description}
+        />
+      )}
 
       {/* Stars/particles background effect */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -172,6 +235,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                     width={100}
                     height={100}
                     className="w-full h-full object-cover"
+                    unoptimized={image.startsWith('http')}
                   />
                 </div>
               ))}
@@ -184,6 +248,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 width={600}
                 height={800}
                 className="w-full h-full object-cover"
+                unoptimized={product.images[0].startsWith('http')}
               />
             </div>
           </div>
@@ -201,7 +266,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               </span>
               <div className="ml-auto">
                 <span className="text-xl font-bold">{product.eth} USDC</span>
-                <p className="text-gray-400 text-sm">Floor Price</p>
+                <p className="text-gray-400 text-sm">Price</p>
               </div>
             </div>
 
@@ -210,7 +275,8 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             <div className="flex flex-wrap gap-4 mb-8">
               <Button
                 className="bg-cyan-500 hover:bg-cyan-600 text-white flex items-center gap-2"
-                onClick={() => setShowOrderModal(true)}
+                onClick={handleStartOrder}
+                disabled={isLoading || !design}
               >
                 <span>Start order</span>
                 <Download className="h-4 w-4" />

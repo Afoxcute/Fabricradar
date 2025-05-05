@@ -1,9 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Clock, DollarSign, User } from 'lucide-react';
+import { Clock, DollarSign, User, Eye } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '../ui/button';
 
 interface DesignCardProps {
   design: {
@@ -79,14 +80,22 @@ export default function DesignCard({
           </div>
         </div>
         
-        <div className="flex items-center text-gray-400 text-sm">
+        <div className="flex items-center text-gray-400 text-sm mb-4">
           <User size={16} className="mr-1" />
           <span>By {tailorName}</span>
         </div>
         
-        {/* Actions */}
+        {/* View Details Button (for all users) */}
+        <Link href={`/product/${design.id}`} className="block w-full mb-3">
+          <Button variant="outline" className="w-full bg-gray-800 hover:bg-gray-700 text-cyan-500 border-gray-700">
+            <Eye size={16} className="mr-2" />
+            View Details
+          </Button>
+        </Link>
+        
+        {/* Admin Actions */}
         {showActions && (
-          <div className="mt-4 pt-4 border-t border-gray-800 flex gap-2">
+          <div className="pt-3 border-t border-gray-800 flex gap-2">
             {onEdit && (
               <button
                 onClick={() => onEdit(design)}

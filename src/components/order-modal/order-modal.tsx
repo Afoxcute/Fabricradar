@@ -29,12 +29,16 @@ import { useCluster } from '../cluster/cluster-data-access'
 import { useTransactionToast } from '../ui/ui-layout'
 import env from '@/config/env'
 import { api } from '@/trpc/react'
-import { useRouter } from 'next/navigation'
+import { useAuth } from '@/providers/auth-provider'
 
 interface OrderModalProps {
   isOpen: boolean
   onClose: () => void
   productName: string
+  designId?: number
+  tailorId?: number
+  price?: number
+  designDescription?: string
 }
 
 const deliveryMethods = [
@@ -81,8 +85,25 @@ const PAYMENT_WALLET_ADDRESS = env.PAYMENT_WALLET_ADDRESS;
 export default function OrderModal({ 
   isOpen, 
   onClose, 
-  productName 
+  productName,
+  designId,
+  tailorId,
+  price = 10,
+  designDescription
 }: OrderModalProps) {
+  const { user } = useAuth();
+  const createOrderMutation = api.orders.createOrder.useMutation({
+    onSuccess: (data) => {
+      console.log('Order created:', data);
+      // Show success message is handled by payment success logic
+    },
+    onError: (error) => {
+      console.error('Failed to create order:', error);
+      toast.error('Failed to create order in our system');
+      setPaymentStatus({ loading: false, success: false, error: true, signature: '' });
+    }
+  });
+
   const [measurements, setMeasurements] = useState({
     height: '',
     chest: '',
@@ -97,14 +118,14 @@ export default function OrderModal({
   })
   
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
+    name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}`.trim() : '',
+    phone: user?.phone || '',
     gender: 'male', // Default gender
     timeline: '14', // Default timeline (days)
     deliveryMethod: 'shipping',
     address: '',
     paymentMethod: 'crypto',
-    usdcAmount: '10', // Default USDC amount
+    usdcAmount: price.toString(), // Use the price from the design if available
   })
 
   // Get current measurements list based on selected gender
@@ -158,44 +179,6 @@ export default function OrderModal({
     setFormData(prev => ({ ...prev, [name]: value }))
   }
   
-  const router = useRouter()
-  const createOrderMutation = api.orders.createOrder.useMutation()
-
-  const handleOrderCreation = async (txHash: string) => {
-    try {
-      // Prepare order data
-      const orderData = {
-        productName,
-        customerName: formData.name,
-        userId: null, // Replace with actual user ID if available
-        tailorId: null, // Replace with actual tailor ID 
-        price: parseFloat(formData.usdcAmount),
-        txHash,
-        description: `Custom order for ${productName}`,
-        measurements: measurements,
-        delivery: {
-          method: formData.deliveryMethod,
-          address: formData.deliveryMethod === 'shipping' ? formData.address : null,
-          timeline: formData.timeline,
-        },
-        paymentMethod: formData.paymentMethod,
-      }
-
-      // Create order via API
-      const order = await createOrderMutation.mutateAsync(orderData)
-
-      // Show success toast
-      toast.success('Order placed successfully! Waiting for tailor acceptance.')
-
-      // Close modal and potentially redirect
-      onClose()
-      router.push('/orders') // Optional: redirect to orders page
-    } catch (error) {
-      console.error('Order creation failed:', error)
-      toast.error('Failed to create order. Please try again.')
-    }
-  }
-
   const handlePaymentClick = async () => {
     if (!wallet.connected || !wallet.publicKey) {
       toast.error('Please connect your wallet first')
@@ -243,16 +226,40 @@ export default function OrderModal({
         error: false, 
         signature: receipt.signature 
       })
-
-      // Create order after successful payment
-      await handleOrderCreation(receipt.signature)
-
-      // Optional: Show transaction details
+      
+      // Show success toast with transaction signature
       transactionToast(receipt.signature)
-    } catch (error) {
-      console.error('Payment failed:', error)
+
+      // Create order in the database
+      if (designId && tailorId) {
+        createOrderMutation.mutate({
+          productName,
+          customerName: formData.name,
+          userId: user?.id,
+          tailorId,
+          price: parseFloat(formData.usdcAmount),
+          txHash: receipt.signature,
+          description: designDescription,
+          measurements,
+          delivery: {
+            method: formData.deliveryMethod,
+            address: formData.address,
+            timeline: formData.timeline,
+          },
+          paymentMethod: formData.paymentMethod,
+          designId,
+        });
+      }
+      
+      // Close modal after a delay
+      setTimeout(() => {
+        onClose()
+      }, 3000)
+      
+    } catch (error: any) {
+      console.error('Payment error:', error)
       setPaymentStatus({ loading: false, success: false, error: true, signature: '' })
-      toast.error('Payment failed. Please try again.')
+      toast.error(`Payment failed: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -331,6 +338,19 @@ export default function OrderModal({
     // Create versioned transaction
     return new VersionedTransaction(messageV0)
   }
+
+  // Autofill user details when the modal opens
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.firstName && user.lastName 
+          ? `${user.firstName} ${user.lastName}`.trim() 
+          : prev.name,
+        phone: user.phone || prev.phone,
+      }));
+    }
+  }, [user, isOpen]);
   
   return (
     <Modal 
@@ -339,6 +359,11 @@ export default function OrderModal({
       title={`Start order for ${productName}`}
     >
       <div className="space-y-6">
+        {/* Info about 48-hour acceptance window */}
+        <div className="p-3 rounded-md bg-blue-500/20 border border-blue-500 text-white text-sm">
+          <p>Once your order is placed, the tailor has 48 hours to accept your order. If not accepted within this timeframe, your order will be automatically cancelled.</p>
+        </div>
+
         {/* Gender Selection */}
         <div>
           <h3 className="text-lg font-medium text-white mb-4">Your Gender</h3>
@@ -587,6 +612,7 @@ export default function OrderModal({
             {paymentStatus.success && (
               <div className="p-3 rounded-md bg-green-500/20 border border-green-500 text-white text-sm">
                 <p>Payment successful! Your order has been placed.</p>
+                <p className="mt-1">The tailor will review your order within 48 hours.</p>
                 <p className="mt-1">Transaction ID: {paymentStatus.signature.slice(0, 8)}...{paymentStatus.signature.slice(-8)}</p>
               </div>
             )}

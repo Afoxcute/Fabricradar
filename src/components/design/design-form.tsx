@@ -152,10 +152,7 @@ export default function DesignForm({
         ...designData
       });
     } else {
-      createMutation.mutate({
-        ...designData,
-        tailorId: user.id,
-      });
+      createMutation.mutate(designData);
     }
   };
   

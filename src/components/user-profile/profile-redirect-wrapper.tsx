@@ -54,7 +54,14 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
         isProfileComplete(user) && 
         user.accountType === 'TAILOR' &&
         !isCheckingProfile) {
-      router.push('/tailor/dashboard');
+      
+      // Get the current pathname
+      const pathname = window.location.pathname;
+      
+      // Only redirect to dashboard if not already on a tailor-related page
+      if (!pathname.startsWith('/tailor/')) {
+        router.push('/tailor/dashboard');
+      }
     }
   }, [user, connected, publicKey, isCheckingProfile, router]);
 

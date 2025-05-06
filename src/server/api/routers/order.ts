@@ -296,6 +296,48 @@ export const orderRouter = createTRPCRouter({
       return updatedOrder;
     }),
 
+  // Get detailed order information by ID
+  getOrderById: publicProcedure
+    .input(z.object({ 
+      orderId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.db.order.findUnique({
+        where: { id: input.orderId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            }
+          }
+        }
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found",
+        });
+      }
+
+      // Check if the user has permission to view this order
+      // Allow either the customer or the tailor to view the order
+      if (!ctx.user || (ctx.user.id !== order.userId && ctx.user.id !== order.tailorId && ctx.user.accountType !== "TAILOR")) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You don't have permission to view this order",
+        });
+      }
+
+      return {
+        order,
+      };
+    }),
+
   // Accept or reject an order
   acceptOrder: publicProcedure
     .input(z.object({ 

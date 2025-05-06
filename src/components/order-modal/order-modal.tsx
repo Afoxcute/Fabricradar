@@ -179,7 +179,7 @@ export default function OrderModal({
     
     return endDateTime > startDateTime;
   }
-
+  
   // Check if USDC amount is valid and enough balance is available
   const isUsdcAmountValid = (() => {
     const amount = parseFloat(formData.usdcAmount)
@@ -203,7 +203,7 @@ export default function OrderModal({
   }
   
   const { checkBalanceForTransaction, fundWalletDirectly } = useUsdcBalanceCheck()
-
+  
   const handlePaymentClick = async () => {
     if (!wallet.connected || !wallet.publicKey) {
       toast.error('Please connect your wallet first')
@@ -227,7 +227,7 @@ export default function OrderModal({
 
     // Check USDC balance using our enhanced method
     const hasEnoughBalance = await checkBalanceForTransaction(parseFloat(formData.usdcAmount))
-    
+
     if (!hasEnoughBalance) {
       // The popup will be shown automatically by the LowBalanceDetector
       // No need for additional error message as it's handled by the detector
@@ -543,8 +543,8 @@ export default function OrderModal({
                     id="timelineStartTime"
                     name="timelineStartTime"
                     value={formData.timelineStartTime}
-                    onChange={handleFormChange}
-                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                onChange={handleFormChange}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     required
                   />
                 </div>

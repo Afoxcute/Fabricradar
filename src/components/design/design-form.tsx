@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import ImageUpload from './image-upload';
-import { DesignTimelinePicker } from './design-timeline-picker';
-import { combine2DateAndTime } from '@/lib/utils';
 
 interface Design {
   id: number;
@@ -17,9 +15,6 @@ interface Design {
   imageUrl: string | null;
   averageTimeline: string;
   tailorId: number;
-  timelineDate?: Date;
-  timelineStartTime?: string;
-  timelineEndTime?: string;
 }
 
 interface DesignFormProps {
@@ -36,21 +31,14 @@ export default function DesignForm({
   const { user } = useAuth();
   const router = useRouter();
   
-  const [title, setTitle] = useState(isEditing && designToEdit ? designToEdit.title : '');
-  const [description, setDescription] = useState(isEditing && designToEdit ? designToEdit.description : '');
-  const [price, setPrice] = useState(isEditing && designToEdit ? designToEdit.price.toString() : '');
-  const [averageTimeline, setAverageTimeline] = useState(isEditing && designToEdit ? designToEdit.averageTimeline : '');
-  const [imageUrl, setImageUrl] = useState(isEditing && designToEdit ? designToEdit.imageUrl : null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [price, setPrice] = useState('');
+  const [averageTimeline, setAverageTimeline] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  
-  // Add timeline state
-  const [timeline, setTimeline] = useState({
-    date: isEditing && designToEdit?.timelineDate ? new Date(designToEdit.timelineDate) : new Date(),
-    startTime: isEditing && designToEdit?.timelineStartTime ? designToEdit.timelineStartTime : '09:00',
-    endTime: isEditing && designToEdit?.timelineEndTime ? designToEdit.timelineEndTime : '17:00'
-  });
   
   // Fill form when editing
   useEffect(() => {
@@ -59,12 +47,7 @@ export default function DesignForm({
       setDescription(designToEdit.description);
       setPrice(designToEdit.price.toString());
       setAverageTimeline(designToEdit.averageTimeline);
-      setImageUrl(designToEdit.imageUrl || null);
-      setTimeline({
-        date: isEditing && designToEdit.timelineDate ? new Date(designToEdit.timelineDate) : new Date(),
-        startTime: isEditing && designToEdit.timelineStartTime ? designToEdit.timelineStartTime : '09:00',
-        endTime: isEditing && designToEdit.timelineEndTime ? designToEdit.timelineEndTime : '17:00'
-      });
+      setImageUrl(designToEdit.imageUrl || '');
     }
   }, [isEditing, designToEdit]);
   
@@ -93,12 +76,7 @@ export default function DesignForm({
       setDescription('');
       setPrice('');
       setAverageTimeline('');
-      setImageUrl(null);
-      setTimeline({
-        date: new Date(),
-        startTime: '09:00',
-        endTime: '17:00'
-      });
+      setImageUrl('');
     }
     
     // Show success message
@@ -158,10 +136,6 @@ export default function DesignForm({
       return;
     }
     
-    // Calculate timeline start and end times as Date objects
-    const timelineStartDateTime = combine2DateAndTime(timeline.date, timeline.startTime);
-    const timelineEndDateTime = combine2DateAndTime(timeline.date, timeline.endTime);
-    
     // Prepare design data
     const designData = {
       title,
@@ -169,9 +143,6 @@ export default function DesignForm({
       price: Number(price),
       averageTimeline,
       imageUrl: imageUrl || undefined,
-      timelineDate: timeline.date,
-      timelineStartTime: timeline.startTime,
-      timelineEndTime: timeline.endTime,
     };
     
     // Submit design - create or update
@@ -186,41 +157,42 @@ export default function DesignForm({
   };
   
   return (
-    <div className="bg-gray-900 rounded-xl border border-gray-800 shadow-xl overflow-hidden">
-      <div className="p-6">
-        <h2 className="text-2xl font-bold text-white mb-6">
-          {isEditing ? 'Edit Design' : 'Create New Design'}
-        </h2>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
-                Title
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-cyan-500 focus:border-cyan-500"
-                placeholder="e.g. Traditional Wedding Dress"
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">
-                Description
-              </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={5}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-cyan-500 focus:border-cyan-500"
-                placeholder="Describe your design, materials, style, etc."
-              />
-            </div>
+    <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+      <h2 className="text-xl font-semibold text-white mb-4">
+        {isEditing ? 'Edit Design' : 'Add New Design'}
+      </h2>
+      
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          {/* Title */}
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-300 mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-cyan-500 focus:border-cyan-500"
+              placeholder="e.g. Classic Tailored Suit"
+            />
+          </div>
+          
+          {/* Description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-300 mb-1">
+              Description
+            </label>
+            <textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-cyan-500 focus:border-cyan-500"
+              placeholder="Describe your design in detail"
+            ></textarea>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Price */}
@@ -256,18 +228,6 @@ export default function DesignForm({
             </div>
           </div>
           
-          {/* Timeline Picker Section */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-300 mb-3">Design Timeline Availability</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              Set when you&apos;re available to work on this design.
-            </p>
-            <DesignTimelinePicker 
-              value={timeline}
-              onChange={setTimeline}
-            />
-          </div>
-          
           {/* Image Upload */}
           <ImageUpload 
             onImageUrlChange={setImageUrl} 
@@ -290,25 +250,25 @@ export default function DesignForm({
             </div>
           )}
           
-          <div className="flex justify-end">
+          {/* Submit Button */}
+          <div className="mt-6">
             <button
               type="submit"
               disabled={isLoading}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-cyan-500 hover:bg-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
             >
               {isLoading ? (
                 <>
-                  <Loader2 size={16} className="mr-2 animate-spin" />
-                  {isEditing ? 'Updating...' : 'Creating...'}
+                  <Loader2 size={18} className="animate-spin mr-2" />
+                  {isEditing ? 'Updating Design...' : 'Creating Design...'}
                 </>
               ) : (
-                <>{isEditing ? 'Update Design' : 'Create Design'}</>
+                isEditing ? 'Update Design' : 'Create Design'
               )}
             </button>
           </div>
-          </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 } 

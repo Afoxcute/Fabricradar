@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Modal from '../ui/modal'
 import { Button } from '../ui/button'
-import { ChevronsRight, ExternalLink, Loader2 } from 'lucide-react'
+import { ChevronsRight, ExternalLink, Loader2, Calendar, Clock } from 'lucide-react'
 import { useWallet } from '../solana/privy-solana-adapter'
 import { useConnection } from '@solana/wallet-adapter-react'
 import { USDC_MINT_ADDRESS } from '../account/account-data-access'
@@ -121,7 +121,10 @@ export default function OrderModal({
     name: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}`.trim() : '',
     phone: user?.phone || '',
     gender: 'male', // Default gender
-    timeline: '14', // Default timeline (days)
+    timelineStart: '', // Start date
+    timelineStartTime: '', // Start time
+    timelineEnd: '', // End date
+    timelineEndTime: '', // End time
     deliveryMethod: 'shipping',
     address: '',
     paymentMethod: 'crypto',
@@ -154,9 +157,27 @@ export default function OrderModal({
   const isFormComplete = 
     formData.name.trim() !== '' && 
     formData.phone.trim() !== '' && 
+    formData.timelineStart !== '' &&
+    formData.timelineStartTime !== '' &&
+    formData.timelineEnd !== '' &&
+    formData.timelineEndTime !== '' &&
     (formData.deliveryMethod !== 'shipping' || formData.address.trim() !== '') &&
     parseFloat(formData.usdcAmount) > 0
   
+  // Check if timeline is valid (end date is after start date)
+  const isTimelineValid = () => {
+    if (!formData.timelineStart || !formData.timelineEnd) return true;
+    
+    const startDateTime = new Date(
+      `${formData.timelineStart}T${formData.timelineStartTime || '00:00'}`
+    );
+    const endDateTime = new Date(
+      `${formData.timelineEnd}T${formData.timelineEndTime || '00:00'}`
+    );
+    
+    return endDateTime > startDateTime;
+  }
+
   // Check if USDC amount is valid and enough balance is available
   const isUsdcAmountValid = (() => {
     const amount = parseFloat(formData.usdcAmount)
@@ -187,6 +208,11 @@ export default function OrderModal({
 
     if (!isFormComplete) {
       toast.error('Please fill in all required fields')
+      return
+    }
+
+    if (!isTimelineValid()) {
+      toast.error('End date must be after start date')
       return
     }
 
@@ -244,7 +270,12 @@ export default function OrderModal({
           delivery: {
             method: formData.deliveryMethod,
             address: formData.address,
-            timeline: formData.timeline,
+            customTimeline: {
+              startDate: formData.timelineStart,
+              startTime: formData.timelineStartTime,
+              endDate: formData.timelineEnd,
+              endTime: formData.timelineEndTime
+            }
           },
           paymentMethod: formData.paymentMethod,
           designId,
@@ -352,6 +383,33 @@ export default function OrderModal({
     }
   }, [user, isOpen]);
   
+  // Set default dates when the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Set default start date to today
+      const today = new Date();
+      const startDate = today.toISOString().split('T')[0];
+      
+      // Set default end date to 14 days from now
+      const endDate = new Date();
+      endDate.setDate(today.getDate() + 14);
+      const endDateStr = endDate.toISOString().split('T')[0];
+      
+      // Set default times
+      const nowHours = String(today.getHours()).padStart(2, '0');
+      const nowMinutes = String(today.getMinutes()).padStart(2, '0');
+      const defaultTime = `${nowHours}:${nowMinutes}`;
+      
+      setFormData(prev => ({
+        ...prev,
+        timelineStart: startDate,
+        timelineStartTime: defaultTime,
+        timelineEnd: endDateStr,
+        timelineEndTime: defaultTime,
+      }));
+    }
+  }, [isOpen]);
+  
   return (
     <Modal 
       isOpen={isOpen} 
@@ -443,22 +501,94 @@ export default function OrderModal({
               />
             </div>
             
-            <div>
-              <label htmlFor="timeline" className="block text-sm font-medium text-gray-300 mb-1">
-                Timeline (days)
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Custom Timeline <span className="text-red-500">*</span>
               </label>
-              <select
-                id="timeline"
-                name="timeline"
-                value={formData.timeline}
-                onChange={handleFormChange}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              >
-                <option value="7">7 days</option>
-                <option value="14">14 days</option>
-                <option value="21">21 days</option>
-                <option value="30">30 days</option>
-              </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center mb-2">
+                    <Calendar className="h-4 w-4 mr-1 text-cyan-500" />
+                    <label htmlFor="timelineStart" className="text-sm text-gray-300">
+                      Start Date
+                    </label>
+                  </div>
+                  <input
+                    type="date"
+                    id="timelineStart"
+                    name="timelineStart"
+                    value={formData.timelineStart}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center mb-2">
+                    <Clock className="h-4 w-4 mr-1 text-cyan-500" />
+                    <label htmlFor="timelineStartTime" className="text-sm text-gray-300">
+                      Start Time
+                    </label>
+                  </div>
+                  <input
+                    type="time"
+                    id="timelineStartTime"
+                    name="timelineStartTime"
+                    value={formData.timelineStartTime}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center mb-2">
+                    <Calendar className="h-4 w-4 mr-1 text-cyan-500" />
+                    <label htmlFor="timelineEnd" className="text-sm text-gray-300">
+                      End Date
+                    </label>
+                  </div>
+                  <input
+                    type="date"
+                    id="timelineEnd"
+                    name="timelineEnd"
+                    value={formData.timelineEnd}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 bg-gray-800 border ${
+                      !isTimelineValid() && formData.timelineStart && formData.timelineEnd
+                        ? 'border-red-500'
+                        : 'border-gray-700'
+                    } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+                    required
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center mb-2">
+                    <Clock className="h-4 w-4 mr-1 text-cyan-500" />
+                    <label htmlFor="timelineEndTime" className="text-sm text-gray-300">
+                      End Time
+                    </label>
+                  </div>
+                  <input
+                    type="time"
+                    id="timelineEndTime"
+                    name="timelineEndTime"
+                    value={formData.timelineEndTime}
+                    onChange={handleFormChange}
+                    className={`w-full px-3 py-2 bg-gray-800 border ${
+                      !isTimelineValid() && formData.timelineStart && formData.timelineEnd && 
+                      formData.timelineStartTime && formData.timelineEndTime
+                        ? 'border-red-500'
+                        : 'border-gray-700'
+                    } rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500`}
+                    required
+                  />
+                </div>
+              </div>
+              {!isTimelineValid() && formData.timelineStart && formData.timelineEnd && (
+                <p className="mt-1 text-sm text-red-500">
+                  End date and time must be after start date and time
+                </p>
+              )}
             </div>
             
             <div>

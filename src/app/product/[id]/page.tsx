@@ -123,15 +123,15 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       {/* Order Modal */}
       {design && (
-        <OrderModal
-          isOpen={showOrderModal}
-          onClose={() => setShowOrderModal(false)}
-          productName={product.name}
+      <OrderModal
+        isOpen={showOrderModal}
+        onClose={() => setShowOrderModal(false)}
+        productName={product.name}
           designId={design.id}
           tailorId={design.tailorId}
           price={design.price}
           designDescription={design.description}
-        />
+      />
       )}
 
       {/* Stars/particles background effect */}

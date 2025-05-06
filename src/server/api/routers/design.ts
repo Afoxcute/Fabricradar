@@ -11,9 +11,6 @@ export const designRouter = createTRPCRouter({
       price: z.number().positive(),
       imageUrl: z.string().url().optional().nullable(),
       averageTimeline: z.string(),
-      timelineDate: z.date().optional(),
-      timelineStartTime: z.string().optional(),
-      timelineEndTime: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       // Check if user is a tailor
@@ -178,27 +175,16 @@ export const designRouter = createTRPCRouter({
   updateDesign: protectedProcedure
     .input(z.object({
       designId: z.number(),
-      title: z.string().min(3).max(100),
-      description: z.string().min(10),
-      price: z.number().positive(),
+      title: z.string().min(3).max(100).optional(),
+      description: z.string().min(10).optional(),
+      price: z.number().positive().optional(),
       imageUrl: z.string().url().optional().nullable(),
-      averageTimeline: z.string(),
-      timelineDate: z.date().optional(),
-      timelineStartTime: z.string().optional(),
-      timelineEndTime: z.string().optional(),
+      averageTimeline: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const { designId, ...updateData } = input;
+      const { designId, ...data } = input;
       
-      // Check if user is a tailor
-      if (ctx.user.accountType !== "TAILOR") {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only tailors can update designs",
-        });
-      }
-      
-      // Check if design exists and belongs to the user
+      // Find the design first to verify ownership
       const existingDesign = await ctx.db.design.findUnique({
         where: { id: designId },
       });
@@ -210,17 +196,18 @@ export const designRouter = createTRPCRouter({
         });
       }
       
+      // Only the design creator (tailor) can update it
       if (existingDesign.tailorId !== ctx.user.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "You can only update your own designs",
+          message: "You don't have permission to update this design",
         });
       }
       
       try {
         const updatedDesign = await ctx.db.design.update({
           where: { id: designId },
-          data: updateData,
+          data,
         });
         
         return {

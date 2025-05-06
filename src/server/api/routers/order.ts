@@ -19,6 +19,12 @@ export const orderRouter = createTRPCRouter({
         method: z.string(),
         address: z.string().optional(),
         timeline: z.string().optional(),
+        customTimeline: z.object({
+          startDate: z.string(),
+          startTime: z.string(),
+          endDate: z.string(),
+          endTime: z.string()
+        }).optional()
       }).optional(),
       paymentMethod: z.string().optional(),
       designId: z.number().optional(),

@@ -18,7 +18,7 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
     user, 
     isLoading: authLoading, 
     refreshUserData, 
-    associateWalletWithUser 
+    associateWalletWithUser
   } = useAuth();
   const { publicKey, connected } = useWallet();
   const router = useRouter();
@@ -113,7 +113,7 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
                   console.log("No existing user found with this wallet address - need profile completion");
                   // Clear the existing user from localStorage
                   localStorage.removeItem("auth_user");
-                  setUser(null);
+                  // No need to call setUser as the auth provider will handle this on reload
                   setNeedsCompletion(true);
                   setIsCheckingProfile(false);
                   return;
@@ -122,6 +122,7 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
                 // API error, treat as no user found
                 console.log("API error or no user found with this wallet");
                 localStorage.removeItem("auth_user");
+                // No need to call setUser as the auth provider will handle this on reload
                 setNeedsCompletion(true);
                 setIsCheckingProfile(false);
                 return;

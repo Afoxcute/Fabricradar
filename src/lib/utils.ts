@@ -152,3 +152,22 @@ export const shortenAddress = (address: string, startChars = 6, endChars = 4): s
   
   return `${start}...${end}`
 }
+
+/**
+ * Combine a date object and a time string (HH:MM) into a single Date object
+ */
+export function combine2DateAndTime(date: Date, timeStr: string): Date {
+  // Create a new date object to avoid mutation
+  const combined = new Date(date);
+  
+  // Parse the time string (expected format: "HH:MM")
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  
+  // Set hours and minutes
+  combined.setHours(hours);
+  combined.setMinutes(minutes);
+  combined.setSeconds(0);
+  combined.setMilliseconds(0);
+  
+  return combined;
+}

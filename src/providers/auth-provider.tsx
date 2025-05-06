@@ -208,35 +208,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, publicKey]);
 
-  // Add effect to detect wallet disconnection and clear localStorage
-  useEffect(() => {
-    // If previously connected but now disconnected, clear localStorage
-    if (!connected && publicKey === null) {
-      // Check if we have a stored user with a wallet address
-      const storedUser = localStorage.getItem("auth_user");
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          if (parsedUser.walletAddress) {
-            console.log("Wallet disconnected, clearing localStorage to prevent profile mixing");
-            localStorage.removeItem("auth_user");
-            setUser(null);
-            
-            // Set a flag in sessionStorage to indicate the wallet just disconnected
-            sessionStorage.setItem("just_wallet_disconnected", "true");
-          }
-        } catch (error) {
-          console.error("Failed to parse stored user while checking wallet disconnect", error);
-        }
-      }
-    }
-    
-    // When wallet connects again, clear the disconnection flag
-    if (connected && publicKey) {
-      sessionStorage.removeItem("just_wallet_disconnected");
-    }
-  }, [connected, publicKey]);
-
   // Function to handle login
   const login = async (identifier: string, otp: string) => {
     setIsLoading(true);

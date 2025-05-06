@@ -225,12 +225,24 @@ export default function OrderModal({
       return
     }
 
+    // Manually trigger the funding popup if needed with the exact amount required
+    const requiredAmount = parseFloat(formData.usdcAmount)
+    console.log('Attempting transaction with amount:', requiredAmount)
+    
+    // Manually dispatch transaction attempt event to ensure the LowBalanceDetector catches it
+    const event = new CustomEvent('transaction-attempt', {
+      detail: { requiredAmount }
+    })
+    window.dispatchEvent(event)
+    console.log('Dispatched transaction-attempt event with amount:', requiredAmount)
+    
     // Check USDC balance using our enhanced method
-    const hasEnoughBalance = await checkBalanceForTransaction(parseFloat(formData.usdcAmount))
+    const hasEnoughBalance = await checkBalanceForTransaction(requiredAmount)
+    console.log('Has enough balance check result:', hasEnoughBalance)
     
     if (!hasEnoughBalance) {
-      // The popup will be shown automatically by the LowBalanceDetector
-      // No need for additional error message as it's handled by the detector
+      console.log('Insufficient balance detected. Popup should appear.')
+      // No need to continue with the transaction
       return
     }
 

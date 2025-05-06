@@ -19,14 +19,10 @@ import OrderModal from '@/components/order-modal/order-modal';
 import { api } from '@/trpc/react';
 import { useAuth } from '@/providers/auth-provider';
 import toast from 'react-hot-toast';
-import { useUsdcBalanceCheck } from '@/hooks/use-usdc-balance-check';
-import { useWallet } from '@/components/solana/privy-solana-adapter';
 
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const { user } = useAuth();
-  const { publicKey, connected } = useWallet();
-  const { checkBalanceForTransaction, showFundingPopup } = useUsdcBalanceCheck();
   
   // Fetch design data based on the ID
   const { data: designData, isLoading, error } = api.designs.getDesignById.useQuery({
@@ -54,7 +50,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   const designWithImages = design as DesignWithImages;
 
   // Handle start order click
-  const handleStartOrder = async () => {
+  const handleStartOrder = () => {
     if (!user) {
       toast.error('Please sign in to place an order');
       return;
@@ -65,39 +61,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
       return;
     }
     
-    if (!designWithImages || !connected || !publicKey) {
-      toast.error('Please wait while we load the design data');
-      return;
-    }
-    
-    try {
-      const price = designWithImages.price || 10;
-      console.log('Checking balance for price:', price);
-      
-      // Manually trigger the funding popup with the exact amount we need
-      const event = new CustomEvent('transaction-attempt', {
-        detail: { requiredAmount: price }
-      });
-      window.dispatchEvent(event);
-      console.log('Dispatched transaction-attempt event');
-      
-      // Check if user has enough USDC for the order
-      const hasEnoughBalance = await checkBalanceForTransaction(price);
-      console.log('Balance check result:', hasEnoughBalance);
-      
-      if (hasEnoughBalance) {
-        // If they have enough balance, open the order modal
-        setShowOrderModal(true);
-      } else {
-        console.log('Insufficient balance detected. Popup should be showing.');
-        // The popup will be shown automatically by the LowBalanceDetector
-        // If not, we can manually trigger it
-        showFundingPopup(price);
-      }
-    } catch (error) {
-      console.error('Error checking balance:', error);
-      toast.error('Failed to verify your balance. Please try again.');
-    }
+    setShowOrderModal(true);
   };
 
   // Fallback if design isn't loaded yet

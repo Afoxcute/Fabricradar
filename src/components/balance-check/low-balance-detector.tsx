@@ -57,32 +57,19 @@ export function LowBalanceDetector({ minimumUsdcRequired = 5, children }: LowBal
   useEffect(() => {
     const handleTransactionAttempt = (e: CustomEvent<{ requiredAmount: number }>) => {
       const requiredAmountValue = e.detail.requiredAmount || minimumUsdcRequired
-      console.log('Transaction attempt event received:', e.detail)
       setRequiredAmount(requiredAmountValue)
       setTransactionAttempted(true)
       
       // Only show the alert if balance is too low and we're connected
       if (connected && publicKey && !isLoading && usdcBalance !== undefined) {
-        console.log('Current USDC balance:', usdcBalance, 'Required:', requiredAmountValue)
         if (usdcBalance < requiredAmountValue) {
-          console.log('Showing balance alert due to insufficient funds')
           setShowBalanceAlert(true)
-        } else {
-          console.log('Not showing balance alert - sufficient funds')
         }
-      } else {
-        console.log('Not checking balance - wallet not ready:', {
-          connected,
-          publicKey: publicKey?.toString(),
-          isLoading,
-          usdcBalance
-        })
       }
     }
 
     // Add the event listener
     window.addEventListener('transaction-attempt' as any, handleTransactionAttempt as any)
-    console.log('LowBalanceDetector: Added transaction-attempt event listener')
     
     // Cleanup
     return () => {
@@ -144,25 +131,6 @@ export function LowBalanceDetector({ minimumUsdcRequired = 5, children }: LowBal
   return (
     <>
       {children}
-      
-      {/* Debug indicator in development environment */}
-      {process.env.NODE_ENV === 'development' && (
-        <div style={{ 
-          position: 'fixed', 
-          bottom: '10px', 
-          right: '10px', 
-          background: 'rgba(0,0,0,0.7)', 
-          color: 'lightgreen', 
-          padding: '4px 8px', 
-          borderRadius: '4px',
-          fontSize: '10px',
-          zIndex: 9999,
-          pointerEvents: 'none'
-        }}>
-          Balance Detector Active
-          {connected && <span> | {usdcBalance !== undefined ? `USDC: ${usdcBalance.toFixed(2)}` : 'Loading...'}</span>}
-        </div>
-      )}
       
       <Dialog open={showBalanceAlert} onOpenChange={setShowBalanceAlert}>
         <DialogContent className="sm:max-w-md">

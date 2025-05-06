@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Link from 'next/link';
 
 export default function TailorOrdersPage() {
   const { user } = useAuth();
@@ -159,7 +158,6 @@ export default function TailorOrdersPage() {
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                     </>
                   )}
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">View Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -216,17 +214,6 @@ export default function TailorOrdersPage() {
                         </td>
                       </>
                     )}
-                    
-                    <td className="px-4 py-4 whitespace-nowrap text-center">
-                      <Link href={`/tailor/orders/${order.id}`}>
-                        <Button
-                          size="sm"
-                          className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                        >
-                          View Details
-                        </Button>
-                      </Link>
-                    </td>
                   </tr>
                 ))}
               </tbody>

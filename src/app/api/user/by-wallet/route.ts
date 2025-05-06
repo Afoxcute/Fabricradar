@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
 
     console.log(`Looking up user with wallet address: ${walletAddress}`);
 
-    // Find user by wallet address
-    const user = await db.user.findFirst({
+    // Find user by wallet address - use exact match with findUnique
+    const user = await db.user.findUnique({
       where: {
         walletAddress: walletAddress,
       },

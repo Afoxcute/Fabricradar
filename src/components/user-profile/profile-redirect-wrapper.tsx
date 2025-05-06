@@ -85,94 +85,104 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
         // Get wallet address as string for API calls
         const walletAddressStr = publicKey.toString();
         
-        // If we already have user data and it's complete, no need to check
-        if (isProfileComplete(user)) {
-          console.log("Profile is complete in local state", debugProfileStatus(user));
+        // If we already have user data and it's complete, check if the wallet matches
+        if (user) {
+          console.log("User exists in state", debugProfileStatus(user));
           
           // Make sure the wallet address is associated with the user
-          if (user?.walletAddress !== walletAddressStr) {
-            // Wallet address doesn't match - might need to check for a different user
+          if (user.walletAddress !== walletAddressStr) {
+            console.log("Wallet address doesn't match current user - checking if a different user exists with this wallet");
+            // Wallet address doesn't match - need to check for a different user
             try {
-              // Check for existing user with this wallet using a direct fetch to avoid encoding issues
+              // Check for existing user with this wallet using a direct fetch
               const apiUrl = `/api/user/by-wallet?walletAddress=${encodeURIComponent(walletAddressStr)}`;
               console.log("Checking for user with wallet address:", apiUrl);
               
               const response = await fetch(apiUrl);
-              const data = await response.json();
               
-              if (data.success && data.user) {
-                console.log("Found user with this wallet, updating local storage", debugProfileStatus(data.user));
-                // Found a user with this wallet - store in localStorage and refresh
-                localStorage.setItem("auth_user", JSON.stringify(data.user));
-                window.location.reload(); // Force reload to update auth context
+              if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                  console.log("Found user with this wallet, updating local storage", debugProfileStatus(data.user));
+                  // Found a user with this wallet - store in localStorage and refresh
+                  localStorage.setItem("auth_user", JSON.stringify(data.user));
+                  window.location.reload(); // Force reload to update auth context
+                  return;
+                } else {
+                  console.log("No existing user found with this wallet address - need profile completion");
+                  // Clear the existing user from localStorage
+                  localStorage.removeItem("auth_user");
+                  setUser(null);
+                  setNeedsCompletion(true);
+                  setIsCheckingProfile(false);
+                  return;
+                }
+              } else {
+                // API error, treat as no user found
+                console.log("API error or no user found with this wallet");
+                localStorage.removeItem("auth_user");
+                setNeedsCompletion(true);
+                setIsCheckingProfile(false);
                 return;
               }
             } catch (error) {
               console.error("Error checking wallet user:", error);
+              setNeedsCompletion(true);
+              setIsCheckingProfile(false);
+              return;
             }
+          } else if (isProfileComplete(user)) {
+            // Wallet matches and profile is complete
+            console.log("Wallet matches and profile is complete");
+            setIsCheckingProfile(false);
+            setNeedsCompletion(false);
+            return;
           }
-          
-          setIsCheckingProfile(false);
-          setNeedsCompletion(false);
-          return;
         }
 
-        // If user exists but profile is incomplete
-        if (user && user.id) {
-          console.log("Found user with incomplete profile, refreshing data", debugProfileStatus(user));
-          // Refresh user data first to make sure we have latest info
-          const updatedUser = await refreshUserData(user.id);
-          console.log("Refreshed user data:", debugProfileStatus(updatedUser));
+        // If we get here, either user is null or profile is incomplete
+        // Check if this wallet is associated with an existing user in the database
+        try {
+          // Use a direct /api/user endpoint instead of trpc
+          const apiUrl = `/api/user/by-wallet?walletAddress=${encodeURIComponent(walletAddressStr)}`;
+          console.log("Checking for user with wallet address:", apiUrl);
           
-          // Check if profile is still incomplete after refresh
-          if (!isProfileComplete(updatedUser)) {
-            console.log("Profile is still incomplete after refresh");
-            setNeedsCompletion(true);
-          } else {
-            console.log("Profile is complete after refresh");
-            setNeedsCompletion(false);
-          }
-        } else if (connected && publicKey) {
-          console.log("No user in local storage but wallet is connected, checking API");
-          // No user in local storage but wallet is connected - check if a user exists with this wallet address
-          try {
-            // Use a direct /api/user endpoint instead of trpc to avoid encoding issues
-            const apiUrl = `/api/user/by-wallet?walletAddress=${encodeURIComponent(walletAddressStr)}`;
-            console.log("Checking for user with wallet address:", apiUrl);
-            
-            const response = await fetch(apiUrl);
+          const response = await fetch(apiUrl);
+          
+          if (response.ok) {
             const data = await response.json();
             
             if (data.success && data.user) {
               console.log("Found user with this wallet in API", debugProfileStatus(data.user));
+              localStorage.setItem("auth_user", JSON.stringify(data.user));
               
-              // Check if this user has a complete profile
               if (isProfileComplete(data.user)) {
                 console.log("User from API has complete profile");
-                // Found a user with this wallet and complete profile - store in localStorage
-                localStorage.setItem("auth_user", JSON.stringify(data.user));
-                // Refresh the page to update auth context
                 window.location.reload();
                 return;
               } else {
                 console.log("User from API has incomplete profile");
-                // Store user in localStorage but mark as needing completion
-                localStorage.setItem("auth_user", JSON.stringify(data.user));
                 setNeedsCompletion(true);
               }
             } else {
-              console.log("No user found with this wallet address");
-              // No user found with this wallet address - needs profile completion
+              console.log("No user found with this wallet address - needs profile completion");
+              // Clear any existing user data since this is a new wallet
+              localStorage.removeItem("auth_user");
               setNeedsCompletion(true);
             }
-          } catch (error) {
-            console.error("Error checking wallet user:", error);
-            // Error occurred - default to showing profile completion
+          } else {
+            console.log("API error or no user found - needs profile completion");
+            localStorage.removeItem("auth_user");
             setNeedsCompletion(true);
           }
+        } catch (error) {
+          console.error("Error checking wallet user:", error);
+          setNeedsCompletion(true);
         }
       } catch (error) {
         console.error("Error in checkUserProfile:", error);
+        setNeedsCompletion(true);
       } finally {
         setIsCheckingProfile(false);
       }

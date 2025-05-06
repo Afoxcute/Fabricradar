@@ -57,6 +57,7 @@ export function UserProfileForm({
       lastName: initialValues?.lastName || "",
       email: initialValues?.email || "",
       phone: initialValues?.phone || "",
+      // Always prioritize the connected wallet address over any stored value
       walletAddress: walletAddress || initialValues?.walletAddress || "",
       accountType: initialValues?.accountType || "USER",
     },

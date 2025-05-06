@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
-import { ChevronRight, Copy, Check, Loader2 } from 'lucide-react';
+import { ChevronRight, Copy, Check, Loader2, Wallet } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
 import Image from 'next/image';
@@ -81,6 +81,15 @@ const Header = () => {
           >
             Marketplace
           </Link>
+          {authenticated && wallet.connected && (
+            <Link
+              href="/fund-wallet"
+              className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
+            >
+              <Wallet className="h-4 w-4" />
+              Fund Wallet
+            </Link>
+          )}
         </nav>
         
         {authenticated && wallet.connected && wallet.publicKey ? (

@@ -8,21 +8,49 @@ import { useConnection } from '@solana/wallet-adapter-react'
 import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { useFundWallet } from '@privy-io/react-auth/solana'
 import { Button } from '../ui/button'
-import { Loader2, CreditCard, Coins, Wallet } from 'lucide-react'
+import { Loader2, CreditCard, Coins, Wallet, DollarSign, ArrowRight, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useCluster } from '../cluster/cluster-data-access'
+import { useGetUSDCBalance } from '../account/account-data-access'
+import { USDC_MINT_ADDRESS } from '../account/account-data-access'
+import { useRouter } from 'next/navigation'
 
 export default function WalletFundFeature() {
   const { publicKey, connected } = useWallet()
   const { connection } = useConnection()
   const { cluster } = useCluster()
-  const { fundWallet } = useFundWallet()
+  const router = useRouter()
   const [balance, setBalance] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [fundingLoading, setFundingLoading] = useState(false)
-  const [fundingAmount, setFundingAmount] = useState('0.1')
+  const [fundingAmount, setFundingAmount] = useState('10')
+  const [preferredProvider, setPreferredProvider] = useState<'coinbase' | 'moonpay'>('moonpay')
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  // Fetch wallet balance when connected
+  // Handle user exiting funding flow
+  const handleUserExitedFunding = (params: { 
+    address: string; 
+    cluster: { name: string }; 
+    fundingMethod: string | null; 
+    balance: bigint | undefined 
+  }) => {
+    // Refresh balances
+    setRefreshTrigger(prev => prev + 1)
+    
+    // Show appropriate toast message
+    if (params.balance && params.balance > BigInt(0)) {
+      toast.success('Funding completed successfully!')
+    } else {
+      toast('Funding flow exited. You can try again anytime.')
+    }
+  }
+
+  // Enhanced useFundWallet hook with callback
+  const { fundWallet } = useFundWallet({
+    onUserExited: handleUserExitedFunding
+  })
+
+  // Fetch SOL balance
   useEffect(() => {
     async function fetchBalance() {
       if (connected && publicKey) {
@@ -52,9 +80,21 @@ export default function WalletFundFeature() {
     return () => {
       if (intervalId) clearInterval(intervalId)
     }
-  }, [connected, publicKey, connection])
+  }, [connected, publicKey, connection, refreshTrigger])
 
-  const handleFundWithSOL = async () => {
+  // Get USDC balance
+  const { data: usdcBalance, isLoading: isLoadingUsdc, refetch: refetchUsdcBalance } = useGetUSDCBalance({
+    address: publicKey!
+  });
+
+  // Ensure USDC balances are refreshed when the refresh trigger changes
+  useEffect(() => {
+    if (connected && publicKey) {
+      refetchUsdcBalance()
+    }
+  }, [refreshTrigger, connected, publicKey, refetchUsdcBalance])
+
+  const handleFundWithUSDC = async () => {
     if (!publicKey) {
       toast.error('Please connect your wallet first')
       return
@@ -62,49 +102,44 @@ export default function WalletFundFeature() {
 
     try {
       setFundingLoading(true)
+      
+      // Determine cluster for funding
+      const clusterName = cluster.network?.includes('mainnet') ? 'mainnet-beta' : 'devnet'
+      
+      // Call fundWallet with enhanced options
       await fundWallet(publicKey.toString(), {
-        cluster: {
-          name: cluster.network?.includes('mainnet') ? 'mainnet-beta' : 'devnet'
+        cluster: { name: clusterName },
+        amount: fundingAmount,
+        asset: 'USDC', // Specify USDC asset
+        card: {
+          preferredProvider: preferredProvider
         },
-        amount: fundingAmount
+        defaultFundingMethod: 'card', // Direct to card funding immediately
+        uiConfig: {
+          receiveFundsTitle: "Add USDC to Your Wallet",
+          receiveFundsSubtitle: "Fund your wallet with USDC to use on our platform"
+        }
       })
-      toast.success(`Successfully initiated funding of ${fundingAmount} SOL`)
+      
+      toast.success(`Funding initiated for ${fundingAmount} USDC`)
     } catch (error) {
-      console.error('Error funding wallet:', error)
-      toast.error('Failed to fund wallet. Please try again.')
+      console.error('Error funding wallet with USDC:', error)
+      toast.error('Failed to fund wallet with USDC. Please try again.')
     } finally {
       setFundingLoading(false)
     }
   }
 
-  const handleFundWithEVM = async () => {
-    if (!publicKey) {
-      toast.error('Please connect your wallet first')
-      return
-    }
-
-    try {
-      setFundingLoading(true)
-      // We don't specify the asset, so it will default to ETH/USDC depending on Privy config
-      await fundWallet(publicKey.toString(), {
-        cluster: {
-          name: cluster.network?.includes('mainnet') ? 'mainnet-beta' : 'devnet'
-        }
-      })
-      toast.success('Successfully initiated EVM funding flow')
-    } catch (error) {
-      console.error('Error funding wallet with EVM:', error)
-      toast.error('Failed to fund wallet. Please try again.')
-    } finally {
-      setFundingLoading(false)
-    }
+  const handleRefreshBalances = () => {
+    setRefreshTrigger(prev => prev + 1)
+    toast.success('Refreshing balances...')
   }
 
   return (
     <div>
       <AppHero
-        title="Fund Your Wallet"
-        subtitle="Add SOL or other tokens to your wallet to get started with the platform"
+        title="Fund Your Wallet with USDC"
+        subtitle="Add USDC to your Solana wallet to get started with the platform"
       >
         {!connected && (
           <div className="mt-6">
@@ -116,90 +151,141 @@ export default function WalletFundFeature() {
       <div className="max-w-lg mx-auto py-8">
         {connected ? (
           <>
-            <div className="mb-6 text-center">
-              <div className="badge badge-success">Connected</div>
-              <p className="mt-2">Wallet: {publicKey?.toString()}</p>
-              <p className="mt-1">
-                Balance: {loading ? (
-                  <span className="loading loading-spinner loading-xs"></span>
-                ) : balance !== null ? (
-                  `${balance.toFixed(5)} SOL`
-                ) : (
-                  'Unable to fetch balance'
-                )}
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-3">
+                <div className="badge badge-success">Connected</div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefreshBalances}
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Refresh
+                </Button>
+              </div>
+              
+              <p className="text-sm text-center mb-4 text-gray-400 break-all">
+                {publicKey?.toString()}
               </p>
+              
+              <div className="flex justify-center gap-4">
+                <div className="bg-gray-800/50 px-4 py-2 rounded-lg">
+                  <p className="text-sm text-gray-400">SOL Balance</p>
+                  <p className="font-bold">
+                    {loading ? (
+                      <span className="loading loading-spinner loading-xs"></span>
+                    ) : balance !== null ? (
+                      `${balance.toFixed(5)} SOL`
+                    ) : (
+                      'Unable to fetch'
+                    )}
+                  </p>
+                </div>
+                <div className="bg-blue-900/30 px-4 py-2 rounded-lg border border-blue-800">
+                  <p className="text-sm text-blue-400">USDC Balance</p>
+                  <p className="font-bold text-blue-300">
+                    {isLoadingUsdc ? (
+                      <span className="loading loading-spinner loading-xs"></span>
+                    ) : usdcBalance !== undefined ? (
+                      `${usdcBalance.toFixed(2)} USDC`
+                    ) : (
+                      '0.00 USDC'
+                    )}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
-                <h2 className="card-title">Fund Your Wallet</h2>
+                <div className="flex items-center mb-4">
+                  <DollarSign className="h-6 w-6 text-blue-500 mr-2" />
+                  <h2 className="card-title m-0">Fund Your Wallet with USDC</h2>
+                </div>
                 <p className="text-sm text-gray-400 mb-4">
-                  Choose your preferred method to add funds to your wallet
+                  Add USDC to your Solana wallet to make transactions on our platform.
                 </p>
 
                 <div className="mb-4">
                   <label className="label">
-                    <span className="label-text">Amount (SOL)</span>
+                    <span className="label-text">Amount (USDC)</span>
                   </label>
                   <div className="flex items-center gap-2">
                     <input
                       type="number"
                       value={fundingAmount}
                       onChange={(e) => setFundingAmount(e.target.value)}
-                      step="0.01"
-                      min="0.01"
-                      max="10"
+                      step="1"
+                      min="1"
+                      max="1000"
                       className="input input-bordered w-full"
-                      placeholder="0.1"
+                      placeholder="10"
                       disabled={fundingLoading}
                     />
-                    <span className="font-medium">SOL</span>
+                    <span className="font-medium text-blue-300">USDC</span>
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
-                    Min: 0.01 SOL, Max: 10 SOL
+                    Min: 1 USDC, Max: 1000 USDC
                   </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row gap-3">
-                  <Button
-                    onClick={handleFundWithSOL}
-                    disabled={fundingLoading || !connected}
-                    className="flex-1 flex items-center justify-center gap-2 py-5"
-                  >
-                    {fundingLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Coins className="h-4 w-4" />
-                        Fund with SOL
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    onClick={handleFundWithEVM}
-                    disabled={fundingLoading || !connected}
-                    className="flex-1 flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 py-5"
-                  >
-                    {fundingLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4" />
-                        Fund with EVM
-                      </>
-                    )}
-                  </Button>
+                <div className="mb-4">
+                  <label className="label">
+                    <span className="label-text">Preferred Provider</span>
+                  </label>
+                  <div className="flex gap-3">
+                    <button
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 flex-1 ${
+                        preferredProvider === 'moonpay' 
+                          ? 'bg-blue-800/50 border border-blue-600' 
+                          : 'bg-gray-800 border border-gray-700'
+                      }`}
+                      onClick={() => setPreferredProvider('moonpay')}
+                      disabled={fundingLoading}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span>MoonPay</span>
+                    </button>
+                    <button
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 flex-1 ${
+                        preferredProvider === 'coinbase' 
+                          ? 'bg-blue-800/50 border border-blue-600' 
+                          : 'bg-gray-800 border border-gray-700'
+                      }`}
+                      onClick={() => setPreferredProvider('coinbase')}
+                      disabled={fundingLoading}
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      <span>Coinbase</span>
+                    </button>
+                  </div>
                 </div>
+
+                <Button
+                  onClick={handleFundWithUSDC}
+                  disabled={fundingLoading || !connected}
+                  className="w-full flex items-center justify-center gap-2 py-5 bg-blue-600 hover:bg-blue-700"
+                >
+                  {fundingLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <DollarSign className="h-4 w-4" />
+                      Fund with USDC
+                      <ArrowRight className="h-4 w-4 ml-1" />
+                    </>
+                  )}
+                </Button>
 
                 <div className="bg-blue-900/20 border border-blue-800 rounded-md p-3 mt-4">
                   <h3 className="text-sm font-semibold text-blue-400 flex items-center gap-2">
                     <Wallet className="h-4 w-4" />
-                    How it works
+                    Important Information
                   </h3>
                   <ul className="list-disc list-inside text-xs text-gray-300 mt-2 space-y-1">
-                    <li>SOL funding: Directly adds SOL to your wallet</li>
-                    <li>EVM funding: Uses Ethereum or other EVM chains to fund your Solana wallet</li>
+                    <li>You can only fund your wallet with USDC on Solana</li>
+                    <li>You need USDC for all transactions on our platform</li>
                     <li>Processing can take a few moments to complete</li>
                     <li>On testnet/devnet, funds are for testing purposes only</li>
                   </ul>
@@ -211,7 +297,7 @@ export default function WalletFundFeature() {
           <div className="card bg-base-100 shadow-xl">
             <div className="card-body items-center text-center">
               <h2 className="card-title">Connect Your Wallet</h2>
-              <p>Please connect your Solana wallet to add funds.</p>
+              <p>Please connect your Solana wallet to add USDC funds.</p>
               <div className="card-actions mt-4">
                 <WalletButton />
               </div>

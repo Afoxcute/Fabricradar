@@ -15,6 +15,7 @@ import {
 } from '@solana/web3.js'
 import { IconCheck, IconCopy, IconSend } from '@tabler/icons-react'
 import toast from 'react-hot-toast'
+import { useUsdcBalanceCheck } from '@/hooks/use-usdc-balance-check'
 
 /**
  * Component for sending SOL to another wallet
@@ -29,6 +30,7 @@ export function TransactionSender() {
   const wallet = useWallet()
   const { connection } = useConnection()
   const { sendTransaction } = useSendTransaction()
+  const { checkBalanceForTransaction } = useUsdcBalanceCheck()
   
   // Validate recipient address
   const isValidRecipient = (() => {
@@ -87,40 +89,51 @@ export function TransactionSender() {
   }
   
   const handleSendTransaction = async () => {
-    if (!wallet.connected) {
+    if (!wallet.publicKey) {
       toast.error('Please connect your wallet first')
       return
     }
     
     if (!isValidRecipient) {
-      toast.error('Invalid recipient address')
+      toast.error('Please enter a valid recipient address')
       return
     }
     
     if (!isValidAmount) {
-      toast.error('Invalid amount')
+      toast.error('Please enter a valid amount')
       return
     }
     
     try {
       setLoading(true)
       
-      // Create transaction
+      // Check USDC balance using enhanced hook - require minimum 1 USDC for transaction fees
+      const hasEnoughBalance = await checkBalanceForTransaction(1)
+      
+      if (!hasEnoughBalance) {
+        // The popup will be shown automatically by the LowBalanceDetector
+        setLoading(false)
+        return
+      }
+      
+      // Create the transaction
       const transaction = await createTransaction()
       
-      // Send transaction using Privy
+      // Send the transaction
       const receipt = await sendTransaction({
         transaction,
         connection
       })
       
-      // Save transaction signature
-      setTransactionSignature(receipt.signature)
+      // Set transaction signature
+      const signature = receipt.signature
+      setTransactionSignature(signature)
       
       // Reset form
       setRecipient('')
       setAmount('')
       
+      // Show success toast
       toast.success('Transaction sent successfully!')
     } catch (error: any) {
       console.error('Transaction error:', error)

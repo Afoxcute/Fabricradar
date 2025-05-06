@@ -7,6 +7,7 @@ import { ReactQueryProvider } from './react-query-provider';
 import { ProfileRedirectWrapper } from '@/components/user-profile/profile-redirect-wrapper';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/providers/auth-provider';
+import { LowBalanceDetector } from '@/components/balance-check/low-balance-detector';
 
 export const metadata = {
   title: 'Tailor Module',
@@ -45,8 +46,10 @@ export default function RootLayout({
             <SolanaProvider>
               <AuthProvider>
                 <ProfileRedirectWrapper>
-              {/* <UiLayout links={links}>{children}</UiLayout> */}
-              {children}
+                  <LowBalanceDetector minimumUsdcRequired={5}>
+                    {/* <UiLayout links={links}>{children}</UiLayout> */}
+                    {children}
+                  </LowBalanceDetector>
                 </ProfileRedirectWrapper>
               </AuthProvider>
               <Toaster position="bottom-right" />

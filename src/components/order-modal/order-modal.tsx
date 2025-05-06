@@ -30,6 +30,8 @@ import { useTransactionToast } from '../ui/ui-layout'
 import env from '@/config/env'
 import { api } from '@/trpc/react'
 import { useAuth } from '@/providers/auth-provider'
+import { verifyUsdcBalanceOrNotify } from '@/utils/balance-check'
+import { useUsdcBalanceCheck } from '@/hooks/use-usdc-balance-check'
 
 interface OrderModalProps {
   isOpen: boolean
@@ -200,6 +202,8 @@ export default function OrderModal({
     setFormData(prev => ({ ...prev, [name]: value }))
   }
   
+  const { checkBalanceForTransaction, fundWalletDirectly } = useUsdcBalanceCheck()
+
   const handlePaymentClick = async () => {
     if (!wallet.connected || !wallet.publicKey) {
       toast.error('Please connect your wallet first')
@@ -221,8 +225,12 @@ export default function OrderModal({
       return
     }
 
+    // Check USDC balance using our enhanced method
+    const hasEnoughBalance = await checkBalanceForTransaction(parseFloat(formData.usdcAmount))
+    
     if (!hasEnoughBalance) {
-      toast.error('Insufficient USDC balance')
+      // The popup will be shown automatically by the LowBalanceDetector
+      // No need for additional error message as it's handled by the detector
       return
     }
 

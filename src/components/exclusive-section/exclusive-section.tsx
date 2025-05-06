@@ -1,126 +1,159 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import { Button } from '../ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+import { api } from '@/trpc/react';
+import { Clock, DollarSign, Loader2 } from 'lucide-react';
+
+type Category = 'all' | 'formal' | 'casual' | 'traditional' | 'modern';
+
+interface Design {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  imageUrl: string | null;
+  images?: string[] | null;
+  averageTimeline: string;
+  tailorId: number;
+  tailor?: {
+    id: number;
+    firstName: string | null;
+    lastName: string | null;
+  };
+}
 
 const ExclusiveSection = () => {
+  const [category, setCategory] = useState<Category>('all');
+  
+  // Fetch designs from the API
+  const { data: designsData, isLoading, error } = api.designs.getAllDesigns.useQuery({ limit: 4 });
+
   return (
     <section className="container mx-auto py-16">
       <h2 className="text-2xl font-bold mb-8">Exclusive Tailor-Made Designs</h2>
 
       <div className="flex flex-wrap gap-3 mb-8">
         <Button
-          variant="secondary"
-          className="rounded-full bg-cyan-500 hover:bg-cyan-600 text-white"
+          variant={category === 'all' ? 'secondary' : 'outline'}
+          className={category === 'all' ? 
+            "rounded-full bg-cyan-500 hover:bg-cyan-600 text-white" : 
+            "rounded-full border-gray-700 hover:bg-gray-800"}
+          onClick={() => setCategory('all')}
         >
           All
         </Button>
         <Button
-          variant="outline"
-          className="rounded-full border-gray-700 hover:bg-gray-800"
+          variant={category === 'formal' ? 'secondary' : 'outline'}
+          className={category === 'formal' ? 
+            "rounded-full bg-cyan-500 hover:bg-cyan-600 text-white" : 
+            "rounded-full border-gray-700 hover:bg-gray-800"}
+          onClick={() => setCategory('formal')}
         >
-          Collectibles
+          Formal
         </Button>
         <Button
-          variant="outline"
-          className="rounded-full border-gray-700 hover:bg-gray-800"
+          variant={category === 'casual' ? 'secondary' : 'outline'}
+          className={category === 'casual' ? 
+            "rounded-full bg-cyan-500 hover:bg-cyan-600 text-white" : 
+            "rounded-full border-gray-700 hover:bg-gray-800"}
+          onClick={() => setCategory('casual')}
         >
-          Music
+          Casual
         </Button>
         <Button
-          variant="outline"
-          className="rounded-full border-gray-700 hover:bg-gray-800"
+          variant={category === 'traditional' ? 'secondary' : 'outline'}
+          className={category === 'traditional' ? 
+            "rounded-full bg-cyan-500 hover:bg-cyan-600 text-white" : 
+            "rounded-full border-gray-700 hover:bg-gray-800"}
+          onClick={() => setCategory('traditional')}
         >
-          Metaverse
+          Traditional
         </Button>
         <Button
-          variant="outline"
-          className="rounded-full border-gray-700 hover:bg-gray-800"
+          variant={category === 'modern' ? 'secondary' : 'outline'}
+          className={category === 'modern' ? 
+            "rounded-full bg-cyan-500 hover:bg-cyan-600 text-white" : 
+            "rounded-full border-gray-700 hover:bg-gray-800"}
+          onClick={() => setCategory('modern')}
         >
-          Virtual Worlds
+          Modern
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* NFT Items - First Row */}
-        {[
-          { id: '1', name: 'Pink Midi Dress', price: '1.2 USDC', usd: '$1997' },
-          {
-            id: '2',
-            name: 'White Kaftan With Beads',
-            price: '1.5 USDC',
-            usd: '$2500.12',
-          },
-          { id: '3', name: 'Mint Green Dress', price: '1.1 USDC', usd: '$1837' },
-          {
-            id: '4',
-            name: 'Agbada for Men With Embroidery',
-            price: '1.6 USDC',
-            usd: '$2667',
-          },
-        ].map((item, i) => (
-          <Link href={`/product/${item.id}`} key={i}>
-            <div className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800 transition-all hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-500/20">
+      {isLoading ? (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 size={24} className="animate-spin text-cyan-500" />
+          <span className="ml-2 text-gray-400">Loading designs...</span>
+        </div>
+      ) : error ? (
+        <div className="bg-red-900/30 border border-red-800 text-red-500 px-4 py-3 rounded-lg my-8">
+          <p>Failed to load designs. Please try again later.</p>
+        </div>
+      ) : designsData?.designs.length === 0 ? (
+        <div className="text-center py-16 bg-gray-900/30 rounded-xl border border-gray-800">
+          <p className="text-gray-400">No designs available yet. Check back soon!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {designsData?.designs.map((design) => {
+            // Get tailor name
+            const tailorName = design.tailor
+              ? `${design.tailor.firstName || ''} ${design.tailor.lastName || ''}`.trim() || 'Anonymous Tailor'
+              : 'Anonymous Tailor';
+            
+            // Get image URL (from API or fallback) - ensure it's always a string
+            let imageUrl: string = '/product1.jpeg';
+            if (design.images && Array.isArray(design.images) && design.images.length > 0) {
+              imageUrl = design.images[0] as string;
+            } else if (design.imageUrl) {
+              imageUrl = design.imageUrl;
+            }
+              
+            return (
+              <div key={design.id} className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800 transition-transform hover:scale-[1.02]">
               <div className="aspect-[3/4] relative">
                 <Image
-                  src={`/product${i + 1}.jpeg?height=400&width=300`}
-                  alt={item.name}
-                  width={300}
-                  height={400}
+                    src={imageUrl}
+                    alt={design.title}
+                    width={400}
+                    height={533}
                   className="w-full h-full object-cover"
+                    unoptimized={imageUrl.startsWith('http')}
                 />
               </div>
               <div className="p-4">
-                <h3 className="font-medium text-sm truncate">{item.name}</h3>
-                <div className="flex justify-between items-center mt-2">
-                  <div>
-                    <p className="text-cyan-400 font-bold">{item.price}</p>
-                    <p className="text-gray-400 text-xs">{item.usd}</p>
+                  <h3 className="font-bold">{design.title}</h3>
+                  <p className="text-sm text-gray-400 mb-3">by {tailorName}</p>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center text-cyan-500">
+                      <DollarSign size={16} className="mr-1" />
+                      <span className="font-semibold">${design.price.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="flex items-center text-gray-400 text-sm">
+                      <Clock size={16} className="mr-1" />
+                      <span>{design.averageTimeline}</span>
+                    </div>
                   </div>
+
+                  <Link href={`/product/${design.id}`}>
+                    <Button
+                      variant="outline"
+                      className="w-full mt-4 border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+                    >
+                      View Details
+                    </Button>
+                  </Link>
                 </div>
               </div>
+            );
+          })}
             </div>
-          </Link>
-        ))}
-
-        {/* NFT Items - Second Row */}
-        {/* {[
-          { name: 'Agbada Kaftan', price: '1.3 USDC', usd: '$2165.12' },
-          { name: 'African Aso Oke', price: '1.5 USDC', usd: '$2500' },
-          { name: 'Safari Suit', price: '1.1 USDC', usd: '$1837' },
-          { name: 'Brocaded Pocket Kaftan', price: '1.8 USDC', usd: '$3000.12' },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800"
-          >
-            <div className="aspect-[3/4] relative">
-              <Image
-                src="/placeholder.svg?height=400&width=300"
-                alt={item.name}
-                width={300}
-                height={400}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="font-medium text-sm truncate">{item.name}</h3>
-              <div className="flex justify-between items-center mt-2">
-                <div>
-                  <p className="text-cyan-400 font-bold">{item.price}</p>
-                  <p className="text-gray-400 text-xs">{item.usd}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))} */}
-      </div>
-
-      <div className="flex justify-center mt-12">
-        <Button className="bg-transparent border border-gray-700 hover:bg-gray-800 text-white px-8">
-          Enter Marketplace
-        </Button>
-      </div>
+      )}
     </section>
   );
 };

@@ -83,7 +83,8 @@ model Design {
   title            String
   description      String
   price            Float
-  imageUrl         String?
+  imageUrl         String?  // Legacy field - use 'images' instead
+  images           Json?    // Array of image URLs
   averageTimeline  String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

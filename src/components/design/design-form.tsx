@@ -5,7 +5,7 @@ import { api } from '@/trpc/react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import ImageUpload from './image-upload';
+import MultiImageUpload from './image-upload';
 
 interface Design {
   id: number;
@@ -13,6 +13,7 @@ interface Design {
   description: string;
   price: number;
   imageUrl: string | null;
+  images?: string[] | null;
   averageTimeline: string;
   tailorId: number;
 }
@@ -34,8 +35,9 @@ export default function DesignForm({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [averageTimeline, setAverageTimeline] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState<string[]>([]);
+  const [averageTimeline, setAverageTimeline] = useState('');
   
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -48,6 +50,7 @@ export default function DesignForm({
       setPrice(designToEdit.price.toString());
       setAverageTimeline(designToEdit.averageTimeline);
       setImageUrl(designToEdit.imageUrl || '');
+      setImages(designToEdit.images || []);
     }
   }, [isEditing, designToEdit]);
   
@@ -77,6 +80,7 @@ export default function DesignForm({
       setPrice('');
       setAverageTimeline('');
       setImageUrl('');
+      setImages([]);
     }
     
     // Show success message
@@ -143,6 +147,7 @@ export default function DesignForm({
       price: Number(price),
       averageTimeline,
       imageUrl: imageUrl || undefined,
+      images: images || undefined,
     };
     
     // Submit design - create or update
@@ -229,9 +234,9 @@ export default function DesignForm({
           </div>
           
           {/* Image Upload */}
-          <ImageUpload 
-            onImageUrlChange={setImageUrl} 
-            initialImageUrl={isEditing && designToEdit ? designToEdit.imageUrl || '' : ''}
+          <MultiImageUpload 
+            onImagesChange={setImages}
+            initialImages={isEditing && designToEdit ? designToEdit.images || [] : []}
           />
           
           {/* Error Message */}

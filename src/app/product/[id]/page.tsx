@@ -41,6 +41,14 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   // If we have a valid design, use it, otherwise use fallback data
   const design = designData?.design;
 
+  // Extend the type for design to include images field
+  type DesignWithImages = typeof design & {
+    images?: string[] | null;
+  };
+  
+  // Use the extended type
+  const designWithImages = design as DesignWithImages;
+
   // Handle start order click
   const handleStartOrder = () => {
     if (!user) {
@@ -57,21 +65,20 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   };
 
   // Fallback if design isn't loaded yet
-  const product = design ? {
-    id: design.id,
-    name: design.title,
-    price: design.price,
-    eth: design.price,
+  const product = designWithImages ? {
+    id: designWithImages.id,
+    name: designWithImages.title,
+    price: designWithImages.price,
+    eth: designWithImages.price,
     priceChange: '+1.6%',
-    description: design.description,
-    images: [
-      design.imageUrl || '/product3.jpeg?height=600&width=450',
-      '/product3.jpeg?height=150&width=100',
-      '/product3.jpeg?height=150&width=100',
-      '/product3.jpeg?height=150&width=100',
-    ],
+    description: designWithImages.description,
+    images: designWithImages.images 
+      ? [...designWithImages.images] 
+      : designWithImages.imageUrl 
+        ? [designWithImages.imageUrl]
+        : ['/product3.jpeg?height=600&width=450'],
     creator: {
-      name: design.tailor ? `${design.tailor.firstName || ''} ${design.tailor.lastName || ''}`.trim() || 'Anonymous Designer' : 'Anonymous Designer',
+      name: designWithImages.tailor ? `${designWithImages.tailor.firstName || ''} ${designWithImages.tailor.lastName || ''}`.trim() || 'Anonymous Designer' : 'Anonymous Designer',
       avatar: '/placeholder.svg?height=40&width=40',
       rating: 4.8,
       reviews: 23,
@@ -122,15 +129,15 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       {/* Order Modal */}
-      {design && (
+      {designWithImages && (
       <OrderModal
         isOpen={showOrderModal}
         onClose={() => setShowOrderModal(false)}
         productName={product.name}
-          designId={design.id}
-          tailorId={design.tailorId}
-          price={design.price}
-          designDescription={design.description}
+          designId={designWithImages.id}
+          tailorId={designWithImages.tailorId}
+          price={designWithImages.price}
+          designDescription={designWithImages.description}
       />
       )}
 
@@ -276,7 +283,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
               <Button
                 className="bg-cyan-500 hover:bg-cyan-600 text-white flex items-center gap-2"
                 onClick={handleStartOrder}
-                disabled={isLoading || !design}
+                disabled={isLoading || !designWithImages}
               >
                 <span>Start order</span>
                 <Download className="h-4 w-4" />

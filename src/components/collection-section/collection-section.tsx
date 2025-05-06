@@ -7,57 +7,26 @@ import { api } from '@/trpc/react';
 import { Clock, DollarSign, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-// Define a type for fallback designs
-interface FallbackDesign {
+interface Design {
   id: number;
   title: string;
   description: string;
   price: number;
-  imageUrl: string;
-  creator: string;
+  imageUrl: string | null;
+  images?: string[] | null;
   averageTimeline: string;
+  tailorId: number;
+  tailor?: {
+    id: number;
+    firstName: string | null;
+    lastName: string | null;
+  };
 }
 
 const CollectionSection = () => {
   // Fetch designs from the API
   const { data: designsData, isLoading, error } = api.designs.getAllDesigns.useQuery({ limit: 3 });
   
-  // Fallback designs for error or loading state
-  const fallbackDesigns: FallbackDesign[] = [
-    {
-      id: 1,
-      title: 'Urban Collection',
-      description: 'Modern urban wear with a twist of elegance',
-      price: 299.99,
-      imageUrl: '/product1.jpeg',
-      creator: 'Deluxe Lux Sensation',
-      averageTimeline: '2-3 weeks',
-    },
-    {
-      id: 2,
-      title: 'Pastel Dreams',
-      description: 'Soft pastel colors for a dreamy look',
-      price: 199.99,
-      imageUrl: '/product2.jpeg',
-      creator: 'A.I.D.A',
-      averageTimeline: '1-2 weeks',
-    },
-    {
-      id: 3,
-      title: 'Formal Elegance',
-      description: 'Sophisticated formal wear for special occasions',
-      price: 399.99,
-      imageUrl: '/product3.jpeg',
-      creator: 'Vantablack',
-      averageTimeline: '3-4 weeks',
-    },
-  ];
-  
-  // Determine which designs to display
-  const designsToDisplay = designsData?.designs && designsData.designs.length > 0
-    ? designsData.designs
-    : fallbackDesigns;
-
   return (
     <section className="max-w-[1440px] mx-auto py-16 px-4">
       <h2 className="text-2xl font-bold mb-2">Trending Collection</h2>
@@ -70,16 +39,29 @@ const CollectionSection = () => {
           <Loader2 size={24} className="animate-spin text-cyan-500" />
           <span className="ml-2 text-gray-400">Loading designs...</span>
         </div>
+      ) : error ? (
+        <div className="bg-red-900/30 border border-red-800 text-red-500 px-4 py-3 rounded-lg my-8">
+          <p>Failed to load designs. Please try again later.</p>
+        </div>
+      ) : designsData?.designs.length === 0 ? (
+        <div className="text-center py-16 bg-gray-900/30 rounded-xl border border-gray-800">
+          <p className="text-gray-400">No designs available yet. Check back soon!</p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {designsToDisplay.map((design, index) => {
+          {designsData?.designs.map((design) => {
             // Get tailor name if available from API data, otherwise use fallback
-            const tailorName = 'tailor' in design && design.tailor
+            const tailorName = design.tailor
               ? `${design.tailor.firstName || ''} ${design.tailor.lastName || ''}`.trim() || 'Anonymous Tailor'
-              : ('creator' in design ? design.creator : 'Anonymous Tailor');
+              : 'Anonymous Tailor';
             
-            // Get image URL (from API or fallback)
-            const imageUrl = design.imageUrl || fallbackDesigns[index % fallbackDesigns.length].imageUrl;
+            // Get image URL (from API or fallback) - ensure it's always a string
+            let imageUrl: string = '/product1.jpeg';
+            if (design.images && Array.isArray(design.images) && design.images.length > 0) {
+              imageUrl = design.images[0] as string;
+            } else if (design.imageUrl) {
+              imageUrl = design.imageUrl;
+            }
               
             return (
               <div key={design.id} className="bg-gray-900/50 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-800 transition-transform hover:scale-[1.02]">

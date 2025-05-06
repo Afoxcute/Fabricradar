@@ -13,6 +13,7 @@ interface DesignCardProps {
     description: string;
     price: number;
     imageUrl: string | null;
+    images?: string[] | null;
     averageTimeline: string;
     tailorId: number;
     tailor?: {
@@ -46,7 +47,16 @@ export default function DesignCard({
     <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden transition-transform hover:scale-[1.02]">
       {/* Image */}
       <div className="h-48 relative bg-gray-800">
-        {design.imageUrl ? (
+        {design.images && design.images.length > 0 ? (
+          <Image
+            src={design.images[0]}
+            alt={design.title}
+            width={400}
+            height={200}
+            className="w-full h-full object-cover"
+            unoptimized={design.images[0].startsWith('http')}
+          />
+        ) : design.imageUrl ? (
           <Image
             src={design.imageUrl}
             alt={design.title}

@@ -10,6 +10,7 @@ export const designRouter = createTRPCRouter({
       description: z.string().min(10),
       price: z.number().positive(),
       imageUrl: z.string().url().optional().nullable(),
+      images: z.array(z.string().url()).optional().nullable(),
       averageTimeline: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -22,9 +23,13 @@ export const designRouter = createTRPCRouter({
       }
       
       try {
+        // Migrate single imageUrl to images array if needed
+        const images = input.images || (input.imageUrl ? [input.imageUrl] : []);
+        
         const design = await ctx.db.design.create({
           data: {
             ...input,
+            images: images.length > 0 ? images : undefined,
             tailorId: ctx.user.id,
           },
         });
@@ -179,6 +184,7 @@ export const designRouter = createTRPCRouter({
       description: z.string().min(10).optional(),
       price: z.number().positive().optional(),
       imageUrl: z.string().url().optional().nullable(),
+      images: z.array(z.string().url()).optional().nullable(),
       averageTimeline: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -205,9 +211,15 @@ export const designRouter = createTRPCRouter({
       }
       
       try {
+        // Migrate single imageUrl to images array if needed
+        const images = input.images || (input.imageUrl ? [input.imageUrl] : undefined);
+        
         const updatedDesign = await ctx.db.design.update({
           where: { id: designId },
-          data,
+          data: {
+            ...data,
+            images: images,
+          },
         });
         
         return {

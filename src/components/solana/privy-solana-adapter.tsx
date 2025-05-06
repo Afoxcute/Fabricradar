@@ -49,7 +49,22 @@ export function PrivySolanaAdapter({ children }: { children: ReactNode }) {
         connected: true,
         connecting: false,
         disconnect: async () => {
-          await logout()
+          // Clear localStorage before disconnecting to prevent profile mixing
+          const storedUser = localStorage.getItem("auth_user");
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              if (parsedUser.walletAddress) {
+                console.log("Wallet disconnecting, clearing localStorage to prevent profile mixing");
+                localStorage.removeItem("auth_user");
+                // Set flag for wallet disconnection
+                sessionStorage.setItem("just_wallet_disconnected", "true");
+              }
+            } catch (error) {
+              console.error("Error parsing user data during wallet disconnect", error);
+            }
+          }
+          await logout();
         },
         sendTransaction: async (transaction, connection, options = {}) => {
           // Use Privy's wallet to sign and send the transaction
@@ -90,7 +105,11 @@ export function PrivySolanaAdapter({ children }: { children: ReactNode }) {
         connected: false,
         connecting: false,
         disconnect: async () => {
-          await logout()
+          // Clear localStorage even in disconnected state for consistency
+          localStorage.removeItem("auth_user");
+          // Set flag for wallet disconnection
+          sessionStorage.setItem("just_wallet_disconnected", "true");
+          await logout();
         },
         sendTransaction: async () => {
           throw new Error('Wallet not connected')

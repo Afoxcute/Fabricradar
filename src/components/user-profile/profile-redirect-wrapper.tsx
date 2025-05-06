@@ -44,6 +44,20 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
     } else {
       setJustLoggedOut(false);
     }
+    
+    // Also check for wallet disconnection flag
+    const isWalletDisconnected = sessionStorage.getItem("just_wallet_disconnected");
+    if (isWalletDisconnected === "true") {
+      // Clear the flag
+      sessionStorage.removeItem("just_wallet_disconnected");
+      // Treat similar to logout to prevent immediate redirect
+      setJustLoggedOut(true);
+      
+      // Reset the flag after a delay
+      setTimeout(() => {
+        setJustLoggedOut(false);
+      }, 3000);
+    }
   }, [user, connected, publicKey]);
 
   // Redirect tailor to dashboard when profile is complete and they've connected wallet
@@ -77,6 +91,16 @@ export function ProfileRedirectWrapper({ children }: ProfileRedirectWrapperProps
 
         // If user just logged out, don't redirect to profile completion
         if (justLoggedOut) {
+          setIsCheckingProfile(false);
+          setNeedsCompletion(false);
+          return;
+        }
+        
+        // Check for wallet disconnection flag as an additional safeguard
+        const isWalletDisconnected = sessionStorage.getItem("just_wallet_disconnected");
+        if (isWalletDisconnected === "true") {
+          console.log("Wallet was just disconnected, skipping profile completion check");
+          sessionStorage.removeItem("just_wallet_disconnected");
           setIsCheckingProfile(false);
           setNeedsCompletion(false);
           return;

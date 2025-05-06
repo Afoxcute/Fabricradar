@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
+import type { ClassNames } from "react-day-picker"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
@@ -26,7 +27,7 @@ function Calendar({
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100 border-gray-700"
+          "h-7 w-7 bg-transparent p-0 text-gray-300 hover:text-gray-100"
         ),
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
@@ -35,26 +36,31 @@ function Calendar({
         head_cell:
           "text-gray-400 rounded-md w-9 font-normal text-[0.8rem]",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-gray-800/50 [&:has([aria-selected])]:bg-gray-800 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-slate-700/20 [&:has([aria-selected])]:bg-slate-700 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-gray-700 text-gray-200"
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-slate-700"
         ),
         day_range_end: "day-range-end",
         day_selected:
-          "bg-cyan-500 text-white hover:bg-cyan-500 hover:text-white focus:bg-cyan-500 focus:text-white",
-        day_today: "bg-gray-800 text-white",
+          "bg-cyan-500 text-gray-50 hover:bg-cyan-500 hover:text-gray-50 focus:bg-cyan-500 focus:text-gray-50",
+        day_today: "text-cyan-500 font-bold",
         day_outside:
-          "day-outside text-gray-500 opacity-50 aria-selected:bg-gray-800/50 aria-selected:text-gray-400 aria-selected:opacity-30",
+          "day-outside text-gray-500 opacity-50 aria-selected:bg-slate-700/50",
         day_disabled: "text-gray-500 opacity-50",
         day_range_middle:
-          "aria-selected:bg-gray-800 aria-selected:text-gray-200",
+          "aria-selected:bg-slate-600 aria-selected:text-gray-300",
         day_hidden: "invisible",
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        Chevron: ({ orientation }) => {
+          return orientation === "left" ? (
+            <ChevronLeft className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )
+        }
       }}
       {...props}
     />

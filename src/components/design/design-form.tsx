@@ -260,7 +260,7 @@ export default function DesignForm({
           <div>
             <h3 className="text-lg font-medium text-gray-300 mb-3">Design Timeline Availability</h3>
             <p className="text-gray-400 text-sm mb-4">
-              Set when you're available to work on this design.
+              Set when you&apos;re available to work on this design.
             </p>
             <DesignTimelinePicker 
               value={timeline}

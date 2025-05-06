@@ -5,6 +5,7 @@ import { Clock, DollarSign, User, Eye } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '../ui/button';
+import { format } from 'date-fns';
 
 interface DesignCardProps {
   design: {
@@ -20,6 +21,9 @@ interface DesignCardProps {
       firstName: string | null;
       lastName: string | null;
     };
+    timelineDate?: Date | null;
+    timelineStartTime?: string | null;
+    timelineEndTime?: string | null;
   };
   showActions?: boolean;
   onEdit?: (design: any) => void;
@@ -41,6 +45,13 @@ export default function DesignCard({
   const truncatedDescription = design.description.length > 120
     ? `${design.description.substring(0, 120)}...`
     : design.description;
+  
+  // Format the detailed timeline if available
+  const hasDetailedTimeline = design.timelineDate && design.timelineStartTime && design.timelineEndTime;
+  
+  const formattedTimeline = hasDetailedTimeline 
+    ? `${format(design.timelineDate as Date, 'PPP')} at ${design.timelineStartTime} - ${design.timelineEndTime}`
+    : design.averageTimeline;
   
   return (
     <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden transition-transform hover:scale-[1.02]">
@@ -76,7 +87,7 @@ export default function DesignCard({
           
           <div className="flex items-center text-gray-400 text-sm">
             <Clock size={16} className="mr-1" />
-            <span>{design.averageTimeline}</span>
+            <span>{formattedTimeline}</span>
           </div>
         </div>
         

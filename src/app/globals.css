@@ -37,3 +37,33 @@ body {
 .wallet-adapter-button {
   font-family: inherit !important;
 }
+
+/* Calendar styles */
+.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: 14 165 233;
+  --rdp-background-color: 14 165 233;
+  --rdp-accent-color-dark: 14 165 233;
+  --rdp-background-color-dark: 14 165 233;
+  --rdp-outline: 2px solid var(--rdp-accent-color);
+  --rdp-outline-selected: 2px solid var(--rdp-accent-color);
+  --rdp-selected-color: #fff;
+  margin: 0;
+}
+
+.rdp-month {
+  background-color: rgb(17, 24, 39);
+  border-radius: 0.5rem;
+  padding: 8px;
+}
+
+.rdp-day_selected, 
+.rdp-day_selected:focus-visible, 
+.rdp-day_selected:hover {
+  background-color: rgb(14, 165, 233) !important;
+  color: white !important;
+}
+
+.rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+  background-color: rgba(14, 165, 233, 0.2) !important;
+}

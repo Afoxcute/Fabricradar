@@ -85,6 +85,9 @@ model Design {
   price            Float
   imageUrl         String?
   averageTimeline  String
+  timelineDate     DateTime?
+  timelineStartTime String?
+  timelineEndTime   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   tailorId         Int      // Tailor user ID

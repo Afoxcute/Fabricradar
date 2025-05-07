@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Package, User, CreditCard, Clock, Settings, LogOut } from 'lucide-react';
+import { Package, User, CreditCard, Clock, Settings, LogOut, Award } from 'lucide-react';
 import { api } from '@/trpc/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import Header from '@/components/header/header';
 import Footer from '@/components/footer/footer';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import Link from 'next/link';
+import { CustomerRewards } from '@/components/rewards/customer-rewards';
+import { CustomerOrders } from '@/components/order/customer-orders';
 
 // Define JSON value types to match Prisma's JsonValue
 type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
@@ -39,7 +41,7 @@ interface Order {
 export default function AccountPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'wallet'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'wallet' | 'rewards'>('orders');
   
   // Fetch user's orders
   const { data: ordersData, isLoading: isLoadingOrders } = api.orders.getCustomerOrders.useQuery(
@@ -102,6 +104,18 @@ export default function AccountPage() {
                 </button>
                 
                 <button
+                  onClick={() => setActiveTab('rewards')}
+                  className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors ${
+                    activeTab === 'rewards' 
+                      ? 'bg-cyan-600/20 text-cyan-400' 
+                      : 'hover:bg-gray-700/50 text-gray-300'
+                  }`}
+                >
+                  <Award className="h-5 w-5" />
+                  <span>My Rewards</span>
+                </button>
+                
+                <button
                   onClick={() => setActiveTab('profile')}
                   className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors ${
                     activeTab === 'profile' 
@@ -145,58 +159,28 @@ export default function AccountPage() {
                   <h1 className="text-2xl font-bold">My Orders</h1>
                 </div>
                 
-                {isLoadingOrders ? (
-                  <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 text-center">
-                    <Clock className="h-8 w-8 animate-spin text-cyan-500 mx-auto mb-2" />
-                    <p className="text-gray-400">Loading your orders...</p>
-                  </div>
-                ) : !ordersData?.orders?.length ? (
-                  <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 text-center">
-                    <Package className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-                    <p className="text-gray-400 mb-4">You don&apos;t have any orders yet.</p>
-                    <Link href="/">
-                      <Button>Start Shopping</Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {ordersData.orders.map((order: Order) => (
-                      <Link key={order.id} href={`/orders/${order.id}`}>
-                        <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 hover:bg-gray-800/60 transition-colors cursor-pointer">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-semibold text-lg">{order.orderNumber}</p>
-                              <p className="text-sm text-gray-400">
-                                {new Date(order.createdAt).toLocaleDateString()}
-                              </p>
-                              {order.description && (
-                                <p className="text-gray-300 mt-2 line-clamp-1">{order.description}</p>
-                              )}
-                            </div>
-                            
-                            <div className="text-right">
-                              <p className="font-bold text-lg">${order.price.toFixed(2)}</p>
-                              <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                                order.status === 'COMPLETED' ? 'bg-green-900/50 text-green-400' :
-                                order.status === 'ACCEPTED' ? 'bg-cyan-900/50 text-cyan-400' :
-                                order.status === 'PENDING' ? 'bg-yellow-900/50 text-yellow-400' :
-                                'bg-red-900/50 text-red-400'
-                              }`}>
-                                {order.status}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                    
-                    {ordersData.nextCursor && (
-                      <div className="text-center pt-4">
-                        <Button variant="outline">Load More Orders</Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6">
+                  <CustomerOrders limit={5} showFilters={true} />
+                </div>
+              </div>
+            )}
+            
+            {/* Rewards Tab */}
+            {activeTab === 'rewards' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-2xl font-bold">My Rewards</h1>
+                  
+                  <Link href="/rewards">
+                    <Button variant="outline" className="text-sm text-cyan-400 border-cyan-400/30 hover:bg-cyan-950/30">
+                      Browse All Rewards
+                    </Button>
+                  </Link>
+                </div>
+                
+                <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6">
+                  <CustomerRewards />
+                </div>
               </div>
             )}
             

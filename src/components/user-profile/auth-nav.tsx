@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "../solana/privy-solana-adapter";
 import { shortenAddress } from "@/lib/utils";
-import { User, LogOut, ChevronDown, Scissors, LayoutDashboard, Wallet, ShoppingBag } from "lucide-react";
+import { User, LogOut, ChevronDown, Scissors, LayoutDashboard, Wallet, ShoppingBag, Award } from "lucide-react";
 import Link from "next/link";
 
 export function AuthNav() {
@@ -40,6 +40,11 @@ export function AuthNav() {
 
   const navigateToFundWallet = () => {
     router.push("/fund-wallet");
+    setDropdownOpen(false);
+  };
+
+  const navigateToRewards = () => {
+    router.push("/rewards");
     setDropdownOpen(false);
   };
 
@@ -102,6 +107,14 @@ export function AuthNav() {
               >
                 <ShoppingBag className="h-4 w-4 mr-2" />
                 My Orders
+              </button>
+              
+              <button
+                onClick={navigateToRewards}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+              >
+                <Award className="h-4 w-4 mr-2" />
+                Rewards & Offers
               </button>
               
               <button

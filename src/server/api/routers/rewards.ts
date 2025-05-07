@@ -243,4 +243,108 @@ export const rewardsRouter = createTRPCRouter({
         });
       }
     }),
+
+  // Get all available active rewards for customers
+  getAvailableRewards: publicProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const now = new Date();
+        
+        // Get all active rewards that haven't expired yet
+        const rewards = await ctx.db.reward.findMany({
+          where: {
+            isActive: true,
+            endDate: {
+              gte: now,
+            },
+            startDate: {
+              lte: now,
+            },
+          },
+          include: {
+            tailor: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+
+        return { 
+          success: true,
+          rewards 
+        };
+      } catch (error) {
+        console.error('Error fetching available rewards:', error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch available rewards",
+        });
+      }
+    }),
+    
+  // Redeem a reward (increment redemption count)
+  redeemReward: protectedProcedure
+    .input(z.object({
+      rewardId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const reward = await ctx.db.reward.findUnique({
+          where: { id: input.rewardId },
+        });
+
+        if (!reward) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Reward not found",
+          });
+        }
+
+        // Check if reward is active and not expired
+        const now = new Date();
+        if (!reward.isActive || reward.endDate < now || reward.startDate > now) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This reward is not currently available",
+          });
+        }
+
+        // Check if reward has reached max redemptions
+        if (reward.maxRedemptions && reward.redemptionCount >= reward.maxRedemptions) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "This reward has reached its maximum number of redemptions",
+          });
+        }
+
+        // Increment the redemption count
+        const updatedReward = await ctx.db.reward.update({
+          where: { id: input.rewardId },
+          data: {
+            redemptionCount: {
+              increment: 1,
+            },
+          },
+        });
+
+        return {
+          success: true,
+          reward: updatedReward,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        console.error('Error redeeming reward:', error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to redeem reward",
+        });
+      }
+    }),
 }); 

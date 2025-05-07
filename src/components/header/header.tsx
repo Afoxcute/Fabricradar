@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
-import { ChevronRight, Copy, Check, Loader2, Wallet } from 'lucide-react';
+import { ChevronRight, Copy, Check, Loader2, Wallet, Award, User } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
 import Image from 'next/image';
@@ -87,8 +87,22 @@ const Header = () => {
           >
             Marketplace
           </Link>
+          <Link
+            href="/rewards"
+            className="text-sm hover:text-cyan-400 transition-colors flex items-center gap-1"
+          >
+            <Award className="h-4 w-4" />
+            Rewards
+          </Link>
           {authenticated && wallet.connected && (
             <>
+              <Link
+                href="/dashboard"
+                className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                <User className="h-4 w-4" />
+                Dashboard
+              </Link>
               <Link
                 href="/fund-wallet"
                 className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"

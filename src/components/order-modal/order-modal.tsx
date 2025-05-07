@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Modal from '../ui/modal'
 import { Button } from '../ui/button'
-import { ChevronsRight, ExternalLink, Loader2, Calendar, Clock } from 'lucide-react'
+import { ChevronsRight, ExternalLink, Loader2, Calendar, Clock, Award, Percent, ChevronDown, ChevronUp } from 'lucide-react'
 import { useWallet } from '../solana/privy-solana-adapter'
 import { useConnection } from '@solana/wallet-adapter-react'
 import { USDC_MINT_ADDRESS } from '../account/account-data-access'
@@ -103,6 +103,17 @@ export default function OrderModal({
       console.error('Failed to create order:', error);
       toast.error('Failed to create order in our system');
       setPaymentStatus({ loading: false, success: false, error: true, signature: '' });
+    }
+  });
+  
+  // Add reward redemption mutation
+  const redeemRewardMutation = api.rewards.redeemReward.useMutation({
+    onSuccess: () => {
+      console.log('Reward redeemed successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to redeem reward:', error);
+      // Don't show error to user as the order was already placed successfully
     }
   });
 
@@ -290,6 +301,13 @@ export default function OrderModal({
         });
       }
       
+      // Redeem the reward if applied
+      if (selectedReward?.id) {
+        redeemRewardMutation.mutate({ 
+          rewardId: selectedReward.id 
+        });
+      }
+      
       // Close modal after a delay
       setTimeout(() => {
         onClose()
@@ -418,6 +436,81 @@ export default function OrderModal({
     }
   }, [isOpen]);
   
+  // Add the following to the existing OrderModal component after formData useState
+  const [showRewards, setShowRewards] = useState(false);
+  const [selectedReward, setSelectedReward] = useState<{
+    id: number;
+    name: string;
+    type: string;
+    value: number;
+  } | null>(null);
+
+  // Get available rewards that can be applied to this order
+  const { data: rewardsData, isLoading: isLoadingRewards } = api.rewards.getAvailableRewards.useQuery();
+  
+  const availableRewards = React.useMemo(() => {
+    if (!rewardsData?.rewards) return [];
+    
+    // Only return rewards that:
+    // 1. Are active
+    // 2. Meet the minimum spend requirement if it exists
+    // 3. Are from the current tailor (if tailorId is provided)
+    return rewardsData.rewards.filter(reward => {
+      const priceValue = parseFloat(formData.usdcAmount);
+      const meetsMinSpend = !reward.minSpend || priceValue >= reward.minSpend;
+      const isFromTailor = !tailorId || reward.tailorId === tailorId;
+      
+      return reward.isActive && meetsMinSpend && isFromTailor;
+    });
+  }, [rewardsData, formData.usdcAmount, tailorId]);
+
+  // Apply a reward to the current order
+  const applyReward = (reward: any) => {
+    let appliedPrice = parseFloat(formData.usdcAmount);
+    
+    // Apply discount if the reward is a discount type
+    if (reward.type === 'DISCOUNT') {
+      // Calculate discount amount
+      const discountAmount = (price * reward.value) / 100;
+      appliedPrice = parseFloat((price - discountAmount).toFixed(2));
+    }
+    
+    // Update form data with new price
+    setFormData({
+      ...formData,
+      usdcAmount: appliedPrice.toString()
+    });
+    
+    // Store the selected reward
+    setSelectedReward({
+      id: reward.id,
+      name: reward.name,
+      type: reward.type,
+      value: reward.value
+    });
+    
+    // Close the rewards panel
+    setShowRewards(false);
+    
+    // Show success toast
+    toast.success(`Reward "${reward.name}" applied!`);
+  };
+  
+  // Remove an applied reward
+  const removeReward = () => {
+    // Reset price to original
+    setFormData({
+      ...formData,
+      usdcAmount: price.toString()
+    });
+    
+    // Clear selected reward
+    setSelectedReward(null);
+    
+    // Show toast
+    toast.success('Reward removed');
+  };
+
   return (
     <Modal 
       isOpen={isOpen} 
@@ -636,6 +729,96 @@ export default function OrderModal({
               />
             </div>
           </div>
+        </div>
+        
+        {/* Rewards Section */}
+        <div className="mt-6 border-t border-gray-800 pt-6">
+          <div 
+            className="flex justify-between items-center cursor-pointer" 
+            onClick={() => setShowRewards(!showRewards)}
+          >
+            <div className="flex items-center">
+              <Award className="h-5 w-5 text-cyan-500 mr-2" />
+              <h3 className="text-lg font-medium text-white">Rewards & Discounts</h3>
+            </div>
+            {showRewards ? (
+              <ChevronUp className="h-5 w-5 text-gray-400" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-gray-400" />
+            )}
+          </div>
+          
+          {selectedReward && (
+            <div className="mt-3 bg-cyan-900/20 border border-cyan-800 rounded-lg p-3 flex justify-between items-center">
+              <div>
+                <p className="text-cyan-400 font-medium">{selectedReward.name}</p>
+                <p className="text-sm text-gray-400">
+                  {selectedReward.type === 'DISCOUNT' 
+                    ? `${selectedReward.value}% discount applied` 
+                    : `${selectedReward.type} reward applied`}
+                </p>
+              </div>
+              <button 
+                onClick={removeReward}
+                className="text-gray-400 hover:text-red-400"
+              >
+                &times;
+              </button>
+            </div>
+          )}
+          
+          {showRewards && (
+            <div className="mt-3 bg-gray-800 border border-gray-700 rounded-lg p-4">
+              {isLoadingRewards ? (
+                <div className="flex justify-center items-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-cyan-500 mr-2" />
+                  <span>Loading rewards...</span>
+                </div>
+              ) : availableRewards.length > 0 ? (
+                <div className="space-y-3">
+                  {availableRewards.map(reward => (
+                    <div 
+                      key={reward.id} 
+                      className="bg-gray-900 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-cyan-700 transition-all"
+                      onClick={() => applyReward(reward)}
+                    >
+                      <div className="flex justify-between">
+                        <h4 className="font-medium">{reward.name}</h4>
+                        <span className="text-sm bg-cyan-900/50 text-cyan-400 px-2 py-0.5 rounded">
+                          {reward.type === 'DISCOUNT' ? (
+                            <span className="flex items-center">
+                              <Percent className="h-3 w-3 mr-1" />
+                              {reward.value}% OFF
+                            </span>
+                          ) : reward.type === 'FREE_ITEM' ? (
+                            'Free Item'
+                          ) : reward.type === 'POINTS' ? (
+                            `${reward.value} Points`
+                          ) : (
+                            'Priority'
+                          )}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-400 mt-1">{reward.description}</p>
+                      
+                      {reward.minSpend && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          Min spend: ${reward.minSpend}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-400">No rewards available for this order</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Check back later or contact your tailor for special offers
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         {/* Payment Method Section */}

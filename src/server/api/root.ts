@@ -4,6 +4,7 @@ import { userRouter } from "../api/routers/user";
 import { orderRouter } from "../api/routers/order";
 import { designRouter } from "../api/routers/design";
 import { orderChatRouter } from "../api/routers/order-chat";
+import { rewardsRouter } from "../api/routers/rewards";
 
 /**
  * This is the primary router for your server.
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   orders: orderRouter,
   designs: designRouter,
   orderChat: orderChatRouter,
+  rewards: rewardsRouter,
 });
 
 // export type definition of API

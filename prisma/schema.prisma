@@ -22,6 +22,14 @@ enum OrderStatus {
   REJECTED
 }
 
+// Define RewardType enum
+enum RewardType {
+  DISCOUNT
+  FREE_ITEM
+  POINTS
+  PRIORITY
+}
+
 model User {
   id              Int                @id @default(autoincrement())
   createdAt       DateTime           @default(now())
@@ -37,6 +45,7 @@ model User {
   orders          Order[]            // Relation to orders
   designs         Design[]           // Relation to designs
   chatMessages    OrderChatMessage[] // Relation to chat messages
+  rewards         Reward[]           // Relation to rewards
   
   @@index([phone], map: "phone_idx")
   @@index([email], map: "email_idx")
@@ -127,4 +136,28 @@ model OrderChatMessage {
   
   @@index([orderId], name: "message_order_idx")
   @@index([userId], name: "message_user_idx")
+}
+
+// Define Reward model for tailor rewards
+model Reward {
+  id               Int        @id @default(autoincrement())
+  name             String
+  description      String
+  type             RewardType
+  value            Float      // Percentage for discount, number of items for free items, points value
+  minSpend         Float?     // Minimum spend required (optional)
+  startDate        DateTime
+  endDate          DateTime
+  isActive         Boolean    @default(true)
+  imageUrl         String?    // Optional image URL
+  redemptionCount  Int        @default(0)
+  maxRedemptions   Int?       // Maximum number of redemptions (optional)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  tailorId         Int        // Tailor user ID
+  tailor           User       @relation(fields: [tailorId], references: [id])
+  
+  @@index([tailorId], name: "reward_tailor_idx")
+  @@index([type], name: "reward_type_idx")
+  @@index([isActive], name: "reward_active_idx")
 }

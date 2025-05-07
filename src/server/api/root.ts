@@ -5,6 +5,7 @@ import { orderRouter } from "../api/routers/order";
 import { designRouter } from "../api/routers/design";
 import { orderChatRouter } from "../api/routers/order-chat";
 import { rewardsRouter } from "../api/routers/rewards";
+import { tokenRouter } from "../api/routers/tokens";
 
 /**
  * This is the primary router for your server.
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   designs: designRouter,
   orderChat: orderChatRouter,
   rewards: rewardsRouter,
+  tokens: tokenRouter,
 });
 
 // export type definition of API

@@ -18,15 +18,15 @@ import {
   Calendar,
   Clock,
   Info,
-  Search,
-  Coins
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TailorNav } from '@/components/tailor/tailor-nav';
 import Image from 'next/image';
 import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
-import { TokenMinter } from '@/components/rewards/token-minter';
+import { TokenList } from '@/components/token/token-list';
+import { CompressedTokenMinter } from '@/components/token/compressed-token-minter';
 
 // Define the same RewardType as in Prisma schema
 type RewardType = 'DISCOUNT' | 'FREE_ITEM' | 'POINTS' | 'PRIORITY';
@@ -132,6 +132,16 @@ export default function TailorRewardsPage() {
       toast.error(`Failed to delete reward: ${error.message}`);
     }
   });
+  
+  // Token creation mutation
+  const createTokenMutation = api.tokens.createToken.useMutation({
+    onSuccess: () => {
+      toast.success('Token created and stored successfully!');
+    },
+    onError: (error) => {
+      toast.error(`Failed to store token: ${error.message}`);
+    }
+  });
 
   // Get rewards for the current tailor
   const rewardsQuery = api.rewards.getTailorRewards.useQuery(
@@ -192,47 +202,68 @@ export default function TailorRewardsPage() {
             <h1 className="text-3xl font-bold text-white mb-2">Customer Rewards</h1>
             <p className="text-gray-400">Create and manage special offers and rewards for your customers</p>
           </div>
-          <Button 
-            onClick={() => setActiveTab('create')}
-            className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <Plus size={18} />
-            Create New Reward
-          </Button>
+          {activeTab !== 'tokens' ? (
+            <Button 
+              onClick={() => setActiveTab('create')}
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Create New Reward
+            </Button>
+          ) : (
+            <div className="flex gap-4">
+              <Button 
+                onClick={() => setActiveTab('active')}
+                variant="outline"
+                className="text-gray-300 border-gray-700 hover:bg-gray-800"
+              >
+                Back to Rewards
+              </Button>
+              <Button 
+                onClick={() => document.getElementById('createTokenSection')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Create Token
+              </Button>
+            </div>
+          )}
         </div>
         
-        {/* Reward Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 flex items-center">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mr-4">
-              <Award className="h-6 w-6 text-blue-500" />
+        {/* Reward Statistics Cards - Only show on reward tabs */}
+        {activeTab !== 'tokens' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 flex items-center">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mr-4">
+                <Award className="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Total Active Rewards</p>
+                <p className="text-2xl font-bold">{rewards.filter((r: Reward) => r.isActive).length}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-gray-400 text-sm">Total Active Rewards</p>
-              <p className="text-2xl font-bold">{rewards.filter((r: Reward) => r.isActive).length}</p>
+            
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 flex items-center">
+              <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
+                <Ticket className="h-6 w-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Total Redemptions</p>
+                <p className="text-2xl font-bold">{rewards.reduce((sum: number, r: Reward) => sum + r.redemptionCount, 0)}</p>
+              </div>
+            </div>
+            
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 flex items-center">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mr-4">
+                <Users className="h-6 w-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-gray-400 text-sm">Unique Customers</p>
+                <p className="text-2xl font-bold">84</p>
+              </div>
             </div>
           </div>
-          
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 flex items-center">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mr-4">
-              <Ticket className="h-6 w-6 text-green-500" />
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Total Redemptions</p>
-              <p className="text-2xl font-bold">{rewards.reduce((sum: number, r: Reward) => sum + r.redemptionCount, 0)}</p>
-            </div>
-          </div>
-          
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 flex items-center">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center mr-4">
-              <Users className="h-6 w-6 text-purple-500" />
-            </div>
-            <div>
-              <p className="text-gray-400 text-sm">Unique Customers</p>
-              <p className="text-2xl font-bold">84</p>
-            </div>
-          </div>
-        </div>
+        )}
         
         {/* Tabs */}
         <div className="flex border-b border-gray-800 mb-6 gap-2">
@@ -268,36 +299,46 @@ export default function TailorRewardsPage() {
           </button>
           <button
             onClick={() => setActiveTab('tokens')}
-            className={`px-4 py-2 font-medium text-sm flex items-center ${
+            className={`px-4 py-2 font-medium text-sm ${
               activeTab === 'tokens' 
                 ? 'text-cyan-400 border-b-2 border-cyan-400' 
                 : 'text-gray-400 hover:text-gray-300'
             }`}
           >
-            <Coins className="h-4 w-4 mr-1" />
-            Token Rewards
+            Reward Tokens
           </button>
         </div>
         
-        {/* Token Minter Component */}
-        {activeTab === 'tokens' ? (
-          <div className="max-w-md mx-auto">
-            <TokenMinter />
-            <div className="mt-6 bg-gray-900/30 border border-gray-800 rounded-xl p-6">
-              <h3 className="text-lg font-medium mb-4 flex items-center">
-                <Info className="h-5 w-5 mr-2 text-cyan-400" />
-                About Token Rewards
-              </h3>
-              <p className="text-gray-400 mb-4">
-                Compressed tokens (cTokens) are a special type of SPL token on Solana. You can mint these tokens
-                and distribute them to your customers as rewards.
-              </p>
-              <p className="text-gray-400">
-                These tokens can be used by customers to redeem special offers, exclusives, or early access to your designs.
-              </p>
+        {/* Token Reward Tab */}
+        {activeTab === 'tokens' && user?.id && (
+          <div className="space-y-8">
+            {/* Token List */}
+            <div>
+              <TokenList tailorId={user.id} />
+            </div>
+            
+            {/* Create Token Section */}
+            <div id="createTokenSection" className="pt-4">
+              <CompressedTokenMinter 
+                onSuccess={(mintAddress) => {
+                  // Store the token in the database
+                  if (user?.id) {
+                    createTokenMutation.mutate({
+                      mintAddress,
+                      name: 'Tailor Reward Token',
+                      symbol: 'REWARD',
+                      decimals: 9,
+                      initialSupply: 1000000000,
+                    });
+                  }
+                }}
+              />
             </div>
           </div>
-        ) : activeTab === 'create' ? (
+        )}
+        
+        {/* Create New Reward Form */}
+        {activeTab === 'create' ? (
           <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
             <div className="flex items-center mb-6">
               <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center mr-3">

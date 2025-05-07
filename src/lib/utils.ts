@@ -192,3 +192,17 @@ export function formatRelativeTime(date: Date): string {
     return `${days} ${days === 1 ? 'day' : 'days'} ago`;
   }
 }
+
+/**
+ * Format/truncate an address for display
+ * @param address The address to format
+ * @param startLen Number of characters to show at start
+ * @param endLen Number of characters to show at end
+ * @returns Formatted address
+ */
+export function formatAddress(address: string, startLen = 4, endLen = 4): string {
+  if (!address) return '';
+  if (address.length <= startLen + endLen + 2) return address;
+  
+  return `${address.slice(0, startLen)}...${address.slice(-endLen)}`;
+}

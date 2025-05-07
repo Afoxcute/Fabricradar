@@ -30,6 +30,23 @@ enum RewardType {
   PRIORITY
 }
 
+// Define TailorToken model to track minted tokens
+model TailorToken {
+  id             Int       @id @default(autoincrement())
+  mintAddress    String    @unique
+  name           String
+  symbol         String
+  decimals       Int       @default(9)
+  initialSupply  Float
+  tailorId       Int
+  tailor         User      @relation(fields: [tailorId], references: [id])
+  txSignature    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  @@index([tailorId], name: "token_tailor_idx")
+}
+
 model User {
   id              Int                @id @default(autoincrement())
   createdAt       DateTime           @default(now())
@@ -46,6 +63,7 @@ model User {
   designs         Design[]           // Relation to designs
   chatMessages    OrderChatMessage[] // Relation to chat messages
   rewards         Reward[]           // Relation to rewards
+  tokens          TailorToken[]      // Relation to minted tokens
   
   @@index([phone], map: "phone_idx")
   @@index([email], map: "email_idx")

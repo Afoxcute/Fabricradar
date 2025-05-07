@@ -50,6 +50,11 @@ const Header = () => {
     }
   };
 
+  // Function to navigate to fund wallet page
+  const navigateToFundWallet = () => {
+    router.push('/fund-wallet');
+  };
+
   return (
     <header className="max-w-[1440px] mx-auto py-4 flex items-center justify-between px-4">
       <div className="flex items-center gap-2">
@@ -97,6 +102,14 @@ const Header = () => {
               >
                 My Orders
               </Link>
+              {user?.accountType === 'TAILOR' && (
+                <Link
+                  href="/tailor/dashboard"
+                  className="text-sm flex items-center gap-1 hover:text-cyan-400 transition-colors"
+                >
+                  Tailor Dashboard
+                </Link>
+              )}
             </>
           )}
         </nav>
@@ -123,6 +136,16 @@ const Header = () => {
                   </div>
                 )}
               </div>
+            
+            {/* Fund Wallet Button (Mobile) */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="md:hidden text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10"
+              onClick={navigateToFundWallet}
+            >
+              <Wallet className="h-4 w-4" />
+            </Button>
             
             {/* Order Notifications */}
             <OrderNotifications />

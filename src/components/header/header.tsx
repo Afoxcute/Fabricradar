@@ -87,30 +87,14 @@ const Header = () => {
           >
             Marketplace
           </Link>
-          <Link
-            href="/rewards"
-            className="text-sm hover:text-cyan-400 transition-colors flex items-center gap-1"
-          >
-            <Award className="h-4 w-4" />
-            Rewards
-          </Link>
           {authenticated && wallet.connected && (
-            <>
-              <Link
-                href="/dashboard"
-                className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                <User className="h-4 w-4" />
-                Dashboard
-              </Link>
-              <Link
-                href="/fund-wallet"
-                className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
-              >
-                <Wallet className="h-4 w-4" />
-                Fund Wallet
-              </Link>
-            </>
+            <Link
+              href="/fund-wallet"
+              className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
+            >
+              <Wallet className="h-4 w-4" />
+              Fund Wallet
+            </Link>
           )}
         </nav>
         

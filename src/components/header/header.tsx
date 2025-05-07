@@ -60,7 +60,7 @@ const Header = () => {
           height={32}
           className="w-8 h-8"
         />
-        <span className="font-bold text-lg">Tailor Module</span>
+        <span className="font-bold text-lg">Fabricradar</span>
       </div>
       <div className="flex items-center gap-6">
         <nav className="hidden md:flex items-center gap-6">

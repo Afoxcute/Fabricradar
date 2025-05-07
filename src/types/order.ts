@@ -1,4 +1,8 @@
-import { Order, OrderStatus } from "@prisma/client";
+// Remove problematic imports and define locally
+// import { Order, OrderStatus } from "@prisma/client";
+
+// Define OrderStatus type locally to match Prisma schema
+export type OrderStatus = "PENDING" | "ACCEPTED" | "COMPLETED" | "REJECTED";
 
 // Define the progress structure for order tracking
 export interface OrderProgress {

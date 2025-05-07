@@ -11,6 +11,31 @@ import Footer from '@/components/footer/footer';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import Link from 'next/link';
 
+// Define JSON value types to match Prisma's JsonValue
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+type JsonObject = { [Key in string]?: JsonValue };
+type JsonArray = JsonValue[];
+
+// Define Order interface with correct field types to match Prisma model
+interface Order {
+  id: number;
+  orderNumber: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  customerName: string;
+  userId: number;
+  tailorId: number;
+  status: string;
+  price: number;
+  txHash: string | null;
+  description: string | null; // Must be string | null, not string | undefined
+  measurements?: JsonValue | null; // Fix this to match Prisma's JsonValue type
+  designId?: number | null;
+  isAccepted: boolean;
+  acceptanceDeadline?: Date | string | null;
+  acceptedAt?: Date | string | null;
+}
+
 export default function AccountPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -135,7 +160,7 @@ export default function AccountPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {ordersData.orders.map((order) => (
+                    {ordersData.orders.map((order: Order) => (
                       <Link key={order.id} href={`/orders/${order.id}`}>
                         <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 hover:bg-gray-800/60 transition-colors cursor-pointer">
                           <div className="flex justify-between items-start">

@@ -17,21 +17,27 @@ export type OrderWithProgress = {
   progress?: OrderProgress | null;
 };
 
+// Define JSON value types
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+type JsonObject = { [Key in string]?: JsonValue };
+type JsonArray = JsonValue[];
+type NullableJsonInput = JsonValue | { toJSON: () => JsonValue };
+
 // Extend Prisma namespace for InputTypes
 declare namespace Prisma {
   interface OrderUpdateInput {
-    progress?: PrismaNamespace.InputJsonValue | PrismaNamespace.NullableJsonNullValueInput;
+    progress?: NullableJsonInput | { set?: JsonValue } | null;
   }
   
   interface OrderUncheckedUpdateInput {
-    progress?: PrismaNamespace.InputJsonValue | PrismaNamespace.NullableJsonNullValueInput;
+    progress?: NullableJsonInput | { set?: JsonValue } | null;
   }
   
   interface OrderCreateInput {
-    progress?: PrismaNamespace.InputJsonValue;
+    progress?: JsonValue;
   }
   
   interface OrderUncheckedCreateInput {
-    progress?: PrismaNamespace.InputJsonValue;
+    progress?: JsonValue;
   }
 } 

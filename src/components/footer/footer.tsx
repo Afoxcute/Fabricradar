@@ -15,7 +15,7 @@ const Footer = () => {
               height={32}
               className="w-8 h-8"
             />
-            <span className="font-bold">Tailor Module</span>
+            <span className="font-bold">Fabricradar</span>
           </div>
           <p className="text-gray-400 text-sm mb-4">
             The premier NFT marketplace for fashion designers and enthusiasts.
@@ -157,7 +157,7 @@ const Footer = () => {
       </div>
 
       <div className="mt-12 pt-8 border-t border-gray-800 text-center text-gray-500 text-sm">
-        <p>© {new Date().getFullYear()} Tailor Module. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Fabricradar. All rights reserved.</p>
       </div>
     </footer>
   );

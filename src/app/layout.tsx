@@ -10,7 +10,7 @@ import { AuthProvider } from '@/providers/auth-provider';
 import { LowBalanceDetector } from '@/components/balance-check/low-balance-detector';
 
 export const metadata = {
-  title: 'Tailor Module',
+  title: 'Fabricradar',
   description: 'Made-to-order fashion platform',
 };
 

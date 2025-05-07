@@ -1,6 +1,10 @@
 import { db } from "@/server/db";
-import { OrderStatus } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+
+// Define the interface for the order properties we need
+interface OrderWithId {
+  id: number;
+}
 
 // This endpoint will be called by a CRON job to periodically check
 // for expired order acceptance deadlines and automatically reject them
@@ -10,7 +14,7 @@ export async function GET(request: NextRequest) {
     // and they haven't been accepted yet
     const expiredOrders = await db.order.findMany({
       where: {
-        status: OrderStatus.PENDING,
+        status: "PENDING",
         isAccepted: false,
         acceptanceDeadline: {
           lt: new Date() // Only orders where deadline has passed
@@ -23,11 +27,11 @@ export async function GET(request: NextRequest) {
       await db.order.updateMany({
         where: {
           id: {
-            in: expiredOrders.map(order => order.id)
+            in: expiredOrders.map((order: OrderWithId) => order.id)
           }
         },
         data: {
-          status: OrderStatus.REJECTED,
+          status: "REJECTED",
         }
       });
     }

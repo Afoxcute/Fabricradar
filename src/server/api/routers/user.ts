@@ -10,6 +10,16 @@ type AccountTypeValue = "USER" | "TAILOR";
 // Add AccountType enum for validation
 const AccountTypeEnum = z.enum(["USER", "TAILOR"]);
 
+// Define our own user input interface to avoid Prisma type issues
+interface UserCreateData {
+  email?: string | null;
+  phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  walletAddress?: string | null;
+  accountType?: AccountTypeValue;
+}
+
 export const userRouter = createTRPCRouter({
   addToWaitlist: publicProcedure
     .input(z.object({ contact: z.string(), name: z.string() }))
@@ -68,8 +78,8 @@ export const userRouter = createTRPCRouter({
         });
       }
 
-      // Create user data object with proper typing
-      const userData: Prisma.UserCreateInput = {
+      // Create user data object with our custom interface
+      const userData: UserCreateData = {
         email: input.email,
         phone: input.phone,
         firstName: input.firstName,
@@ -80,19 +90,17 @@ export const userRouter = createTRPCRouter({
       try {
         // Add accountType if provided
         if (input.accountType) {
-          // Using a type cast to handle the accountType properly
-          (userData as any).accountType = input.accountType;
+          userData.accountType = input.accountType;
         }
 
         // Add wallet address if provided
         if (input.walletAddress) {
-          // @ts-ignore - walletAddress might not be recognized by TypeScript due to missing prisma migration
           userData.walletAddress = input.walletAddress;
         }
         
         // Create new user
         user = await ctx.db.user.create({
-          data: userData,
+          data: userData as any,
         });
       } catch (error) {
         console.error("Error creating user with advanced fields:", error);
@@ -106,7 +114,6 @@ export const userRouter = createTRPCRouter({
         };
         
         user = await ctx.db.user.create({
-          // @ts-ignore - Using a basic object to avoid type conflicts
           data: fallbackData,
         });
       }

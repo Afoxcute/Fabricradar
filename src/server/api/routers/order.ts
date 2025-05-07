@@ -1,8 +1,26 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
-import { OrderStatus, Prisma, Order } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { OrderProgress } from "@/types/order";
+
+// Define the OrderStatus type to match Prisma schema
+type OrderStatus = "PENDING" | "ACCEPTED" | "COMPLETED" | "REJECTED";
+// Constants for OrderStatus values to prevent string typos
+const OrderStatus = {
+  PENDING: "PENDING" as OrderStatus,
+  ACCEPTED: "ACCEPTED" as OrderStatus,
+  COMPLETED: "COMPLETED" as OrderStatus,
+  REJECTED: "REJECTED" as OrderStatus
+};
+
+// Interface for the order object as returned from Prisma
+interface OrderData {
+  id: number;
+  orderNumber: string;
+  status: OrderStatus;
+  updatedAt: Date;
+}
 
 // Import the type extensions to make sure they're included
 import "@/types/prisma-extensions";
@@ -442,7 +460,7 @@ export const orderRouter = createTRPCRouter({
       });
       
       // Transform into notification format
-      const orderChanges = orders.map(order => ({
+      const orderChanges = orders.map((order: OrderData) => ({
         id: `${order.id}-${order.updatedAt.getTime()}`,
         orderId: order.id,
         orderNumber: order.orderNumber,

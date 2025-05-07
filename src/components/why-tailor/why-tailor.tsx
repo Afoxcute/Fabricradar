@@ -5,7 +5,7 @@ const WhyTailor = () => {
   return (
     <section className="container mx-auto py-16">
       <h2 className="text-2xl font-bold mb-12 text-center">
-        Why Tailor Module?
+        Why Fabricradar?
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

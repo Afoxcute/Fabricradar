@@ -2,6 +2,19 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 
+// Define interface for OrderChatMessage with the fields we're using
+interface OrderChatMessage {
+  id: number;
+  userType: "CUSTOMER" | "TAILOR" | "SYSTEM";
+  message: string;
+  createdAt: Date;
+  user?: {
+    firstName: string | null;
+    lastName: string | null;
+    accountType: string;
+  } | null;
+}
+
 export const orderChatRouter = createTRPCRouter({
   // Get chat messages for an order
   getOrderChatMessages: publicProcedure
@@ -45,7 +58,7 @@ export const orderChatRouter = createTRPCRouter({
       });
 
       // Transform the messages for the client
-      const transformedMessages = messages.map(msg => ({
+      const transformedMessages = messages.map((msg: OrderChatMessage) => ({
         id: msg.id.toString(),
         sender: msg.userType,
         message: msg.message,

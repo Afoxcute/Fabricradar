@@ -6,6 +6,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 
+// Import JsonValue type or define it
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+
 interface DesignCardProps {
   design: {
     id: number;
@@ -13,7 +16,7 @@ interface DesignCardProps {
     description: string;
     price: number;
     imageUrl: string | null;
-    images?: string[] | null;
+    images?: JsonValue | null; // Updated to handle JsonValue from API
     averageTimeline: string;
     tailorId: number;
     tailor?: {
@@ -47,14 +50,14 @@ export default function DesignCard({
     <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden transition-transform hover:scale-[1.02]">
       {/* Image */}
       <div className="h-48 relative bg-gray-800">
-        {design.images && design.images.length > 0 ? (
+        {design.images && Array.isArray(design.images) && design.images.length > 0 ? (
           <Image
-            src={design.images[0]}
+            src={design.images[0] as string}
             alt={design.title}
             width={400}
             height={200}
             className="w-full h-full object-cover"
-            unoptimized={design.images[0].startsWith('http')}
+            unoptimized={(design.images[0] as string).startsWith('http')}
           />
         ) : design.imageUrl ? (
           <Image

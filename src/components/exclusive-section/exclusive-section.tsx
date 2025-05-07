@@ -9,13 +9,16 @@ import { Clock, DollarSign, Loader2 } from 'lucide-react';
 
 type Category = 'all' | 'formal' | 'casual' | 'traditional' | 'modern';
 
+// Import JsonValue type or define it
+type JsonValue = string | number | boolean | null | { [key: string]: JsonValue } | JsonValue[];
+
 interface Design {
   id: number;
   title: string;
   description: string;
   price: number;
   imageUrl: string | null;
-  images?: string[] | null;
+  images?: JsonValue | null; // Updated to handle JsonValue from API
   averageTimeline: string;
   tailorId: number;
   tailor?: {
@@ -98,7 +101,7 @@ const ExclusiveSection = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {designsData?.designs.map((design) => {
+          {designsData?.designs.map((design: any) => {
             // Get tailor name
             const tailorName = design.tailor
               ? `${design.tailor.firstName || ''} ${design.tailor.lastName || ''}`.trim() || 'Anonymous Tailor'

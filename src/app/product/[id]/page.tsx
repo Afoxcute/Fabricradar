@@ -87,7 +87,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
     },
     reviews: [
       {
-        text: '"The tailor brought my dream outfit to life! The attention to detail was extraordinary, an NFT, but wearing it in real life was a whole new level. The stitching, fit, and fabric were perfect. So glad I found this on Tailor Module!"',
+        text: '"The tailor brought my dream outfit to life! The attention to detail was extraordinary, an NFT, but wearing it in real life was a whole new level. The stitching, fit, and fabric were perfect. So glad I found this on Fabricradar!"',
         author: '@mark_glow',
         avatar: '/placeholder.svg?height=30&width=30',
       },

@@ -1,0 +1,45 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="110" fill="url(#gradient)" opacity="0.2" />
+  <circle cx="150" cy="150" r="80" stroke="url(#gradient)" stroke-width="2" stroke-dasharray="4 4" opacity="0.4" />
+  
+  <!-- Gift Box -->
+  <rect x="120" y="130" width="60" height="60" rx="4" fill="#2DD4BF" opacity="0.2" />
+  <rect x="120" y="130" width="60" height="60" rx="4" stroke="#2DD4BF" stroke-width="2" />
+  <rect x="145" y="110" width="10" height="20" fill="#2DD4BF" opacity="0.3" />
+  <rect x="145" y="110" width="10" height="20" stroke="#2DD4BF" stroke-width="2" />
+  <path d="M120 145H180" stroke="#2DD4BF" stroke-width="2" />
+  <path d="M150 130V190" stroke="#2DD4BF" stroke-width="2" />
+  
+  <!-- Stars -->
+  <path d="M100 80L103 87H110L104 91L107 98L100 94L93 98L96 91L90 87H97L100 80Z" fill="#FCD34D" />
+  <path d="M190 70L192 74H197L193 77L195 82L190 79L185 82L187 77L183 74H188L190 70Z" fill="#FCD34D" />
+  <path d="M210 120L212 124H217L213 127L215 132L210 129L205 132L207 127L203 124H208L210 120Z" fill="#FCD34D" />
+  <path d="M180 210L182 214H187L183 217L185 222L180 219L175 222L177 217L173 214H178L180 210Z" fill="#FCD34D" />
+  <path d="M70 170L72 174H77L73 177L75 182L70 179L65 182L67 177L63 174H68L70 170Z" fill="#FCD34D" />
+  
+  <!-- Badge/Medal -->
+  <circle cx="230" cy="170" r="20" fill="#A855F7" opacity="0.2" />
+  <circle cx="230" cy="170" r="20" stroke="#A855F7" stroke-width="2" />
+  <path d="M230 155V160" stroke="#A855F7" stroke-width="2" />
+  <path d="M230 180V185" stroke="#A855F7" stroke-width="2" />
+  <path d="M215 170H220" stroke="#A855F7" stroke-width="2" />
+  <path d="M240 170H245" stroke="#A855F7" stroke-width="2" />
+  <circle cx="230" cy="170" r="8" fill="#A855F7" opacity="0.4" />
+  <path d="M230 164V176" stroke="#A855F7" stroke-width="2" />
+  <path d="M224 170H236" stroke="#A855F7" stroke-width="2" />
+  
+  <!-- Coupon -->
+  <rect x="70" y="120" width="40" height="20" rx="2" fill="#3B82F6" opacity="0.2" />
+  <rect x="70" y="120" width="40" height="20" rx="2" stroke="#3B82F6" stroke-width="2" />
+  <path d="M75 130H85" stroke="#3B82F6" stroke-width="2" />
+  <path d="M90 130H100" stroke="#3B82F6" stroke-width="2" />
+  <path d="M105 125V135" stroke="#3B82F6" stroke-width="2" stroke-dasharray="2 2" />
+
+  <!-- Definitions -->
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="300" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2DD4BF"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+</svg> 

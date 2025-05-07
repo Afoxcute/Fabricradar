@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Package, User, CreditCard, Clock, Settings, LogOut } from 'lucide-react';
+import { Package, User, CreditCard, Clock, Settings, LogOut, Gift } from 'lucide-react';
 import { api } from '@/trpc/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import Header from '@/components/header/header';
 import Footer from '@/components/footer/footer';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import Link from 'next/link';
+import RewardsTab from '@/components/rewards/rewards-tab';
 
 // Define JSON value types to match Prisma's JsonValue
 type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
@@ -39,7 +40,7 @@ interface Order {
 export default function AccountPage() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'wallet'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'profile' | 'wallet' | 'rewards'>('orders');
   
   // Fetch user's orders
   const { data: ordersData, isLoading: isLoadingOrders } = api.orders.getCustomerOrders.useQuery(
@@ -123,6 +124,23 @@ export default function AccountPage() {
                 >
                   <CreditCard className="h-5 w-5" />
                   <span>Wallet</span>
+                </button>
+                
+                <button
+                  onClick={() => setActiveTab('rewards')}
+                  className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors ${
+                    activeTab === 'rewards' 
+                      ? 'bg-cyan-600/20 text-cyan-400' 
+                      : 'hover:bg-gray-700/50 text-gray-300'
+                  }`}
+                >
+                  <Gift className="h-5 w-5" />
+                  <span>Rewards</span>
+                  {user.accountType === 'TAILOR' && (
+                    <span className="bg-cyan-600 text-white text-xs rounded-full px-1.5 py-0.5 ml-auto">
+                      New
+                    </span>
+                  )}
                 </button>
                 
                 <button
@@ -264,6 +282,11 @@ export default function AccountPage() {
                   )}
                 </div>
               </div>
+            )}
+
+            {/* Rewards Tab */}
+            {activeTab === 'rewards' && (
+              <RewardsTab />
             )}
           </div>
         </div>

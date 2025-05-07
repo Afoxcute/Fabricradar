@@ -1,0 +1,61 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="110" fill="url(#gradient)" opacity="0.2" />
+  
+  <!-- Reward Stars Background -->
+  <path d="M70 60L72 68H80L73 73L76 80L70 75L64 80L67 73L60 68H68L70 60Z" fill="#FCD34D" opacity="0.3" />
+  <path d="M220 55L222 63H230L223 68L226 75L220 70L214 75L217 68L210 63H218L220 55Z" fill="#FCD34D" opacity="0.3" />
+  <path d="M240 150L242 158H250L243 163L246 170L240 165L234 170L237 163L230 158H238L240 150Z" fill="#FCD34D" opacity="0.3" />
+  <path d="M100 220L102 228H110L103 233L106 240L100 235L94 240L97 233L90 228H98L100 220Z" fill="#FCD34D" opacity="0.3" />
+  
+  <!-- Coin Stack 1 -->
+  <circle cx="110" cy="140" r="20" fill="url(#goldGradient)" />
+  <ellipse cx="110" cy="140" rx="17" ry="5" fill="#B45309" opacity="0.5" />
+  <path d="M93 140C93 142.761 100.507 145 110 145C119.493 145 127 142.761 127 140" stroke="#B45309" stroke-width="1" />
+  
+  <circle cx="110" cy="130" r="20" fill="url(#goldGradient)" />
+  <ellipse cx="110" cy="130" rx="17" ry="5" fill="#B45309" opacity="0.5" />
+  <path d="M93 130C93 132.761 100.507 135 110 135C119.493 135 127 132.761 127 130" stroke="#B45309" stroke-width="1" />
+  
+  <circle cx="110" cy="120" r="20" fill="url(#goldGradient)" />
+  <ellipse cx="110" cy="120" rx="17" ry="5" fill="#B45309" opacity="0.5" />
+  <path d="M93 120C93 122.761 100.507 125 110 125C119.493 125 127 122.761 127 120" stroke="#B45309" stroke-width="1" />
+  
+  <!-- Trophy -->
+  <path d="M150 80H190V90C190 100 180 110 170 110C160 110 150 100 150 90V80Z" fill="#FCD34D" opacity="0.7" />
+  <path d="M150 80H190V90C190 100 180 110 170 110C160 110 150 100 150 90V80Z" stroke="#FCD34D" stroke-width="2" />
+  <rect x="165" y="110" width="10" height="25" fill="#FCD34D" opacity="0.7" />
+  <rect x="155" y="135" width="30" height="5" rx="2" fill="#FCD34D" opacity="0.7" />
+  <path d="M150 80H140C140 90 145 95 150 95V80Z" fill="#FCD34D" opacity="0.5" />
+  <path d="M150 80H140C140 90 145 95 150 95V80Z" stroke="#FCD34D" stroke-width="2" />
+  <path d="M190 80H200C200 90 195 95 190 95V80Z" fill="#FCD34D" opacity="0.5" />
+  <path d="M190 80H200C200 90 195 95 190 95V80Z" stroke="#FCD34D" stroke-width="2" />
+  
+  <!-- Star Badge -->
+  <circle cx="170" cy="170" r="30" fill="url(#purpleGradient)" opacity="0.7" />
+  <path d="M170 150L174 161H186L176 168L180 180L170 173L160 180L164 168L154 161H166L170 150Z" fill="#FCD34D" />
+  <path d="M170 150L174 161H186L176 168L180 180L170 173L160 180L164 168L154 161H166L170 150Z" stroke="#FCD34D" stroke-width="1" />
+  
+  <!-- Reward Ticket -->
+  <rect x="200" y="200" width="60" height="30" rx="4" fill="#A855F7" opacity="0.2" />
+  <rect x="200" y="200" width="60" height="30" rx="4" stroke="#A855F7" stroke-width="2" />
+  <path d="M240 200V230" stroke="#A855F7" stroke-width="2" stroke-dasharray="2 2" />
+  <path d="M210 210H225" stroke="#A855F7" stroke-width="2" />
+  <path d="M210 220H225" stroke="#A855F7" stroke-width="2" />
+  <circle cx="250" cy="215" r="5" fill="#A855F7" opacity="0.5" />
+  
+  <!-- Definitions -->
+  <defs>
+    <linearGradient id="gradient" x1="40" y1="40" x2="260" y2="260" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+    <linearGradient id="goldGradient" x1="90" y1="110" x2="130" y2="150" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FBBF24"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+    <linearGradient id="purpleGradient" x1="140" y1="140" x2="200" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C084FC"/>
+      <stop offset="1" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+</svg> 

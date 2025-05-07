@@ -102,14 +102,6 @@ const Header = () => {
               >
                 My Orders
               </Link>
-              {user?.accountType === 'TAILOR' && (
-                <Link
-                  href="/tailor/dashboard"
-                  className="text-sm flex items-center gap-1 hover:text-cyan-400 transition-colors"
-                >
-                  Tailor Dashboard
-                </Link>
-              )}
             </>
           )}
         </nav>

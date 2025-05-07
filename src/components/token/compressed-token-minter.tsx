@@ -49,12 +49,10 @@ export function CompressedTokenMinter({
       setIsLoading(true);
       setError(null);
 
-      // Use environment variable for RPC endpoint
-      const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
-      if (!RPC_ENDPOINT) {
-        throw new Error('RPC_ENDPOINT not configured. Please set the NEXT_PUBLIC_RPC_ENDPOINT environment variable.');
-      }
-
+      // Use environment variable for RPC endpoint or default to the current connection
+      const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || connection.rpcEndpoint;
+      console.log('Using RPC endpoint:', RPC_ENDPOINT);
+      
       // Create RPC connection for Light Protocol
       const rpc = createRpc(RPC_ENDPOINT);
 

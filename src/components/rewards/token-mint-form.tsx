@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '../solana/privy-solana-adapter';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
@@ -8,9 +8,8 @@ import { Button } from '../ui/button';
 import { Loader2, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCluster } from '../cluster/cluster-data-access';
-
-// Token constants - would ideally be in an environment variable
-const CTOKEN_MINT_ADDRESS = 'cTokenmWW8bLPjZEBAUgYy3zKxQZW6VKi7bqNFEVv3m';
+import { TokenService, CTOKEN_MINT_ADDRESS } from '@/services/TokenService';
+import { db } from '@/server/db';
 
 interface TokenMintFormProps {
   onSuccess?: () => void;
@@ -23,6 +22,29 @@ export default function TokenMintForm({ onSuccess }: TokenMintFormProps) {
   const [amount, setAmount] = useState('100');
   const [isLoading, setIsLoading] = useState(false);
   const [transactionSignature, setTransactionSignature] = useState('');
+  const [tokenBalance, setTokenBalance] = useState<number | null>(null);
+
+  // Create a TokenService instance
+  const tokenService = new TokenService(db);
+
+  // Fetch token balance on load
+  useEffect(() => {
+    fetchTokenBalance();
+  }, [publicKey, connected]);
+
+  const fetchTokenBalance = async () => {
+    if (!connected || !publicKey || !connection) return;
+    
+    try {
+      const balance = await tokenService.getTokenBalance(
+        publicKey.toString(),
+        connection
+      );
+      setTokenBalance(balance);
+    } catch (error) {
+      console.error('Error fetching token balance:', error);
+    }
+  };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setAmount(e.target.value);
@@ -43,22 +65,29 @@ export default function TokenMintForm({ onSuccess }: TokenMintFormProps) {
     setTransactionSignature('');
 
     try {
-      // For this implementation, we'll simulate the token minting
-      // since we don't have the full library integration yet
-      
-      // In a real integration, we would use the Light Protocol libraries
-      // to create and send an actual token minting transaction
+      // Call our token service with the wallet's sendTransaction method
+      const result = await tokenService.createTokenMint(
+        publicKey.toString(),
+        Number(amount),
+        connection,
+        sendTransaction
+      );
 
-      toast.success(`Simulated minting ${amount} cTokens to your wallet`);
-      
-      // In a real implementation, we would store this in the database
-      // and link it to the tailor's rewards
-      
-      if (onSuccess) {
-        onSuccess();
+      if (result.success) {
+        toast.success(`Successfully minted ${amount} cTokens to your wallet`);
+        setTransactionSignature(result.signature);
+        
+        // Refresh the token balance
+        setTimeout(() => {
+          fetchTokenBalance();
+        }, 2000);
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+      } else {
+        toast.error('Failed to mint tokens');
       }
-
-      setTransactionSignature('simulated-transaction-signature');
     } catch (error: any) {
       console.error('Error minting tokens:', error);
       toast.error(error.message || 'Failed to mint tokens');
@@ -74,6 +103,16 @@ export default function TokenMintForm({ onSuccess }: TokenMintFormProps) {
         Mint cTokens as rewards that customers can redeem. These tokens will be stored in your wallet 
         and can be transferred to customers when they redeem rewards.
       </p>
+
+      {/* Display current token balance */}
+      {connected && tokenBalance !== null && (
+        <div className="bg-blue-900/20 border border-blue-800 rounded-md p-3 mb-6">
+          <p className="text-sm text-blue-400 flex items-center">
+            <Coins size={16} className="mr-2" />
+            Current Token Balance: <span className="font-bold ml-1">{tokenBalance.toLocaleString()}</span>
+          </p>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div>
@@ -134,8 +173,8 @@ export default function TokenMintForm({ onSuccess }: TokenMintFormProps) {
         )}
 
         <div className="mt-4 text-xs text-gray-500">
-          <p>Note: This is currently a simulation. In the final implementation, actual cTokens will be 
-          minted to your wallet using the Light Protocol.</p>
+          <p>Note: Token minting is using the Solana SPL Token system through your connected wallet. 
+          For a full production system, minting authority would be restricted to authorized wallets only.</p>
         </div>
       </div>
     </div>

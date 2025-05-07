@@ -6,7 +6,8 @@ import { useConnection } from '@solana/wallet-adapter-react';
 import { Button } from '../ui/button';
 import { Loader2, Coins, Wallet, RefreshCw, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { CTOKEN_MINT_ADDRESS } from '@/services/TokenService';
+import { TokenService, CTOKEN_MINT_ADDRESS } from '@/services/TokenService';
+import { db } from '@/server/db';
 
 export function CustomerTokenRewards() {
   const { publicKey, connected } = useWallet();
@@ -20,6 +21,9 @@ export function CustomerTokenRewards() {
     date: string;
     description: string;
   }>>([]);
+
+  // Create token service instance
+  const tokenService = new TokenService(db);
 
   // Simulate recent redemptions
   useEffect(() => {
@@ -50,16 +54,19 @@ export function CustomerTokenRewards() {
     setError(null);
 
     try {
-      // In a real implementation, we would query the actual token balance
-      const simulatedBalance = Math.floor(Math.random() * 200);
-      setTokenBalance(simulatedBalance);
+      // Use the token service to get the real balance
+      const balance = await tokenService.getTokenBalance(
+        publicKey.toString(),
+        connection
+      );
+      setTokenBalance(balance);
     } catch (err: any) {
       console.error('Error fetching token balance:', err);
       setError(err.message || 'Failed to fetch token balance');
     } finally {
       setIsLoading(false);
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, connection, tokenService]);
 
   useEffect(() => {
     fetchTokenBalance();

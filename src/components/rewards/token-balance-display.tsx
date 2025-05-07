@@ -4,12 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '../solana/privy-solana-adapter';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { Loader2, Wallet, RefreshCw, Coins } from 'lucide-react';
 import { Button } from '../ui/button';
-
-// Token constants
-const CTOKEN_MINT_ADDRESS = 'cTokenmWW8bLPjZEBAUgYy3zKxQZW6VKi7bqNFEVv3m';
+import { TokenService, CTOKEN_MINT_ADDRESS } from '@/services/TokenService'; 
+import { db } from '@/server/db';
 
 export default function TokenBalanceDisplay() {
   const { publicKey, connected } = useWallet();
@@ -17,6 +15,9 @@ export default function TokenBalanceDisplay() {
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Create a TokenService instance
+  const tokenService = new TokenService(db);
 
   const fetchTokenBalance = useCallback(async () => {
     if (!connected || !publicKey) {
@@ -28,35 +29,19 @@ export default function TokenBalanceDisplay() {
       setIsLoading(true);
       setError(null);
 
-      // Get the associated token account address
-      const tokenMintPublicKey = new PublicKey(CTOKEN_MINT_ADDRESS);
-      const associatedTokenAddress = await getAssociatedTokenAddress(
-        tokenMintPublicKey,
-        publicKey
+      const balance = await tokenService.getTokenBalance(
+        publicKey.toString(),
+        connection
       );
-
-      try {
-        // Get the token account info
-        const tokenAccount = await getAccount(
-          connection,
-          associatedTokenAddress
-        );
-
-        // Parse and format balance (assuming 9 decimals for the token)
-        const balance = Number(tokenAccount.amount) / Math.pow(10, 9);
-        setTokenBalance(balance);
-      } catch (err) {
-        // Token account doesn't exist or another error
-        console.log('Token account not found or another error:', err);
-        setTokenBalance(0);
-      }
+      
+      setTokenBalance(balance);
     } catch (err) {
       console.error('Error fetching token balance:', err);
       setError('Failed to load token balance');
     } finally {
       setIsLoading(false);
     }
-  }, [connected, publicKey, connection]);
+  }, [connected, publicKey, connection, tokenService]);
 
   // Fetch balance on component mount and when wallet changes
   useEffect(() => {

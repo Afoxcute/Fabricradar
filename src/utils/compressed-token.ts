@@ -17,7 +17,7 @@ export const CTOKEN_MINT_ADDRESS = 'cTokenmWW8bLPjZEBAUgYy3zKxQZW6VKi7bqNFEVv3m'
  */
 export function createConnection(): Connection {
   // Use the RPC endpoint from the environment variable
-  const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || "https://api.mainnet-beta.solana.com";
+  const rpcEndpoint = process.env.NEXT_PUBLIC_RPC_ENDPOINT || "https://api.devnet.solana.com";
   // Create a standard web3.js Connection
   return new Connection(rpcEndpoint);
 }

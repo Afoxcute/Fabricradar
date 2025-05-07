@@ -23,19 +23,20 @@ enum OrderStatus {
 }
 
 model User {
-  id              Int              @id @default(autoincrement())
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  email           String?          @unique
+  id              Int                @id @default(autoincrement())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  email           String?            @unique
   firstName       String?
   middleName      String?
   lastName        String?
-  phone           String?          @unique
-  walletAddress   String?          @unique
-  accountType     AccountType      @default(USER)
+  phone           String?            @unique
+  walletAddress   String?            @unique
+  accountType     AccountType        @default(USER)
   OTPVerification OTPVerification?
-  orders          Order[]          // Relation to orders
-  designs         Design[]         // Relation to designs
+  orders          Order[]            // Relation to orders
+  designs         Design[]           // Relation to designs
+  chatMessages    OrderChatMessage[] // Relation to chat messages
   
   @@index([phone], map: "phone_idx")
   @@index([email], map: "email_idx")
@@ -54,23 +55,25 @@ model OTPVerification {
 }
 
 model Order {
-  id                 Int         @id @default(autoincrement())
-  orderNumber        String      @unique
+  id                 Int                @id @default(autoincrement())
+  orderNumber        String             @unique
   customerName       String
-  userId             Int         // Customer user ID
-  tailorId           Int         // Tailor user ID
-  status             OrderStatus @default(PENDING)
+  userId             Int                // Customer user ID
+  tailorId           Int                // Tailor user ID
+  status             OrderStatus        @default(PENDING)
   price              Float
   txHash             String?
   description        String?
   measurements       Json?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  user               User        @relation(fields: [userId], references: [id])
-  designId           Int?        // Reference to the design
-  isAccepted         Boolean     @default(false)
-  acceptanceDeadline DateTime?   // 48-hour deadline for tailor to accept
-  acceptedAt         DateTime?   // When the tailor accepted the order
+  progress           Json?              // Track progress milestones
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id])
+  designId           Int?               // Reference to the design
+  isAccepted         Boolean            @default(false)
+  acceptanceDeadline DateTime?          // 48-hour deadline for tailor to accept
+  acceptedAt         DateTime?          // When the tailor accepted the order
+  chatMessages       OrderChatMessage[] // Relation to chat messages
   
   @@index([status], name: "status_idx")
   @@index([tailorId], name: "tailor_idx")
@@ -101,4 +104,27 @@ model Waitlist {
   isEmail   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Define MessageType enum
+enum MessageType {
+  CUSTOMER
+  TAILOR
+  SYSTEM
+}
+
+model OrderChatMessage {
+  id        Int         @id @default(autoincrement())
+  orderId   Int         // Order ID
+  userId    Int         // User ID of the sender
+  userType  MessageType // Type of sender (CUSTOMER, TAILOR, SYSTEM)
+  message   String      // Message content
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  order     Order       @relation(fields: [orderId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+  
+  @@index([orderId], name: "message_order_idx")
+  @@index([userId], name: "message_user_idx")
 }

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "../solana/privy-solana-adapter";
 import { shortenAddress } from "@/lib/utils";
-import { User, LogOut, ChevronDown, Scissors, LayoutDashboard, Wallet } from "lucide-react";
+import { User, LogOut, ChevronDown, Scissors, LayoutDashboard, Wallet, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 export function AuthNav() {
@@ -25,6 +25,11 @@ export function AuthNav() {
 
   const navigateToProfile = () => {
     router.push("/profile");
+    setDropdownOpen(false);
+  };
+  
+  const navigateToOrders = () => {
+    router.push("/orders");
     setDropdownOpen(false);
   };
   
@@ -89,6 +94,14 @@ export function AuthNav() {
               >
                 <User className="h-4 w-4 mr-2" />
                 Your Profile
+              </button>
+              
+              <button
+                onClick={navigateToOrders}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                My Orders
               </button>
               
               <button

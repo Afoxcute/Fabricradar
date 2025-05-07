@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { shortenAddress, copyToClipboard } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 import { AuthNav } from '../user-profile/auth-nav';
+import { OrderNotifications } from '../notifications/order-notifications';
 
 const Header = () => {
   const { ready, authenticated, login } = usePrivy();
@@ -82,13 +83,21 @@ const Header = () => {
             Marketplace
           </Link>
           {authenticated && wallet.connected && (
-            <Link
-              href="/fund-wallet"
-              className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
-            >
-              <Wallet className="h-4 w-4" />
-              Fund Wallet
-            </Link>
+            <>
+              <Link
+                href="/fund-wallet"
+                className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                <Wallet className="h-4 w-4" />
+                Fund Wallet
+              </Link>
+              <Link
+                href="/orders"
+                className="text-sm flex items-center gap-1 hover:text-cyan-400 transition-colors"
+              >
+                My Orders
+              </Link>
+            </>
           )}
         </nav>
         
@@ -114,6 +123,9 @@ const Header = () => {
                   </div>
                 )}
               </div>
+            
+            {/* Order Notifications */}
+            <OrderNotifications />
             
             {/* Auth Navigation */}
             <AuthNav />

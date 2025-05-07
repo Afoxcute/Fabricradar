@@ -4,6 +4,9 @@ CREATE TYPE "AccountType" AS ENUM ('USER', 'TAILOR');
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'ACCEPTED', 'COMPLETED', 'REJECTED');
 
+-- CreateEnum
+CREATE TYPE "MessageType" AS ENUM ('CUSTOMER', 'TAILOR', 'SYSTEM');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -45,6 +48,7 @@ CREATE TABLE "Order" (
     "txHash" TEXT,
     "description" TEXT,
     "measurements" JSONB,
+    "progress" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "designId" INTEGER,
@@ -81,6 +85,19 @@ CREATE TABLE "Waitlist" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Waitlist_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "OrderChatMessage" (
+    "id" SERIAL NOT NULL,
+    "orderId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "userType" "MessageType" NOT NULL,
+    "message" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "OrderChatMessage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -122,6 +139,12 @@ CREATE INDEX "deadline_idx" ON "Order"("acceptanceDeadline");
 -- CreateIndex
 CREATE INDEX "design_tailor_idx" ON "Design"("tailorId");
 
+-- CreateIndex
+CREATE INDEX "message_order_idx" ON "OrderChatMessage"("orderId");
+
+-- CreateIndex
+CREATE INDEX "message_user_idx" ON "OrderChatMessage"("userId");
+
 -- AddForeignKey
 ALTER TABLE "OTPVerification" ADD CONSTRAINT "OTPVerification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -130,3 +153,9 @@ ALTER TABLE "Order" ADD CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") RE
 
 -- AddForeignKey
 ALTER TABLE "Design" ADD CONSTRAINT "Design_tailorId_fkey" FOREIGN KEY ("tailorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderChatMessage" ADD CONSTRAINT "OrderChatMessage_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderChatMessage" ADD CONSTRAINT "OrderChatMessage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -237,7 +237,7 @@ export const userRouter = createTRPCRouter({
       // This is used for checking if a user exists with a given email/phone
       if (input.otp === "check-only") {
         console.log(`Check-only login for user ID ${user.id} with identifier ${input.identifier}`);
-        return user;
+      return user;
       }
 
       // Verify OTP

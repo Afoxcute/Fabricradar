@@ -9,6 +9,8 @@ import BackgroundEffect from "@/components/background-effect/background-effect";
 import { ArrowLeft } from "lucide-react";
 import Header from "@/components/header/header";
 import Footer from "@/components/footer/footer";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function ProfilePage() {
   const { user, refreshUserData } = useAuth();
@@ -72,6 +74,19 @@ export default function ProfilePage() {
               onSuccess={handleProfileSuccess}
             />
           </div>
+          
+          {/* Orders Link */}
+          {user && (
+            <div className="mt-6 bg-gray-900/30 backdrop-blur-sm p-6 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold mb-3">Your Orders</h3>
+              <p className="text-gray-400 mb-4">Track your orders and view your measurements</p>
+              <Link href="/orders">
+                <Button className="w-full bg-cyan-600 hover:bg-cyan-700">
+                  View My Orders
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
       

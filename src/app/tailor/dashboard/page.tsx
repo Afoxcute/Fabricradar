@@ -140,19 +140,19 @@ const TailorDashboard = () => {
     }
   }, [summaryData, isSummaryLoading]);
   
-  // Effect to process order data when loaded
+  // Process orders data when it changes
   useEffect(() => {
     if (ordersData && !isOrdersLoading) {
-      // Transform orders into table format
-      const formattedOrders = ordersData.orders.map((order: PrismaOrder) => ({
-        key: order.id.toString(),
-        id: order.orderNumber,
+      // Map orders data to table format
+      const formattedOrders = ordersData.orders.map((order: any) => ({
+        key: order.id,
+        id: order.orderNumber || `#${order.id}`,
+        originalId: order.id, // Keep the original ID for linking to order details
         customer: order.customerName,
         status: order.status,
         date: new Date(order.createdAt).toLocaleDateString(),
-        price: `${order.price.toFixed(2)} USDC`,
-        txHash: order.txHash || 'N/A',
-        orderId: order.id
+        price: `$${order.price.toFixed(2)}`,
+        orderId: order.id // Required for action buttons
       }));
       
       setRecentOrders(formattedOrders);
@@ -204,46 +204,14 @@ const TailorDashboard = () => {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: any, record: OrderTableRow) => {
-        if (record.status === OrderStatusEnum.PENDING) {
-          return (
-            <div className="flex gap-2">
-              <Button
-                size="small"
-                type="primary"
-                className="bg-cyan-500 hover:bg-cyan-600 border-none"
-                onClick={() => handleAcceptOrder(record.orderId)}
-                loading={updateOrderStatus.isPending}
-              >
-                Accept
-              </Button>
-              <Button 
-                size="small" 
-                danger 
-                onClick={() => handleRejectOrder(record.orderId)}
-                loading={updateOrderStatus.isPending}
-              >
-                Reject
-              </Button>
-            </div>
-          );
-        } else if (record.status === OrderStatusEnum.ACCEPTED) {
-          return (
-            <Button
-              size="small"
-              type="primary"
-              className="bg-green-500 hover:bg-green-600 border-none"
-              onClick={() => handleCompleteOrder(record.orderId)}
-              loading={updateOrderStatus.isPending}
-            >
-              Complete
-            </Button>
-          );
-        } else {
-          return <span className="text-gray-400">No Actions</span>;
-        }
-      },
-    },
+      render: (text: string, record: any) => (
+        <Link href={`/tailor/orders/${record.originalId}`}>
+          <Button type="link" className="text-cyan-500 hover:text-cyan-400">
+            View Details
+          </Button>
+        </Link>
+      ),
+    }
   ];
   
   if (authLoading) {

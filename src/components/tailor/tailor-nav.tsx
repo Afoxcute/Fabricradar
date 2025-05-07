@@ -22,13 +22,18 @@ export function TailorNav() {
     { icon: <Settings size={20} />, label: 'Settings', href: '/tailor/settings' },
   ];
   
+  // Check if the current path starts with the nav item's href
+  const isActiveRoute = (href: string) => {
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+  
   return (
     <div className="bg-gray-900/70 backdrop-blur-sm border-r border-gray-800 h-full w-64 fixed left-0 top-[64px] px-4 py-6">
       <h2 className="text-xl font-bold text-white mb-6 px-4">Tailor Portal</h2>
       
       <nav className="space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = isActiveRoute(item.href);
           
           return (
             <Link

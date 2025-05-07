@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, Prisma, Order } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+import { OrderProgress } from "@/types/order";
+
+// Import the type extensions to make sure they're included
+import "@/types/prisma-extensions";
 
 export const orderRouter = createTRPCRouter({
   // Create a new order
@@ -71,6 +75,46 @@ export const orderRouter = createTRPCRouter({
           message: 'Failed to create order',
         });
       }
+    }),
+
+  // Get a single order by ID
+  getOrderById: publicProcedure
+    .input(z.object({ 
+      orderId: z.number() 
+    }))
+    .query(async ({ ctx, input }) => {
+      const order = await ctx.db.order.findUnique({
+        where: { id: input.orderId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found",
+        });
+      }
+
+      // Check if the user has permission to access this order
+      // Allow both the tailor and the customer to see their own orders
+      if (!ctx.user || (ctx.user.id !== order.tailorId && ctx.user.id !== order.userId)) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You don't have permission to access this order",
+        });
+      }
+
+      return order;
     }),
 
   // Get orders for a customer
@@ -363,5 +407,171 @@ export const orderRouter = createTRPCRouter({
           message: 'Order rejected successfully',
         };
       }
+    }),
+
+  // Get recent order status changes for notifications
+  getRecentOrderChanges: publicProcedure
+    .input(z.object({ 
+      userId: z.number(),
+      limit: z.number().min(1).max(50).default(5),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Check if the user has permission to access this data
+      if (!ctx.user || (ctx.user.id !== input.userId)) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You don't have permission to access this data",
+        });
+      }
+      
+      // Get orders for this user with status changes in the last 7 days
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const orders = await ctx.db.order.findMany({
+        where: {
+          userId: input.userId,
+          updatedAt: {
+            gte: sevenDaysAgo
+          }
+        },
+        orderBy: {
+          updatedAt: "desc"
+        },
+        take: input.limit,
+      });
+      
+      // Transform into notification format
+      const orderChanges = orders.map(order => ({
+        id: `${order.id}-${order.updatedAt.getTime()}`,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        newStatus: order.status,
+        timestamp: order.updatedAt.toISOString(),
+      }));
+      
+      return {
+        orderChanges,
+      };
+    }),
+
+  // Get order progress
+  getOrderProgress: publicProcedure
+    .input(z.object({ 
+      orderId: z.number() 
+    }))
+    .query(async ({ ctx, input }) => {
+      // Get the order to check permissions and progress
+      const order = await ctx.db.order.findUnique({
+        where: { id: input.orderId },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found",
+        });
+      }
+
+      // Check if the user has permission to view this order's progress
+      if (!ctx.user || (ctx.user.id !== order.tailorId && ctx.user.id !== order.userId)) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You don't have permission to view this order's progress",
+        });
+      }
+
+      // Return the progress data, default to empty object if not set
+      // Use a type assertion for the progress field
+      const progress = (order as any).progress ?? {};
+
+      return {
+        progress,
+      };
+    }),
+
+  // Update order progress
+  updateOrderProgress: publicProcedure
+    .input(z.object({ 
+      orderId: z.number(),
+      milestone: z.string(),
+      completed: z.boolean() 
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if user is authenticated
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to update progress",
+        });
+      }
+
+      // Get the order to check permissions and current progress
+      const order = await ctx.db.order.findUnique({
+        where: { id: input.orderId },
+      });
+
+      if (!order) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Order not found",
+        });
+      }
+
+      // Only tailors can update order progress
+      if (ctx.user.id !== order.tailorId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Only the tailor can update order progress",
+        });
+      }
+
+      // Get current progress or initialize empty object
+      // Use a type assertion for the progress field
+      const currentProgress = (order as any).progress ?? {};
+      
+      // Update the milestone
+      const updatedProgress = {
+        ...currentProgress,
+        [input.milestone]: input.completed
+      };
+
+      // Use raw SQL to update the progress field directly
+      // This bypasses TypeScript's type checking issues with the Prisma client
+      await ctx.db.$executeRaw`
+        UPDATE "Order"
+        SET "progress" = ${JSON.stringify(updatedProgress)}::jsonb,
+            "updatedAt" = NOW()
+        WHERE "id" = ${input.orderId}
+      `;
+      
+      // If the "ready_for_delivery" milestone is completed and order is in ACCEPTED status,
+      // update the status to COMPLETED
+      if (input.milestone === 'ready_for_delivery' && 
+          input.completed && 
+          order.status === 'ACCEPTED') {
+        await ctx.db.$executeRaw`
+          UPDATE "Order"
+          SET "status" = 'COMPLETED'
+          WHERE "id" = ${input.orderId}
+        `;
+      }
+      
+      // Add a system message to the chat
+      await ctx.db.$executeRaw`
+        INSERT INTO "OrderChatMessage" ("orderId", "userId", "userType", "message", "createdAt", "updatedAt")
+        VALUES (
+          ${input.orderId}, 
+          ${ctx.user.id}, 
+          'SYSTEM', 
+          ${`Order milestone "${input.milestone.replace(/_/g, ' ')}" marked as ${input.completed ? 'completed' : 'incomplete'}.`}, 
+          NOW(), 
+          NOW()
+        )
+      `;
+
+      return {
+        success: true,
+      };
     }),
 }); 

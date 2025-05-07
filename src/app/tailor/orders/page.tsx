@@ -5,8 +5,9 @@ import { api } from '@/trpc/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Check, Clock, Loader2, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, Check, Clock, Loader2, RefreshCw, X, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 export default function TailorOrdersPage() {
   const { user } = useAuth();
@@ -42,53 +43,57 @@ export default function TailorOrdersPage() {
     }
   };
   
-  // Format relative time for deadline display
-  const formatTimeLeft = (deadline: string) => {
-    const deadlineDate = new Date(deadline);
-    const now = new Date();
-    const diffMs = deadlineDate.getTime() - now.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  // Determine which orders to show based on active tab
+  const isLoading = activeTab === 'pending-acceptance' 
+    ? pendingAcceptanceQuery.isLoading 
+    : allOrdersQuery.isLoading;
     
-    if (diffHours < 0) return 'Expired';
-    if (diffHours < 1) {
-      const diffMinutes = Math.floor(diffMs / (1000 * 60));
-      return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} left`;
-    }
-    
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} left`;
-  };
-  
-  // Get the query and data based on active tab
-  const getActiveQuery = () => {
-    switch (activeTab) {
-      case 'pending-acceptance':
-        return pendingAcceptanceQuery;
-      case 'all':
-        return allOrdersQuery;
-      default:
-        return pendingAcceptanceQuery;
-    }
-  };
-  
-  const activeQuery = getActiveQuery();
-  const isLoading = activeQuery.isLoading;
-  const orders = activeTab === 'pending-acceptance' 
+  const orders = activeTab === 'pending-acceptance'
     ? pendingAcceptanceQuery.data?.orders || []
     : allOrdersQuery.data?.orders || [];
   
-  // Render status badge
+  // Helper function to render status badge
   const renderStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
         return <Badge className="bg-yellow-600 hover:bg-yellow-700">Pending</Badge>;
       case 'ACCEPTED':
-        return <Badge className="bg-green-600 hover:bg-green-700">Accepted</Badge>;
+        return <Badge className="bg-cyan-600 hover:bg-cyan-700">Accepted</Badge>;
       case 'COMPLETED':
-        return <Badge className="bg-blue-600 hover:bg-blue-700">Completed</Badge>;
+        return <Badge className="bg-green-600 hover:bg-green-700">Completed</Badge>;
       case 'REJECTED':
         return <Badge className="bg-red-600 hover:bg-red-700">Rejected</Badge>;
       default:
         return <Badge className="bg-gray-600 hover:bg-gray-700">{status}</Badge>;
+    }
+  };
+  
+  // Helper function to format deadline time
+  const formatDeadline = (deadline: string) => {
+    if (!deadline) return 'Unknown';
+    const date = new Date(deadline);
+    const now = new Date();
+    const diffHours = Math.round((date.getTime() - now.getTime()) / (1000 * 60 * 60));
+    
+    if (diffHours < 0) {
+      return 'Expired';
+    } else if (diffHours < 1) {
+      return 'Less than 1 hour';
+    } else if (diffHours === 1) {
+      return '1 hour';
+    } else if (diffHours < 24) {
+      return `${diffHours} hours`;
+    } else {
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+  };
+  
+  // Refresh data function
+  const handleRefresh = () => {
+    if (activeTab === 'pending-acceptance') {
+      pendingAcceptanceQuery.refetch();
+    } else {
+      allOrdersQuery.refetch();
     }
   };
   
@@ -158,6 +163,7 @@ export default function TailorOrdersPage() {
                       <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
                     </>
                   )}
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-400 uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -183,37 +189,46 @@ export default function TailorOrdersPage() {
                     {activeTab === 'pending-acceptance' && (
                       <>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <Clock size={16} className="mr-1 text-yellow-500" />
-                            <span className="text-sm text-yellow-500 font-medium">
-                              {formatTimeLeft(order.acceptanceDeadline)}
-                            </span>
+                          <div className="text-sm font-medium text-amber-500">
+                            <Clock size={14} className="inline-block mr-1" />
+                            {formatDeadline(order.acceptanceDeadline)}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center">
                           <div className="flex justify-center space-x-2">
                             <Button
                               size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              variant="ghost" 
+                              className="text-green-500 hover:text-green-400 hover:bg-green-900/20"
                               onClick={() => handleAcceptOrder(order.id, true)}
-                              disabled={acceptOrderMutation.isPending}
                             >
-                              <Check size={16} className="mr-1" />
-                              Accept
+                              <Check size={16} />
                             </Button>
                             <Button
                               size="sm"
-                              className="bg-red-600 hover:bg-red-700 text-white"
+                              variant="ghost" 
+                              className="text-red-500 hover:text-red-400 hover:bg-red-900/20"
                               onClick={() => handleAcceptOrder(order.id, false)}
-                              disabled={acceptOrderMutation.isPending}
                             >
-                              <X size={16} className="mr-1" />
-                              Reject
+                              <X size={16} />
                             </Button>
                           </div>
                         </td>
                       </>
                     )}
+                    
+                    <td className="px-4 py-4 whitespace-nowrap text-center">
+                      <Link href={`/tailor/orders/${order.id}`} passHref>
+                        <Button
+                          size="sm"
+                          variant="ghost" 
+                          className="text-cyan-500 hover:text-cyan-400 hover:bg-cyan-900/20"
+                        >
+                          <Eye size={16} className="mr-1" />
+                          View
+                        </Button>
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -224,13 +239,13 @@ export default function TailorOrdersPage() {
       
       {/* Refresh button */}
       <div className="mt-4 flex justify-end">
-        <Button
-          className="text-cyan-500 hover:text-cyan-400 border border-gray-800 hover:border-cyan-900"
-          variant="outline"
-          onClick={() => activeQuery.refetch()}
-          disabled={activeQuery.isLoading}
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          className="text-gray-400 border-gray-700 hover:bg-gray-800"
         >
-          <RefreshCw size={16} className={`mr-2 ${activeQuery.isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw size={14} className="mr-1" />
           Refresh
         </Button>
       </div>

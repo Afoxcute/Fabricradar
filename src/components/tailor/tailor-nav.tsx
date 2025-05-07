@@ -8,9 +8,7 @@ import {
   ShoppingBag, 
   Scissors, 
   Users, 
-  Settings,
-  Wallet,
-  Award
+  Settings
 } from 'lucide-react';
 
 export function TailorNav() {
@@ -20,9 +18,7 @@ export function TailorNav() {
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', href: '/tailor/dashboard' },
     { icon: <ShoppingBag size={20} />, label: 'Orders', href: '/tailor/orders' },
     { icon: <Scissors size={20} />, label: 'Designs', href: '/tailor/designs' },
-    { icon: <Award size={20} />, label: 'Rewards', href: '/tailor/rewards' },
     { icon: <Users size={20} />, label: 'Customers', href: '/tailor/customers' },
-    { icon: <Wallet size={20} />, label: 'Fund Wallet', href: '/fund-wallet' },
     { icon: <Settings size={20} />, label: 'Settings', href: '/tailor/settings' },
   ];
   

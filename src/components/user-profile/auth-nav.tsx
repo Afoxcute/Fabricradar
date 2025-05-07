@@ -1,89 +1,150 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers/auth-provider";
 import { useWallet } from "../solana/privy-solana-adapter";
 import { shortenAddress } from "@/lib/utils";
-import { User, ChevronDown, Scissors, Wallet } from "lucide-react";
+import { User, LogOut, ChevronDown, Scissors, LayoutDashboard, Wallet, ShoppingBag } from "lucide-react";
 import Link from "next/link";
-import { UserProfileMini } from "./user-profile-mini";
 
 export function AuthNav() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { publicKey } = useWallet();
+  const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const toggleDropdown = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
+  const handleLogout = () => {
+    logout();
+    setDropdownOpen(false);
+  };
+
+  const navigateToProfile = () => {
+    router.push("/profile");
+    setDropdownOpen(false);
+  };
+  
+  const navigateToOrders = () => {
+    router.push("/orders");
+    setDropdownOpen(false);
+  };
+  
+  const navigateToTailorDashboard = () => {
+    router.push("/tailor/dashboard");
+    setDropdownOpen(false);
+  };
+
+  const navigateToFundWallet = () => {
+    router.push("/fund-wallet");
+    setDropdownOpen(false);
+  };
+
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <button
         onClick={toggleDropdown}
-        className="flex items-center space-x-2 text-sm px-3 py-2 rounded-lg bg-gray-800/70 hover:bg-gray-700/70 border border-gray-700 hover:border-gray-600 transition-colors"
+        className="flex items-center space-x-2 text-sm px-3 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 transition-colors"
       >
-        <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
-          user?.accountType === 'TAILOR' 
-            ? 'bg-cyan-500/20 text-cyan-400' 
-            : 'bg-blue-500/20 text-blue-400'
-        }`}>
-          {user?.accountType === 'TAILOR' ? (
-            <Scissors className="h-3 w-3" />
-          ) : (
-            <User className="h-3 w-3" />
-          )}
-        </div>
-        <span className="max-w-[120px] truncate">
-          {user?.firstName 
-            ? `${user.firstName}${user.lastName ? ` ${user.lastName.charAt(0)}.` : ''}` 
-            : (publicKey ? shortenAddress(publicKey.toString()) : "Account")}
+        {user?.accountType === 'TAILOR' ? (
+          <Scissors className="h-4 w-4" />
+        ) : (
+          <User className="h-4 w-4" />
+        )}
+        <span>
+          {user?.firstName || (publicKey ? shortenAddress(publicKey.toString()) : "Account")}
         </span>
-        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className="h-4 w-4" />
       </button>
 
       {dropdownOpen && (
-        <div className="absolute right-0 mt-2 bg-gray-800/90 backdrop-blur-sm border border-gray-700 shadow-xl rounded-xl z-50 overflow-hidden transition-all duration-200 animate-in fade-in slide-in-from-top-5">
+        <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 shadow-lg rounded-md py-1 z-50">
           {user ? (
-            <UserProfileMini />
+            <>
+              <div className="px-4 py-2 border-b border-gray-700">
+                <p className="text-sm font-medium">
+                  {user.firstName} {user.lastName}
+                </p>
+                {user.email && (
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                )}
+                {publicKey && (
+                  <p className="text-xs text-gray-400 truncate">
+                    {shortenAddress(publicKey.toString())}
+                  </p>
+                )}
+                {user.accountType && (
+                  <div className="mt-1">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      user.accountType === 'TAILOR' 
+                        ? 'bg-cyan-500/20 text-cyan-400' 
+                        : 'bg-green-500/20 text-green-400'
+                    }`}>
+                      {user.accountType === 'TAILOR' ? 'Tailor' : 'Customer'}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={navigateToProfile}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+              >
+                <User className="h-4 w-4 mr-2" />
+                Your Profile
+              </button>
+              
+              <button
+                onClick={navigateToOrders}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                My Orders
+              </button>
+              
+              <button
+                onClick={navigateToFundWallet}
+                className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+              >
+                <Wallet className="h-4 w-4 mr-2" />
+                Fund Wallet
+              </button>
+              
+              {user.accountType === 'TAILOR' && (
+                <button
+                  onClick={navigateToTailorDashboard}
+                  className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 flex items-center"
+                >
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Tailor Dashboard
+                </button>
+              )}
+              
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 flex items-center"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </button>
+            </>
           ) : (
-            <div className="py-2">
+            <>
               <Link
                 href="/auth/signin"
-                className="block px-4 py-2 text-sm hover:bg-gray-700/50 transition-colors"
-                onClick={() => setDropdownOpen(false)}
+                className="block px-4 py-2 text-sm hover:bg-gray-700"
               >
-                <div className="flex items-center">
-                  <User className="h-4 w-4 mr-2 text-cyan-400" />
-                  <span>Sign In</span>
-                </div>
+                Sign In
               </Link>
               <Link
                 href="/auth/signup"
-                className="block px-4 py-2 text-sm hover:bg-gray-700/50 transition-colors"
-                onClick={() => setDropdownOpen(false)}
+                className="block px-4 py-2 text-sm hover:bg-gray-700"
               >
-                <div className="flex items-center">
-                  <Wallet className="h-4 w-4 mr-2 text-cyan-400" />
-                  <span>Create Account</span>
-                </div>
+                Create Account
               </Link>
-            </div>
+            </>
           )}
         </div>
       )}

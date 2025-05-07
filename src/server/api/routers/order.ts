@@ -455,63 +455,6 @@ export const orderRouter = createTRPCRouter({
       };
     }),
 
-  // Get order stats for a customer (total, pending, completed, total spent)
-  getCustomerOrderStats: publicProcedure
-    .input(z.object({ userId: z.number() }))
-    .query(async ({ ctx, input }) => {
-      // Check if the user has permission to access this data
-      if (!ctx.user || (ctx.user.id !== input.userId)) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You don't have permission to access this data",
-        });
-      }
-
-      // Get total orders count
-      const totalOrders = await ctx.db.order.count({
-        where: {
-          userId: input.userId,
-        },
-      });
-
-      // Get pending orders count
-      const pendingOrders = await ctx.db.order.count({
-        where: {
-          userId: input.userId,
-          status: {
-            in: [OrderStatus.PENDING, OrderStatus.ACCEPTED]
-          },
-        },
-      });
-
-      // Get completed orders count
-      const completedOrders = await ctx.db.order.count({
-        where: {
-          userId: input.userId,
-          status: OrderStatus.COMPLETED,
-        },
-      });
-
-      // Get total spent
-      const spentResult = await ctx.db.order.aggregate({
-        where: {
-          userId: input.userId,
-        },
-        _sum: {
-          price: true,
-        },
-      });
-
-      const totalSpent = spentResult._sum.price || 0;
-
-      return {
-        totalOrders,
-        pendingOrders,
-        completedOrders,
-        totalSpent,
-      };
-    }),
-
   // Get order progress
   getOrderProgress: publicProcedure
     .input(z.object({ 

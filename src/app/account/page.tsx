@@ -10,7 +10,6 @@ import Header from '@/components/header/header';
 import Footer from '@/components/footer/footer';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import Link from 'next/link';
-import { UserProfileCard, UserStatsCard } from '@/components/user-profile';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -110,18 +109,6 @@ export default function AccountPage() {
                 </button>
               </nav>
             </div>
-
-            {user.accountType === 'TAILOR' && (
-              <div className="bg-cyan-900/30 backdrop-blur-sm border border-cyan-900/50 rounded-xl p-6">
-                <h3 className="font-medium text-cyan-400 mb-4">Tailor Portal</h3>
-                <Button 
-                  onClick={() => router.push('/tailor/dashboard')}
-                  className="w-full bg-cyan-700 hover:bg-cyan-600"
-                >
-                  Go to Dashboard
-                </Button>
-              </div>
-            )}
           </div>
           
           {/* Main Content */}
@@ -132,8 +119,6 @@ export default function AccountPage() {
                 <div className="flex items-center justify-between">
                   <h1 className="text-2xl font-bold">My Orders</h1>
                 </div>
-                
-                <UserStatsCard className="mb-6" />
                 
                 {isLoadingOrders ? (
                   <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 text-center">
@@ -152,7 +137,7 @@ export default function AccountPage() {
                   <div className="space-y-4">
                     {ordersData.orders.map((order) => (
                       <Link key={order.id} href={`/orders/${order.id}`}>
-                        <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 hover:bg-gray-800/60 transition-colors cursor-pointer border border-gray-700 hover:border-gray-600">
+                        <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 hover:bg-gray-800/60 transition-colors cursor-pointer">
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="font-semibold text-lg">{order.orderNumber}</p>
@@ -195,15 +180,37 @@ export default function AccountPage() {
               <div className="space-y-6">
                 <h1 className="text-2xl font-bold">My Profile</h1>
                 
-                <UserProfileCard />
-                
-                <div className="mt-6 text-center">
-                  <Link href="/profile">
-                    <Button className="bg-cyan-600 hover:bg-cyan-700 flex items-center gap-2">
+                <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6">
+                  <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-gray-400 text-sm">First Name</h3>
+                      <p className="font-medium">{user.firstName || '(Not provided)'}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-gray-400 text-sm">Last Name</h3>
+                      <p className="font-medium">{user.lastName || '(Not provided)'}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-gray-400 text-sm">Email</h3>
+                      <p className="font-medium">{user.email || '(Not provided)'}</p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-gray-400 text-sm">Phone</h3>
+                      <p className="font-medium">{user.phone || '(Not provided)'}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <Button variant="outline" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
-                      Edit Full Profile
+                      Edit Profile
                     </Button>
-                  </Link>
+                  </div>
                 </div>
               </div>
             )}
@@ -213,9 +220,7 @@ export default function AccountPage() {
               <div className="space-y-6">
                 <h1 className="text-2xl font-bold">My Wallet</h1>
                 
-                <UserProfileCard showEditButton={false} />
-                
-                <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 border border-gray-700 mt-6">
+                <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6">
                   <h2 className="text-xl font-semibold mb-4">Wallet Address</h2>
                   
                   {user.walletAddress ? (
@@ -224,13 +229,6 @@ export default function AccountPage() {
                       <p className="font-mono bg-gray-900 p-3 rounded-md overflow-auto">
                         {user.walletAddress}
                       </p>
-                      <div className="mt-6">
-                        <Link href="/fund-wallet">
-                          <Button className="bg-cyan-600 hover:bg-cyan-700">
-                            Fund Wallet
-                          </Button>
-                        </Link>
-                      </div>
                     </div>
                   ) : (
                     <div className="text-center p-6">

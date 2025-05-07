@@ -25,6 +25,8 @@ import { TailorNav } from '@/components/tailor/tailor-nav';
 import Image from 'next/image';
 import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
+import TokenBalanceDisplay from '@/components/rewards/token-balance-display';
+import TokenMintForm from '@/components/rewards/token-mint-form';
 
 // Define the same RewardType as in Prisma schema
 type RewardType = 'DISCOUNT' | 'FREE_ITEM' | 'POINTS' | 'PRIORITY';
@@ -50,7 +52,7 @@ interface Reward {
 
 export default function TailorRewardsPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired' | 'create'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'draft' | 'expired' | 'create' | 'tokens'>('active');
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   
   // Form state
@@ -264,6 +266,16 @@ export default function TailorRewardsPage() {
           >
             Expired
           </button>
+          <button
+            onClick={() => setActiveTab('tokens')}
+            className={`px-4 py-2 font-medium text-sm ${
+              activeTab === 'tokens' 
+                ? 'text-cyan-400 border-b-2 border-cyan-400' 
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+          >
+            Token Rewards
+          </button>
         </div>
         
         {/* Create New Reward Form */}
@@ -458,6 +470,13 @@ export default function TailorRewardsPage() {
                 </div>
               </div>
             </form>
+          </div>
+        ) : activeTab === 'tokens' ? (
+          <div className="space-y-6">
+            <TokenBalanceDisplay />
+            <TokenMintForm onSuccess={() => {
+              toast.success('Token rewards updated');
+            }} />
           </div>
         ) : (
           <>

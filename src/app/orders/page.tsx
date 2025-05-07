@@ -1,60 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { api } from '@/trpc/react';
 import { useAuth } from '@/providers/auth-provider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Clock, Loader2, RefreshCw, Eye, CheckCircle, XCircle, Filter } from 'lucide-react';
+import { AlertCircle, Clock, Loader2, RefreshCw, Eye } from 'lucide-react';
 import Header from '@/components/header/header';
 import BackgroundEffect from '@/components/background-effect/background-effect';
 import Footer from '@/components/footer/footer';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 export default function CustomerOrdersPage() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  
-  // Read URL parameters for initial filter
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const statusParam = searchParams.get('status');
-    
-    if (statusParam && ['PENDING', 'ACCEPTED', 'COMPLETED', 'REJECTED'].includes(statusParam)) {
-      setStatusFilter(statusParam);
-    }
-  }, []);
-  
-  // Update URL when filter changes
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    
-    if (statusFilter) {
-      url.searchParams.set('status', statusFilter);
-    } else {
-      url.searchParams.delete('status');
-    }
-    
-    // Update URL without triggering a full page reload
-    window.history.pushState({}, '', url);
-  }, [statusFilter]);
   
   // Fetch customer orders
   const { data, isLoading, error, refetch } = api.orders.getCustomerOrders.useQuery(
     { userId: user?.id || 0, limit: 50 },
     { enabled: Boolean(user?.id) }
   );
-  
-  // Filter orders based on status
-  const filteredOrders = React.useMemo(() => {
-    if (!data?.orders) return [];
-    
-    return statusFilter 
-      ? data.orders.filter((order: any) => order.status === statusFilter)
-      : data.orders;
-  }, [data?.orders, statusFilter]);
   
   // Helper function to render status badge
   const renderStatusBadge = (status: string) => {
@@ -105,56 +69,7 @@ export default function CustomerOrdersPage() {
       <Header />
       
       <div className="container mx-auto py-8 px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-          <h1 className="text-2xl font-bold">My Orders</h1>
-          
-          <div className="mt-4 md:mt-0 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={statusFilter === null ? 'default' : 'outline'}
-              onClick={() => setStatusFilter(null)}
-              className={statusFilter === null ? 'bg-cyan-600 hover:bg-cyan-700' : ''}
-            >
-              All Orders
-            </Button>
-            <Button
-              size="sm"
-              variant={statusFilter === 'PENDING' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('PENDING')}
-              className={statusFilter === 'PENDING' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
-            >
-              <Clock className="h-4 w-4 mr-1" />
-              Pending
-            </Button>
-            <Button
-              size="sm"
-              variant={statusFilter === 'ACCEPTED' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('ACCEPTED')}
-              className={statusFilter === 'ACCEPTED' ? 'bg-cyan-600 hover:bg-cyan-700' : ''}
-            >
-              <Clock className="h-4 w-4 mr-1" />
-              In Progress
-            </Button>
-            <Button
-              size="sm"
-              variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('COMPLETED')}
-              className={statusFilter === 'COMPLETED' ? 'bg-green-600 hover:bg-green-700' : ''}
-            >
-              <CheckCircle className="h-4 w-4 mr-1" />
-              Completed
-            </Button>
-            <Button
-              size="sm"
-              variant={statusFilter === 'REJECTED' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('REJECTED')}
-              className={statusFilter === 'REJECTED' ? 'bg-red-600 hover:bg-red-700' : ''}
-            >
-              <XCircle className="h-4 w-4 mr-1" />
-              Rejected
-            </Button>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold mb-6">My Orders</h1>
         
         <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
           {isLoading ? (
@@ -167,7 +82,7 @@ export default function CustomerOrdersPage() {
               <p className="font-medium">Error loading orders</p>
               <p className="text-sm">{error.message || 'There was an error loading your orders. Please try again.'}</p>
             </div>
-          ) : filteredOrders.length > 0 ? (
+          ) : data?.orders && data.orders.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-800/50">
@@ -181,7 +96,7 @@ export default function CustomerOrdersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
-                  {filteredOrders.map((order: any) => (
+                  {data.orders.map((order: any) => (
                     <tr key={order.id} className="bg-gray-900/30 hover:bg-gray-800/50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-white">{order.orderNumber || `#${order.id}`}</div>
@@ -217,32 +132,13 @@ export default function CustomerOrdersPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <h3 className="text-xl font-semibold text-white mb-2">
-                {statusFilter 
-                  ? `No ${statusFilter.toLowerCase()} orders found` 
-                  : "No orders found"}
-              </h3>
-              <p className="text-gray-400 mb-6">
-                {statusFilter 
-                  ? `You don't have any orders with ${statusFilter.toLowerCase()} status.` 
-                  : "You haven't placed any orders yet."}
-              </p>
-              {!statusFilter && (
-                <Link href="/designs" passHref>
-                  <Button className="bg-cyan-600 hover:bg-cyan-700">
-                    Browse Designs
-                  </Button>
-                </Link>
-              )}
-              {statusFilter && (
-                <Button 
-                  onClick={() => setStatusFilter(null)} 
-                  variant="outline" 
-                  className="border-cyan-500/30 text-cyan-400"
-                >
-                  View All Orders
+              <h3 className="text-xl font-semibold text-white mb-2">No orders found</h3>
+              <p className="text-gray-400 mb-6">You haven&apos;t placed any orders yet.</p>
+              <Link href="/designs" passHref>
+                <Button className="bg-cyan-600 hover:bg-cyan-700">
+                  Browse Designs
                 </Button>
-              )}
+              </Link>
             </div>
           )}
         </div>

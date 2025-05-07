@@ -9,7 +9,6 @@ import { Loader2, Coins } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useCluster } from '../cluster/cluster-data-access';
 import { TokenService, CTOKEN_MINT_ADDRESS } from '@/services/TokenService';
-import { db } from '@/server/db';
 
 interface TokenMintFormProps {
   onSuccess?: () => void;
@@ -24,8 +23,8 @@ export default function TokenMintForm({ onSuccess }: TokenMintFormProps) {
   const [transactionSignature, setTransactionSignature] = useState('');
   const [tokenBalance, setTokenBalance] = useState<number | null>(null);
 
-  // Create a TokenService instance
-  const tokenService = new TokenService(db);
+  // Create a TokenService instance without passing the db
+  const tokenService = new TokenService();
 
   // Fetch token balance on load
   useEffect(() => {

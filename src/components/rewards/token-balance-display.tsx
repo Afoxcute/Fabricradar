@@ -7,7 +7,6 @@ import { PublicKey } from '@solana/web3.js';
 import { Loader2, Wallet, RefreshCw, Coins } from 'lucide-react';
 import { Button } from '../ui/button';
 import { TokenService, CTOKEN_MINT_ADDRESS } from '@/services/TokenService'; 
-import { db } from '@/server/db';
 
 export default function TokenBalanceDisplay() {
   const { publicKey, connected } = useWallet();
@@ -17,7 +16,7 @@ export default function TokenBalanceDisplay() {
   const [error, setError] = useState<string | null>(null);
   
   // Create a TokenService instance
-  const tokenService = new TokenService(db);
+  const tokenService = new TokenService();
 
   const fetchTokenBalance = useCallback(async () => {
     if (!connected || !publicKey) {

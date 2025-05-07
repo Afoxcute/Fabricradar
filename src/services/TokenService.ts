@@ -1,4 +1,3 @@
-import { BaseService } from './BaseService';
 import { Connection, Keypair, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js';
 import { 
   createMint, 
@@ -15,7 +14,7 @@ import toast from 'react-hot-toast';
 // Constants
 export const CTOKEN_MINT_ADDRESS = 'cTokenmWW8bLPjZEBAUgYy3zKxQZW6VKi7bqNFEVv3m';
 
-export class TokenService extends BaseService {
+export class TokenService {
   /**
    * Create a compressed token mint (simulation for now)
    * @param walletAddress The wallet address of the minter
@@ -86,17 +85,8 @@ export class TokenService extends BaseService {
         
         const simulatedSignature = `sim-mint-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
         
-        // Log the transaction in your database
-        // await this.db.tokenTransaction.create({
-        //   data: {
-        //     type: 'MINT',
-        //     amount: amount,
-        //     fromAddress: null,
-        //     toAddress: walletAddress,
-        //     signature: simulatedSignature,
-        //     status: 'SUCCESS'
-        //   }
-        // });
+        // In a real implementation, we would log the transaction in the database
+        // When we have proper backend integration
         
         return {
           signature: simulatedSignature,
@@ -219,17 +209,8 @@ export class TokenService extends BaseService {
       // For demo purposes, simulate a successful transfer
       const simulatedSignature = `sim-transfer-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
       
-      // Log the transaction in your database
-      // await this.db.tokenTransaction.create({
-      //   data: {
-      //     type: 'TRANSFER',
-      //     amount: amount,
-      //     fromAddress: fromWalletAddress,
-      //     toAddress: toWalletAddress,
-      //     signature: simulatedSignature,
-      //     status: 'SUCCESS'
-      //   }
-      // });
+      // In a real implementation, we would log the transaction in the database
+      // When we have proper backend integration
       
       return {
         signature: simulatedSignature,

@@ -7,7 +7,6 @@ import { Button } from '../ui/button';
 import { Loader2, Coins, Wallet, RefreshCw, ArrowDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { TokenService, CTOKEN_MINT_ADDRESS } from '@/services/TokenService';
-import { db } from '@/server/db';
 
 export function CustomerTokenRewards() {
   const { publicKey, connected } = useWallet();
@@ -23,7 +22,7 @@ export function CustomerTokenRewards() {
   }>>([]);
 
   // Create token service instance
-  const tokenService = new TokenService(db);
+  const tokenService = new TokenService();
 
   // Simulate recent redemptions
   useEffect(() => {

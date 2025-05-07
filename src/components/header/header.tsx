@@ -96,12 +96,6 @@ const Header = () => {
                 <Wallet className="h-4 w-4" />
                 Fund Wallet
               </Link>
-              <Link
-                href="/orders"
-                className="text-sm flex items-center gap-1 hover:text-cyan-400 transition-colors"
-              >
-                My Orders
-              </Link>
             </>
           )}
         </nav>

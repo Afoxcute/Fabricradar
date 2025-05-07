@@ -18,15 +18,15 @@ import {
   Calendar,
   Clock,
   Info,
-  Search
+  Search,
+  Coins
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TailorNav } from '@/components/tailor/tailor-nav';
 import Image from 'next/image';
 import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
-import TokenBalanceDisplay from '@/components/rewards/token-balance-display';
-import TokenMintForm from '@/components/rewards/token-mint-form';
+import { TokenMinter } from '@/components/rewards/token-minter';
 
 // Define the same RewardType as in Prisma schema
 type RewardType = 'DISCOUNT' | 'FREE_ITEM' | 'POINTS' | 'PRIORITY';
@@ -268,18 +268,36 @@ export default function TailorRewardsPage() {
           </button>
           <button
             onClick={() => setActiveTab('tokens')}
-            className={`px-4 py-2 font-medium text-sm ${
+            className={`px-4 py-2 font-medium text-sm flex items-center ${
               activeTab === 'tokens' 
                 ? 'text-cyan-400 border-b-2 border-cyan-400' 
                 : 'text-gray-400 hover:text-gray-300'
             }`}
           >
+            <Coins className="h-4 w-4 mr-1" />
             Token Rewards
           </button>
         </div>
         
-        {/* Create New Reward Form */}
-        {activeTab === 'create' ? (
+        {/* Token Minter Component */}
+        {activeTab === 'tokens' ? (
+          <div className="max-w-md mx-auto">
+            <TokenMinter />
+            <div className="mt-6 bg-gray-900/30 border border-gray-800 rounded-xl p-6">
+              <h3 className="text-lg font-medium mb-4 flex items-center">
+                <Info className="h-5 w-5 mr-2 text-cyan-400" />
+                About Token Rewards
+              </h3>
+              <p className="text-gray-400 mb-4">
+                Compressed tokens (cTokens) are a special type of SPL token on Solana. You can mint these tokens
+                and distribute them to your customers as rewards.
+              </p>
+              <p className="text-gray-400">
+                These tokens can be used by customers to redeem special offers, exclusives, or early access to your designs.
+              </p>
+            </div>
+          </div>
+        ) : activeTab === 'create' ? (
           <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
             <div className="flex items-center mb-6">
               <div className="w-10 h-10 bg-cyan-500/20 rounded-full flex items-center justify-center mr-3">
@@ -470,13 +488,6 @@ export default function TailorRewardsPage() {
                 </div>
               </div>
             </form>
-          </div>
-        ) : activeTab === 'tokens' ? (
-          <div className="space-y-6">
-            <TokenBalanceDisplay />
-            <TokenMintForm onSuccess={() => {
-              toast.success('Token rewards updated');
-            }} />
           </div>
         ) : (
           <>

@@ -458,205 +458,277 @@ export function UserProfileForm({
   };
 
   return (
-    <div className="card-body">
-      {!isSignUp && (
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">
-          {initialValues ? "Update Profile" : "Complete Your Profile"}
-        </h2>
+    <div>
+      {isLoading && (
+        <div className="absolute inset-0 bg-gray-900/50 flex items-center justify-center z-50 rounded-lg backdrop-blur-sm">
+          <div className="text-center">
+            <Loader2 className="h-10 w-10 animate-spin text-cyan-500 mx-auto" />
+            <p className="mt-2 text-white">Processing your request...</p>
+          </div>
+        </div>
       )}
-      
-      {!showOtp ? (
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      {showOtp ? (
+        <div className="animate-in fade-in duration-300">
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-400 mb-4">
+              <Key className="h-8 w-8" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Verify Your Identity</h3>
+            <p className="text-gray-400 text-sm mb-1">
+              We sent a verification code to
+            </p>
+            <p className="font-mono text-cyan-400">
+              {identifier.includes('@') 
+                ? identifier 
+                : identifier.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')}
+            </p>
+          </div>
+          
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                className="block w-full px-4 py-3 text-center text-2xl tracking-widest bg-gray-800 border border-gray-700 focus:border-cyan-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-colors"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.slice(0, 6))}
+                placeholder="000000"
+                maxLength={6}
+                pattern="\d{6}"
+                autoFocus
+              />
+            </div>
+          </div>
+          
+          <div className="flex flex-col space-y-3">
+            <Button
+              onClick={handleVerifyOtp}
+              className="w-full py-6 bg-cyan-600 hover:bg-cyan-700 text-white flex items-center justify-center gap-2" 
+              disabled={otpCode.length < 6 || isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  <span>Verify Code</span>
+                  <ChevronsRight className="h-5 w-5" />
+                </>
+              )}
+            </Button>
+            
+            <div className="text-center">
+              <button 
+                type="button"
+                onClick={() => setShowOtp(false)}
+                className="text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Go back to profile form
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 animate-in fade-in duration-300">
+          {/* Account Type Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center">
+                {form.watch('accountType') === 'TAILOR' ? (
+                  <Scissors className="h-5 w-5 text-cyan-400 mr-2" />
+                ) : (
+                  <UserCircle className="h-5 w-5 text-blue-400 mr-2" />
+                )}
+                <h3 className="text-lg font-semibold">Account Type</h3>
+              </div>
+              {user && user.accountType && (
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  user.accountType === 'TAILOR' 
+                    ? 'bg-cyan-500/20 text-cyan-400' 
+                    : 'bg-green-500/20 text-green-400'
+                }`}>
+                  {user.accountType}
+                </span>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <label 
+                className={`flex flex-col items-center justify-center p-4 border rounded-lg cursor-pointer transition-all ${
+                  form.watch('accountType') === 'USER'
+                    ? 'bg-blue-900/20 border-blue-700'
+                    : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800'
+                }`}
+              >
+                <input
+                  type="radio"
+                  value="USER"
+                  {...form.register('accountType')}
+                  className="sr-only"
+                />
+                <UserCircle className={`h-10 w-10 mb-2 ${
+                  form.watch('accountType') === 'USER'
+                    ? 'text-blue-400'
+                    : 'text-gray-400'
+                }`} />
+                <span className={form.watch('accountType') === 'USER' ? 'font-medium' : 'text-gray-400'}>
+                  Customer
+                </span>
+              </label>
+              
+              <label 
+                className={`flex flex-col items-center justify-center p-4 border rounded-lg cursor-pointer transition-all ${
+                  form.watch('accountType') === 'TAILOR'
+                    ? 'bg-cyan-900/20 border-cyan-700'
+                    : 'bg-gray-800/50 border-gray-700 hover:bg-gray-800'
+                }`}
+              >
+                <input
+                  type="radio"
+                  value="TAILOR"
+                  {...form.register('accountType')}
+                  className="sr-only"
+                />
+                <Scissors className={`h-10 w-10 mb-2 ${
+                  form.watch('accountType') === 'TAILOR'
+                    ? 'text-cyan-400'
+                    : 'text-gray-400'
+                }`} />
+                <span className={form.watch('accountType') === 'TAILOR' ? 'font-medium' : 'text-gray-400'}>
+                  Tailor
+                </span>
+              </label>
+            </div>
+          </div>
+          
+          {/* Personal Info Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Personal Information</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-1">
+                  First Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="firstName"
+                  className={`w-full px-3 py-2 bg-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-colors ${
+                    form.formState.errors.firstName
+                      ? 'border-red-500'
+                      : 'border-gray-700 focus:border-cyan-500'
+                  }`}
+                  placeholder="Your first name"
+                  {...form.register('firstName')}
+                />
+                {form.formState.errors.firstName && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {form.formState.errors.firstName.message}
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-1">
+                  Last Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="lastName"
+                  className={`w-full px-3 py-2 bg-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-colors ${
+                    form.formState.errors.lastName
+                      ? 'border-red-500'
+                      : 'border-gray-700 focus:border-cyan-500'
+                  }`}
+                  placeholder="Your last name"
+                  {...form.register('lastName')}
+                />
+                {form.formState.errors.lastName && (
+                  <p className="mt-1 text-sm text-red-500">
+                    {form.formState.errors.lastName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          {/* Contact Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Contact Information</h3>
+            <p className="text-sm text-gray-400 mb-2">
+              At least one contact method is required. We&apos;ll use this to verify your account.
+            </p>
+            
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                First Name <span className="text-red-500">*</span>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                Email Address
               </label>
               <input
-                {...form.register("firstName")}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="Enter your first name"
+                type="email"
+                id="email"
+                className={`w-full px-3 py-2 bg-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-colors ${
+                  form.formState.errors.email
+                    ? 'border-red-500'
+                    : 'border-gray-700 focus:border-cyan-500'
+                }`}
+                placeholder="email@example.com"
+                {...form.register('email')}
               />
-              {form.formState.errors.firstName && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.firstName.message}</p>
+              {form.formState.errors.email && (
+                <p className="mt-1 text-sm text-red-500">
+                  {form.formState.errors.email.message}
+                </p>
               )}
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Last Name <span className="text-red-500">*</span>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1">
+                Phone Number
               </label>
               <input
-                {...form.register("lastName")}
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                placeholder="Enter your last name"
+                type="tel"
+                id="phone"
+                className={`w-full px-3 py-2 bg-gray-800 border rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500/50 transition-colors ${
+                  form.formState.errors.phone
+                    ? 'border-red-500'
+                    : 'border-gray-700 focus:border-cyan-500'
+                }`}
+                placeholder="(123) 456-7890"
+                {...form.register('phone')}
               />
-              {form.formState.errors.lastName && (
-                <p className="text-red-500 text-xs mt-1">{form.formState.errors.lastName.message}</p>
+              {form.formState.errors.phone && (
+                <p className="mt-1 text-sm text-red-500">
+                  {form.formState.errors.phone.message}
+                </p>
               )}
             </div>
           </div>
           
-          {/* Account Type Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              Account Type <span className="text-red-500">*</span>
-            </label>
-            <div className="flex space-x-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="USER"
-                  {...form.register("accountType")}
-                  checked={form.watch("accountType") === "USER"}
-                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
-                />
-                <div className="flex items-center gap-2">
-                  <UserCircle className="h-5 w-5 text-cyan-400" />
-                  <span className="text-gray-300">Customer</span>
-                </div>
-              </label>
-              
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="TAILOR"
-                  {...form.register("accountType")}
-                  checked={form.watch("accountType") === "TAILOR"}
-                  className="text-cyan-500 focus:ring-cyan-500 h-4 w-4"
-                />
-                <div className="flex items-center gap-2">
-                  <Scissors className="h-5 w-5 text-cyan-400" />
-                  <span className="text-gray-300">Tailor</span>
-                </div>
-              </label>
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Select &quot;Customer&quot; if you want to order clothes, or &quot;Tailor&quot; if you want to offer tailoring services</p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Email {!form.watch("phone") && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="email"
-              {...form.register("email")}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Enter your email address"
-            />
-            {form.formState.errors.email && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.email.message}</p>
-            )}
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Phone Number {!form.watch("email") && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="tel"
-              {...form.register("phone")}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-              placeholder="Enter your phone number"
-            />
-            {form.formState.errors.phone && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.phone.message}</p>
-            )}
-            <p className="text-xs text-gray-500 mt-1">At least one contact method (email or phone) is required</p>
-          </div>
-          
+          {/* Wallet Address */}
           {walletAddress && (
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Wallet Address
-              </label>
-              <input
-                type="text"
-                value={walletAddress}
-                disabled
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 opacity-70"
-              />
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold border-b border-gray-700 pb-2">Connected Wallet</h3>
+              <div className="p-3 bg-gray-800 border border-gray-700 rounded-md">
+                <p className="text-sm text-gray-400 mb-1">Wallet Address</p>
+                <p className="font-mono text-xs break-all">{walletAddress}</p>
+              </div>
             </div>
           )}
           
-          <Button 
-            type="submit" 
-            className="w-full mt-6 bg-cyan-500 hover:bg-cyan-600 text-white flex items-center justify-center py-3" 
+          <Button
+            type="submit"
+            className="w-full py-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white flex items-center justify-center gap-2"
             disabled={isLoading}
           >
             {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>{isSignUp ? "Creating Account..." : "Updating Profile..."}</span>
-              </>
+              <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
               <>
-                <span>{isSignUp ? "Create Account" : "Save Profile"}</span>
-                <ChevronsRight className="ml-2 h-4 w-4" />
+                <span>{isSignUp ? 'Create Account' : 'Save Changes'}</span>
+                <ChevronsRight className="h-5 w-5" />
               </>
             )}
           </Button>
-          
-          {isSignUp && (
-            <div className="text-center text-sm mt-4">
-              <span className="text-gray-400">Already have an account?</span>{" "}
-              <button 
-                type="button"
-                className="text-cyan-400 hover:underline" 
-                onClick={() => router.push("/auth/signin")}
-              >
-                Sign in
-              </button>
-            </div>
-          )}
         </form>
-      ) : (
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-300 mb-1">
-              Enter OTP Code
-            </label>
-            <input 
-              type="text"
-              placeholder="Enter 6-digit code" 
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value)}
-              maxLength={6}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            />
-            <p className="text-sm text-gray-400 mt-2">
-              We sent a verification code to your {identifier.includes('@') ? 'email' : 'phone'}
-            </p>
-          </div>
-          
-          <Button 
-            onClick={handleVerifyOtp} 
-            className="w-full bg-cyan-500 hover:bg-cyan-600 text-white flex items-center justify-center py-3" 
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                <span>Verifying...</span>
-              </>
-            ) : (
-              <>
-                <span>Verify OTP</span>
-                <Key className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-          
-          <div className="text-center text-sm">
-            <button 
-              type="button"
-              className="text-cyan-400 hover:underline" 
-              onClick={() => setShowOtp(false)}
-            >
-              Go back
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );

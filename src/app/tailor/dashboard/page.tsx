@@ -12,6 +12,7 @@ import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { TailorWalletHelper } from '@/components/tailor/tailor-wallet-helper';
+import Footer from '@/components/footer/footer';
 
 // Define our local OrderStatus enum to match Prisma's enum
 enum OrderStatusEnum {
@@ -218,6 +219,7 @@ const TailorDashboard = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[#050b18] to-[#0a1428]">
+        <BackgroundEffect />
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500 mx-auto"></div>
           <p className="mt-4 text-white text-lg">Loading...</p>
@@ -234,7 +236,7 @@ const TailorDashboard = () => {
       <div className="flex">
         <TailorNav />
         
-        <div className="ml-64 flex-1 p-8 relative z-10">
+        <div className="ml-64 flex-1 p-8 relative z-10 pb-16">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-white">Welcome back, {user?.firstName}!</h1>
             <p className="text-gray-400 mt-2">
@@ -244,7 +246,7 @@ const TailorDashboard = () => {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
               <h3 className="text-gray-400 mb-2">Total Orders</h3>
               {isSummaryLoading ? (
                 <Spin size="small" />
@@ -253,16 +255,16 @@ const TailorDashboard = () => {
               )}
             </div>
             
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
               <h3 className="text-gray-400 mb-2">Pending Orders</h3>
               {isSummaryLoading ? (
                 <Spin size="small" />
               ) : (
-                <p className="text-3xl font-bold text-cyan-500">{orderSummary.pendingOrders}</p>
+                <p className="text-3xl font-bold text-amber-500">{orderSummary.pendingOrders}</p>
               )}
             </div>
             
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
               <h3 className="text-gray-400 mb-2">Completed Orders</h3>
               {isSummaryLoading ? (
                 <Spin size="small" />
@@ -275,8 +277,15 @@ const TailorDashboard = () => {
           </div>
 
           {/* Recent Orders */}
-          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-            <h2 className="text-xl font-bold mb-6">Recent Orders</h2>
+          <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-colors">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Recent Orders</h2>
+              <Link href="/tailor/orders">
+                <Button type="link" className="text-cyan-500 hover:text-cyan-400">
+                  View All Orders
+                </Button>
+              </Link>
+            </div>
             
             <div className="overflow-x-auto">
               {isLoadingOrders ? (
@@ -299,6 +308,7 @@ const TailorDashboard = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

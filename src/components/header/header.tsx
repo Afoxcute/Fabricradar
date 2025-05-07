@@ -12,7 +12,7 @@ import { TokenBalances } from '../account/account-ui';
 import { useRouter } from 'next/navigation';
 import { shortenAddress, copyToClipboard } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
-import { AuthNav } from '../user-profile/auth-nav';
+import { AuthNav } from '@/components/user-profile';
 import { OrderNotifications } from '../notifications/order-notifications';
 
 const Header = () => {

@@ -14,12 +14,15 @@ import { useCluster } from '../cluster/cluster-data-access'
 import { useGetUSDCBalance } from '../account/account-data-access'
 import { USDC_MINT_ADDRESS } from '../account/account-data-access'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/providers/auth-provider'
 
 export default function WalletFundFeature() {
   const { publicKey, connected } = useWallet()
   const { connection } = useConnection()
   const { cluster } = useCluster()
   const router = useRouter()
+  const { user } = useAuth()
+  const isTailor = user?.accountType === 'TAILOR'
   const [balance, setBalance] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [fundingLoading, setFundingLoading] = useState(false)
@@ -138,8 +141,10 @@ export default function WalletFundFeature() {
   return (
     <div>
       <AppHero
-        title="Fund Your Wallet with USDC"
-        subtitle="Add USDC to your Solana wallet to get started with the platform"
+        title={isTailor ? "Fund Your Tailor Wallet" : "Fund Your Wallet with USDC"}
+        subtitle={isTailor 
+          ? "Add USDC to your wallet to receive payments and manage your tailor business" 
+          : "Add USDC to your Solana wallet to get started with the platform"}
       >
         {!connected && (
           <div className="mt-6">
@@ -152,6 +157,13 @@ export default function WalletFundFeature() {
         {connected ? (
           <>
             <div className="mb-6">
+              {isTailor && (
+                <div className="mb-4 bg-cyan-900/30 border border-cyan-800 px-4 py-3 rounded-lg">
+                  <p className="text-cyan-300 font-medium">Tailor Account</p>
+                  <p className="text-sm text-gray-300">As a tailor, you can receive USDC payments from customers.</p>
+                </div>
+              )}
+              
               <div className="flex justify-between items-center mb-3">
                 <div className="badge badge-success">Connected</div>
                 <Button 
@@ -201,10 +213,14 @@ export default function WalletFundFeature() {
               <div className="card-body">
                 <div className="flex items-center mb-4">
                   <DollarSign className="h-6 w-6 text-blue-500 mr-2" />
-                  <h2 className="card-title m-0">Fund Your Wallet with USDC</h2>
+                  <h2 className="card-title m-0">
+                    {isTailor ? "Fund Your Tailor Wallet" : "Fund Your Wallet with USDC"}
+                  </h2>
                 </div>
                 <p className="text-sm text-gray-400 mb-4">
-                  Add USDC to your Solana wallet to make transactions on our platform.
+                  {isTailor 
+                    ? "Add USDC to your wallet to receive payments from customers and manage your tailor business."
+                    : "Add USDC to your Solana wallet to make transactions on our platform."}
                 </p>
 
                 <div className="mb-4">
@@ -285,7 +301,14 @@ export default function WalletFundFeature() {
                   </h3>
                   <ul className="list-disc list-inside text-xs text-gray-300 mt-2 space-y-1">
                     <li>You can only fund your wallet with USDC on Solana</li>
-                    <li>You need USDC for all transactions on our platform</li>
+                    {isTailor ? (
+                      <>
+                        <li>As a tailor, you&apos;ll receive customer payments in USDC</li>
+                        <li>Maintain sufficient USDC balance to pay platform fees</li>
+                      </>
+                    ) : (
+                      <li>You need USDC for all transactions on our platform</li>
+                    )}
                     <li>Processing can take a few moments to complete</li>
                     <li>On testnet/devnet, funds are for testing purposes only</li>
                   </ul>

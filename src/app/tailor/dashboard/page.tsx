@@ -11,6 +11,7 @@ import './dashboard.css';  // Import custom CSS for styling antd components
 import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
 import { JsonValue } from '@prisma/client/runtime/library';
+import { TailorWalletHelper } from '@/components/tailor/tailor-wallet-helper';
 
 // Define our local OrderStatus enum to match Prisma's enum
 enum OrderStatusEnum {
@@ -270,14 +271,7 @@ const TailorDashboard = () => {
               )}
             </div>
             
-            <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-              <h3 className="text-gray-400 mb-2">Total Revenue</h3>
-              {isSummaryLoading ? (
-                <Spin size="small" />
-              ) : (
-                <p className="text-3xl font-bold text-white">{orderSummary.totalRevenue.toFixed(2)} USDC</p>
-              )}
-            </div>
+            <TailorWalletHelper variant="card" />
           </div>
 
           {/* Recent Orders */}

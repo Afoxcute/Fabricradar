@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Check, Clock, Loader2, RefreshCw, X, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import { TailorWalletHelper } from '@/components/tailor/tailor-wallet-helper';
 
 export default function TailorOrdersPage() {
   const { user } = useAuth();
@@ -129,6 +130,10 @@ export default function TailorOrdersPage() {
         >
           All Orders
         </button>
+        
+        <div className="ml-auto">
+          <TailorWalletHelper variant="outline" />
+        </div>
       </div>
       
       {/* Orders List */}

@@ -10,6 +10,20 @@ interface TokenListProps {
   tailorId: number;
 }
 
+// Define TailorToken interface
+interface TailorToken {
+  id: number;
+  name: string;
+  symbol: string;
+  mintAddress: string;
+  initialSupply: number;
+  decimals: number;
+  tailorId: number;
+  txSignature?: string | null;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+}
+
 export function TokenList({ tailorId }: TokenListProps) {
   const { cluster } = useCluster();
   const { data, isLoading, error } = api.tokens.getTailorTokens.useQuery(
@@ -78,7 +92,7 @@ export function TokenList({ tailorId }: TokenListProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {tokens.map((token) => (
+              {tokens.map((token: TailorToken) => (
                 <tr key={token.id} className="bg-gray-900/20 hover:bg-gray-800/30">
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="flex items-center">

@@ -1,5 +1,6 @@
-import { Prisma as PrismaNamespace } from '@prisma/client';
+// import { Prisma as PrismaNamespace } from '@prisma/client';
 import { OrderProgress } from './order';
+import { JsonValue, JsonObject, JsonArray } from './json';
 
 /**
  * This file extends Prisma's generated types to include the progress field
@@ -17,27 +18,22 @@ export type OrderWithProgress = {
   progress?: OrderProgress | null;
 };
 
-// Define JSON value types
-type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
-type JsonObject = { [Key in string]?: JsonValue };
-type JsonArray = JsonValue[];
+// Define additional JSON types needed for Prisma
 type NullableJsonInput = JsonValue | { toJSON: () => JsonValue };
 
-// Extend Prisma namespace for InputTypes
-declare namespace Prisma {
-  interface OrderUpdateInput {
-    progress?: NullableJsonInput | { set?: JsonValue } | null;
-  }
-  
-  interface OrderUncheckedUpdateInput {
-    progress?: NullableJsonInput | { set?: JsonValue } | null;
-  }
-  
-  interface OrderCreateInput {
-    progress?: JsonValue;
-  }
-  
-  interface OrderUncheckedCreateInput {
-    progress?: JsonValue;
-  }
+// Define our own input types without relying on Prisma namespace
+export interface OrderUpdateInput {
+  progress?: NullableJsonInput | { set?: JsonValue } | null;
+}
+
+export interface OrderUncheckedUpdateInput {
+  progress?: NullableJsonInput | { set?: JsonValue } | null;
+}
+
+export interface OrderCreateInput {
+  progress?: JsonValue;
+}
+
+export interface OrderUncheckedCreateInput {
+  progress?: JsonValue;
 } 

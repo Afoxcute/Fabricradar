@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
-import type { Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { OrderProgress } from "@/types/order";
+
+// Import the JSON types from our prisma-extensions
+import { JsonValue, JsonObject, JsonArray } from "@/types/json";
 
 // Define the OrderStatus type to match Prisma schema
 type OrderStatus = "PENDING" | "ACCEPTED" | "COMPLETED" | "REJECTED";

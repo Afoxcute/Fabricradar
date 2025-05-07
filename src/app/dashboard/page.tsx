@@ -15,7 +15,9 @@ import {
   Settings, 
   ChevronRight, 
   Clock,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/header/header';
@@ -54,6 +56,31 @@ export default function CustomerDashboardPage() {
   
   // Fetch available rewards
   const { data: rewardsData } = api.rewards.getAvailableRewards.useQuery();
+  
+  // Fetch customer orders to show status counts
+  const { data: ordersData } = api.orders.getCustomerOrders.useQuery(
+    { userId: user?.id || 0, limit: 50 },
+    { enabled: Boolean(user?.id) }
+  );
+  
+  // Calculate order counts by status
+  const orderCounts = React.useMemo(() => {
+    if (!ordersData?.orders) return {
+      pending: 0,
+      inProgress: 0, 
+      completed: 0,
+      rejected: 0,
+      total: 0
+    };
+    
+    return {
+      pending: ordersData.orders.filter((order: {status: string}) => order.status === 'PENDING').length,
+      inProgress: ordersData.orders.filter((order: {status: string}) => order.status === 'ACCEPTED').length,
+      completed: ordersData.orders.filter((order: {status: string}) => order.status === 'COMPLETED').length,
+      rejected: ordersData.orders.filter((order: {status: string}) => order.status === 'REJECTED').length,
+      total: ordersData.orders.length
+    };
+  }, [ordersData]);
   
   // Get a few featured rewards
   const featuredRewards = React.useMemo(() => {
@@ -96,6 +123,91 @@ export default function CustomerDashboardPage() {
           <p className="text-gray-400">
             Welcome back, {user.firstName || 'valued customer'}! Manage your orders and rewards.
           </p>
+        </div>
+        
+        {/* Order Status Summary */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            <Package className="h-5 w-5 mr-2 text-cyan-400" />
+            Order Status Summary
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-yellow-400 uppercase">Pending</p>
+                  <p className="text-2xl font-bold">{orderCounts.pending}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-yellow-400" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Link href="/orders" onClick={() => router.push('/orders?status=PENDING')}>
+                  <Button size="sm" variant="outline" className="w-full text-xs border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10">
+                    View Pending Orders
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-cyan-400 uppercase">In Progress</p>
+                  <p className="text-2xl font-bold">{orderCounts.inProgress}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-cyan-400" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Link href="/orders" onClick={() => router.push('/orders?status=ACCEPTED')}>
+                  <Button size="sm" variant="outline" className="w-full text-xs border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10">
+                    View In-Progress Orders
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-green-400 uppercase">Completed</p>
+                  <p className="text-2xl font-bold">{orderCounts.completed}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 text-green-400" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Link href="/orders" onClick={() => router.push('/orders?status=COMPLETED')}>
+                  <Button size="sm" variant="outline" className="w-full text-xs border-green-500/30 text-green-400 hover:bg-green-500/10">
+                    View Completed Orders
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-red-400 uppercase">Rejected</p>
+                  <p className="text-2xl font-bold">{orderCounts.rejected}</p>
+                </div>
+                <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <XCircle className="h-5 w-5 text-red-400" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Link href="/orders" onClick={() => router.push('/orders?status=REJECTED')}>
+                  <Button size="sm" variant="outline" className="w-full text-xs border-red-500/30 text-red-400 hover:bg-red-500/10">
+                    View Rejected Orders
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
         
         {/* Quick Stats */}

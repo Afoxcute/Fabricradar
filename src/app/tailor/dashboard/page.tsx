@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Header from '@/components/header/header';
-import { Table, Card, Col, Row, Tag, Button as AntButton, Spin } from 'antd';
-import { Button } from '@/components/ui/button';
+import { Table, Card, Col, Row, Tag, Button, Spin } from 'antd';
 import Link from 'next/link';
 import { useAuth } from '@/providers/auth-provider';
 import BackgroundEffect from '@/components/background-effect/background-effect';
@@ -12,10 +11,6 @@ import './dashboard.css';  // Import custom CSS for styling antd components
 import { api } from '@/trpc/react';
 import toast from 'react-hot-toast';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { useWallet } from '@/components/solana/privy-solana-adapter';
-import { useGetUSDCBalance } from '@/components/account/account-data-access';
-import { Wallet } from 'lucide-react';
-import { PublicKey } from '@solana/web3.js';
 
 // Define our local OrderStatus enum to match Prisma's enum
 enum OrderStatusEnum {
@@ -62,7 +57,6 @@ interface OrderTableRow {
 
 const TailorDashboard = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const { publicKey, connected } = useWallet();
   const [orderSummary, setOrderSummary] = useState<OrderSummary>({
     totalOrders: 0,
     pendingOrders: 0,
@@ -139,11 +133,6 @@ const TailorDashboard = () => {
     });
   };
   
-  // Get USDC balance
-  const { data: usdcBalance, isLoading: isLoadingUsdc } = useGetUSDCBalance({
-    address: publicKey || new PublicKey('11111111111111111111111111111111'),
-  });
-  
   // Effect to update state when data is loaded
   useEffect(() => {
     if (summaryData && !isSummaryLoading) {
@@ -217,9 +206,9 @@ const TailorDashboard = () => {
       key: 'actions',
       render: (text: string, record: any) => (
         <Link href={`/tailor/orders/${record.originalId}`}>
-          <AntButton type="link" className="text-cyan-500 hover:text-cyan-400">
+          <Button type="link" className="text-cyan-500 hover:text-cyan-400">
             View Details
-          </AntButton>
+          </Button>
         </Link>
       ),
     }
@@ -250,49 +239,6 @@ const TailorDashboard = () => {
             <p className="text-gray-400 mt-2">
               Here&apos;s what&apos;s happening in your tailor shop today.
             </p>
-          </div>
-
-          {/* Wallet Status Card - New Addition */}
-          <div className="bg-cyan-900/30 backdrop-blur-sm border border-cyan-800 rounded-xl p-4 mb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-              <div className="flex items-center mb-3 md:mb-0">
-                <Wallet className="h-5 w-5 text-cyan-500 mr-2" />
-                <h3 className="font-medium">Wallet Status</h3>
-              </div>
-              
-              {connected && publicKey ? (
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-                  <div className="flex items-center">
-                    <span className="text-gray-400 mr-2">USDC Balance:</span>
-                    {isLoadingUsdc ? (
-                      <span className="text-cyan-500">Loading...</span>
-                    ) : (
-                      <span className={`font-medium ${(usdcBalance || 0) < 5 ? 'text-amber-500' : 'text-cyan-500'}`}>
-                        {usdcBalance !== undefined ? `${usdcBalance.toFixed(2)} USDC` : '0.00 USDC'}
-                      </span>
-                    )}
-                  </div>
-                  
-                  {(usdcBalance || 0) < 5 && (
-                    <Link href="/tailor/fund-wallet">
-                      <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
-                        <Wallet className="h-4 w-4 mr-1" />
-                        Fund Wallet
-                      </Button>
-                    </Link>
-                  )}
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <span className="text-amber-500 mr-3">Wallet not connected</span>
-                  <Link href="/tailor/fund-wallet">
-                    <Button size="sm" className="bg-cyan-600 hover:bg-cyan-700">
-                      Connect & Fund Wallet
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
           </div>
 
           {/* Summary Cards */}

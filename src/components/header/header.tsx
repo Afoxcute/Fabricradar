@@ -14,6 +14,8 @@ import { shortenAddress, copyToClipboard } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 import { AuthNav } from '../user-profile/auth-nav';
 import { OrderNotifications } from '../notifications/order-notifications';
+import { useUsdcBalanceCheck } from '@/hooks/use-usdc-balance-check';
+import toast from 'react-hot-toast';
 
 const Header = () => {
   const { ready, authenticated, login } = usePrivy();
@@ -22,6 +24,10 @@ const Header = () => {
   const router = useRouter();
   const disableLogin = !ready || (ready && authenticated);
   const [copied, setCopied] = useState(false);
+  const [isFunding, setIsFunding] = useState(false);
+  
+  // Use the USDC balance check hook for funding
+  const { fundWalletDirectly } = useUsdcBalanceCheck();
   
   // Create a state to safely store the PublicKey for the balance query
   const [publicKeyForBalance, setPublicKeyForBalance] = useState<PublicKey | null>(null);
@@ -47,6 +53,30 @@ const Header = () => {
       copyToClipboard(wallet.publicKey.toString());
           setCopied(true);
           setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+    }
+  };
+
+  // Function to handle funding wallet
+  const handleFundWallet = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    if (!wallet.connected || !wallet.publicKey) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+    
+    try {
+      setIsFunding(true);
+      
+      // Call the direct funding method with a default amount
+      await fundWalletDirectly(10);
+      
+      // Success is handled by the hook
+    } catch (error) {
+      console.error('Error initiating wallet funding:', error);
+      toast.error('Could not start funding process');
+    } finally {
+      setIsFunding(false);
     }
   };
 
@@ -84,13 +114,23 @@ const Header = () => {
           </Link>
           {authenticated && wallet.connected && (
             <>
-              <Link
+              <a
                 href="/fund-wallet"
+                onClick={handleFundWallet}
                 className="text-sm flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors"
               >
-                <Wallet className="h-4 w-4" />
-                Fund Wallet
-              </Link>
+                {isFunding ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Funding...
+                  </>
+                ) : (
+                  <>
+                    <Wallet className="h-4 w-4" />
+                    Fund Wallet
+                  </>
+                )}
+              </a>
               <Link
                 href="/orders"
                 className="text-sm flex items-center gap-1 hover:text-cyan-400 transition-colors"

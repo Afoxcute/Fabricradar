@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useWallet } from '../solana/privy-solana-adapter'
 import { useGetUSDCBalance } from '../account/account-data-access'
 import { useRouter } from 'next/navigation'
-import { Wallet, AlertCircle } from 'lucide-react'
+import { Wallet, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog'
 import { useFundWallet } from '@privy-io/react-auth/solana'
@@ -89,7 +89,7 @@ export function LowBalanceDetector({ minimumUsdcRequired = 5, children }: LowBal
     }
   }, [usdcBalance, isLoading, connected, publicKey, requiredAmount, transactionAttempted])
 
-  const handleAddFunds = () => {
+  const handleAddFunds = async () => {
     if (!publicKey) {
       toast.error('Wallet not connected')
       return
@@ -102,7 +102,7 @@ export function LowBalanceDetector({ minimumUsdcRequired = 5, children }: LowBal
       const clusterName = cluster.network?.includes('mainnet') ? 'mainnet-beta' : 'devnet'
       
       // Use Privy's fundWallet with specialized options
-      fundWallet(publicKey.toString(), {
+      await fundWallet(publicKey.toString(), {
         cluster: { name: clusterName },
         amount: String(requiredAmount), // Convert to string as required by Privy
         asset: 'USDC',
@@ -127,6 +127,12 @@ export function LowBalanceDetector({ minimumUsdcRequired = 5, children }: LowBal
     setShowBalanceAlert(false)
     router.push('/fund-wallet')
   }
+
+  // Public method to trigger the dialog from components
+  const showFundingDialog = (amount: number) => {
+    setRequiredAmount(amount);
+    setShowBalanceAlert(true);
+  };
 
   return (
     <>
@@ -168,8 +174,17 @@ export function LowBalanceDetector({ minimumUsdcRequired = 5, children }: LowBal
               className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
               disabled={fundingLoading}
             >
-              <Wallet className="h-4 w-4" />
-              Add USDC with Privy
+              {fundingLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <Wallet className="h-4 w-4" />
+                  <span>Add USDC with Privy</span>
+                </>
+              )}
             </Button>
             <Button
               onClick={handleRedirectToFundingPage}

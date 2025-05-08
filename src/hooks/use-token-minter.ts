@@ -2,9 +2,20 @@ import { useState } from 'react';
 import { useWallet } from '@/components/solana/privy-solana-adapter';
 import { useConnection } from '@solana/wallet-adapter-react';
 import { useCluster } from '@/components/cluster/cluster-data-access';
-import { PublicKey, Keypair, SystemProgram, Transaction } from '@solana/web3.js';
-import { createRpc } from '@lightprotocol/stateless.js';
-import { createTokenPool, compress } from '@lightprotocol/compressed-token';
+import { PublicKey, Keypair, SystemProgram, Transaction, ComputeBudgetProgram } from '@solana/web3.js';
+import { 
+  createRpc, 
+  buildAndSignTx, 
+  sendAndConfirmTx, 
+  selectStateTreeInfo 
+} from '@lightprotocol/stateless.js';
+import { 
+  createTokenPool, 
+  compress, 
+  CompressedTokenProgram,
+  getTokenPoolInfos,
+  selectTokenPoolInfo
+} from '@lightprotocol/compressed-token';
 import {
   getOrCreateAssociatedTokenAccount,
   mintTo,
@@ -279,29 +290,59 @@ export function useTokenMinter() {
         throw new Error(`Token minting failed: ${error instanceof Error ? error.message : String(error)}`);
       }
 
-      // Compress tokens
+      // Compress tokens using improved method
       updateProgress('Compressing tokens...');
       console.log("Compressing tokens...");
       try {
-        const compressedTokenTxId = await compress(
-          rpc,
-          {
-            publicKey: wallet.publicKey,
-            signTransaction: async (tx: any) => {
-              return await privyWallet.signTransaction(tx);
-            }
-          } as any,
-          mint.publicKey,
-          mintAmount,
-          {
-            publicKey: wallet.publicKey,
-            signTransaction: async (tx: any) => {
-              return await privyWallet.signTransaction(tx);
-            }
-          } as any,
-          ata.address,
-          wallet.publicKey
+        // 1. Fetch & Select state tree infos
+        const treeInfos = await rpc.getStateTreeInfos();
+        if (!treeInfos || treeInfos.length === 0) {
+          throw new Error("No state tree infos found");
+        }
+        const treeInfo = selectStateTreeInfo(treeInfos);
+
+        // 2. Fetch & Select token pool info
+        const tokenPoolInfos = await getTokenPoolInfos(rpc, mint.publicKey);
+        if (!tokenPoolInfos || tokenPoolInfos.length === 0) {
+          throw new Error("No token pool infos found for this mint");
+        }
+        const tokenPoolInfo = selectTokenPoolInfo(tokenPoolInfos);
+
+        // 3. Build compress instruction
+        const compressInstruction = await CompressedTokenProgram.compress({
+          payer: wallet.publicKey,
+          owner: wallet.publicKey,
+          source: ata.address,
+          toAddress: wallet.publicKey, // to self
+          amount: mintAmount,
+          mint: mint.publicKey,
+          outputStateTreeInfo: treeInfo,
+          tokenPoolInfo,
+        });
+
+        // 4. Build and sign transaction
+        const latestBlockhash = await rpc.getLatestBlockhash();
+        
+        // Create a signer that uses Privy wallet
+        const signer = {
+          publicKey: wallet.publicKey,
+          signTransaction: async (tx: any) => {
+            return await privyWallet.signTransaction(tx);
+          }
+        };
+
+        const tx = await buildAndSignTx(
+          [
+            ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
+            compressInstruction,
+          ],
+          signer as any,
+          latestBlockhash.blockhash,
+          [signer as any]
         );
+
+        // 5. Send and confirm transaction
+        const compressedTokenTxId = await sendAndConfirmTx(rpc, tx);
         console.log("Tokens compressed successfully with txId:", compressedTokenTxId);
         updateProgress('Tokens minted and compressed successfully!');
         
@@ -311,6 +352,7 @@ export function useTokenMinter() {
         };
       } catch (error) {
         console.error("Error compressing tokens:", error);
+        setError(`Compression failed: ${error instanceof Error ? error.message : String(error)}`);
         // Even if compression fails, we've still created the token
         return {
           mintAddress: mint.publicKey.toString(),

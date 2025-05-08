@@ -74,7 +74,7 @@ export function CompressedTokenMinter({
         decimals,
         walletAdapter as any, // Mint authority
       );
-      console.log(`Mint created with address: ${mint.toBase58()}`);
+      console.log(`Mint created with address: ${mint}`);
       console.log(`Transaction signature: ${transactionSignature}`);
 
       // Create an associated token account for the wallet

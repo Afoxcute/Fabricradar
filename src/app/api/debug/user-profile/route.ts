@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { isProfileComplete, debugProfileStatus } from "@/utils/user-profile-utils";
 
+// Mark this route as explicitly dynamic since it uses request parameters
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

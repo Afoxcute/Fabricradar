@@ -48,10 +48,6 @@ export function CompressedTokenMinter({
     try {
       setIsLoading(true);
       setError(null);
-      // Reset state variables at the start to prevent stale data
-      setMintAddress(null);
-      setTxId(null);
-      setSuccess(false);
 
       // Use environment variable for RPC endpoint
       const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
@@ -112,14 +108,13 @@ export function CompressedTokenMinter({
       console.log(`Mint transaction: ${mintToTxId}`);
 
       // Save mint address and transaction ID
-      const mintAddressString = mint.toBase58();
-      setMintAddress(mintAddressString);
+      setMintAddress(mint.toBase58());
       setTxId(mintToTxId);
       setSuccess(true);
 
       // Notify parent component if callback provided
-      if (onSuccess && mintAddressString) {
-        onSuccess(mintAddressString);
+      if (onSuccess) {
+        onSuccess(mint.toBase58());
       }
 
       toast.success('Compressed token created successfully!');
@@ -193,7 +188,7 @@ export function CompressedTokenMinter({
                   Mint Address
                 </label>
                 <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-green-400">{mintAddress || 'Address not available'}</code>
+                  <code className="text-sm text-green-400">{mintAddress}</code>
                 </div>
               </div>
               <div>
@@ -201,7 +196,7 @@ export function CompressedTokenMinter({
                   Transaction ID
                 </label>
                 <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-blue-400">{txId || 'Transaction ID not available'}</code>
+                  <code className="text-sm text-blue-400">{txId}</code>
                 </div>
               </div>
             </div>

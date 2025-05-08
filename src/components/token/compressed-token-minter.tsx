@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useWallet } from '@/components/solana/privy-solana-adapter';
 import { useCluster } from '@/components/cluster/cluster-data-access';
 import { useConnection } from '@solana/wallet-adapter-react';
@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Coins, CheckCircle2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createRpc } from '@lightprotocol/stateless.js';
-import { createMint } from '@lightprotocol/compressed-token';
+import { createTokenPool } from '@lightprotocol/compressed-token';
 import {
+  createMint,
   getOrCreateAssociatedTokenAccount,
   mintTo,
 } from "@solana/spl-token";
@@ -38,6 +39,8 @@ export function CompressedTokenMinter({
   const [success, setSuccess] = useState(false);
   const [mintAddress, setMintAddress] = useState<string | null>(null);
   const [txId, setTxId] = useState<string | null>(null);
+  const [poolTxId, setPoolTxId] = useState<string | null>(null);
+  const [step, setStep] = useState<'idle' | 'creating-mint' | 'registering-compression' | 'minting-supply'>('idle');
 
   const mintCompressedToken = async () => {
     if (!wallet.publicKey || !wallet.connected) {
@@ -48,6 +51,7 @@ export function CompressedTokenMinter({
     try {
       setIsLoading(true);
       setError(null);
+      setStep('creating-mint');
 
       // Use environment variable for RPC endpoint
       const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT;
@@ -59,46 +63,50 @@ export function CompressedTokenMinter({
       const rpc = createRpc(RPC_ENDPOINT);
 
       // We need to create an adapter between Privy wallet and the mint function
-      // which expects a keypair with a 'publicKey' property and a 'signTransaction' method
       const walletAdapter = {
         publicKey: wallet.publicKey,
         signTransaction: wallet.signTransaction.bind(wallet)
       };
 
-      // Create a compressed token mint
-      console.log('Creating compressed token mint...');
-      const { mint, transactionSignature } = await createMint(
-        rpc,
-        walletAdapter as any, // Type assertion here since we're adapting the wallet interface
+      // STEP 1: Create an SPL token mint (regular SPL token, not compressed yet)
+      console.log('Step 1: Creating SPL token mint...');
+      const mint = await createMint(
+        connection,
+        walletAdapter as any,
         wallet.publicKey,
-        decimals,
-        walletAdapter as any, // Mint authority
+        wallet.publicKey, // Freeze authority (can be null)
+        decimals
       );
-      console.log(`Mint created with address: ${mint}`);
-      console.log(`Transaction signature: ${transactionSignature}`);
+      console.log(`SPL token mint created with address: ${mint.toBase58()}`);
+      
+      // STEP 2: Register the mint for compression
+      setStep('registering-compression');
+      console.log('Step 2: Registering mint for compression...');
+      const registerTxId = await createTokenPool(
+        rpc,
+        walletAdapter as any,
+        mint
+      );
+      console.log(`Mint registered for compression. Transaction: ${registerTxId}`);
+      setPoolTxId(registerTxId);
 
-      // Create an associated token account for the wallet
-      console.log('Creating associated token account...');
+      // STEP 3: Create an associated token account for the wallet
+      setStep('minting-supply');
+      console.log('Step 3: Creating associated token account...');
       const ata = await getOrCreateAssociatedTokenAccount(
         connection,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
+        walletAdapter as any,
         mint,
         wallet.publicKey
       );
       console.log(`Associated token account created: ${ata.address.toBase58()}`);
 
-      // Mint initial supply to the wallet
-      console.log('Minting initial supply...');
+      // STEP 4: Mint initial supply to the wallet
+      console.log('Step 4: Minting initial supply...');
       const mintAmount = initialSupply * Math.pow(10, decimals);
       const mintToTxId = await mintTo(
         connection,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
+        walletAdapter as any,
         mint,
         ata.address,
         wallet.publicKey,
@@ -124,6 +132,7 @@ export function CompressedTokenMinter({
       toast.error('Failed to create token');
     } finally {
       setIsLoading(false);
+      setStep('idle');
     }
   };
 
@@ -175,6 +184,44 @@ export function CompressedTokenMinter({
                 <p className="text-gray-400">{initialSupply.toLocaleString()}</p>
               </div>
             </div>
+            
+            {/* Progress indicators */}
+            {isLoading && (
+              <div className="md:col-span-2 bg-gray-800/50 rounded-lg p-4 space-y-3">
+                <h3 className="text-sm font-medium text-purple-400 mb-2">Creating Token</h3>
+                
+                <div className={`flex items-center ${step === 'creating-mint' || step === 'registering-compression' || step === 'minting-supply' ? 'text-purple-400' : 'text-gray-500'}`}>
+                  {step === 'creating-mint' ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : step === 'registering-compression' || step === 'minting-supply' ? (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  ) : (
+                    <div className="h-4 w-4 rounded-full border border-gray-600 mr-2" />
+                  )}
+                  <span className="text-sm">1. Creating SPL Token Mint</span>
+                </div>
+                
+                <div className={`flex items-center ${step === 'registering-compression' || step === 'minting-supply' ? 'text-purple-400' : 'text-gray-500'}`}>
+                  {step === 'registering-compression' ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : step === 'minting-supply' ? (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  ) : (
+                    <div className="h-4 w-4 rounded-full border border-gray-600 mr-2" />
+                  )}
+                  <span className="text-sm">2. Registering for Compression</span>
+                </div>
+                
+                <div className={`flex items-center ${step === 'minting-supply' ? 'text-purple-400' : 'text-gray-500'}`}>
+                  {step === 'minting-supply' ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <div className="h-4 w-4 rounded-full border border-gray-600 mr-2" />
+                  )}
+                  <span className="text-sm">3. Minting Initial Supply</span>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
@@ -182,7 +229,7 @@ export function CompressedTokenMinter({
               <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
               <h3 className="font-medium text-green-500">Token Created Successfully</h3>
             </div>
-            <div className="mt-2 space-y-2">
+            <div className="mt-4 space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-400">
                   Mint Address
@@ -193,7 +240,15 @@ export function CompressedTokenMinter({
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-400">
-                  Transaction ID
+                  Compression Registration
+                </label>
+                <div className="bg-gray-800 p-2 rounded overflow-x-auto">
+                  <code className="text-sm text-blue-400">{poolTxId}</code>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-400">
+                  Mint Transaction
                 </label>
                 <div className="bg-gray-800 p-2 rounded overflow-x-auto">
                   <code className="text-sm text-blue-400">{txId}</code>
@@ -240,6 +295,7 @@ export function CompressedTokenMinter({
                 setSuccess(false);
                 setMintAddress(null);
                 setTxId(null);
+                setPoolTxId(null);
               }}
               className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
             >

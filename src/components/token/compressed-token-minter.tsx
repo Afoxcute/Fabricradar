@@ -20,25 +20,26 @@ export function CompressedTokenMinter({
   onSuccess,
   decimals = 9,
   initialSupply = 1000000000, // 1 billion
-  symbol = 'REWARD',
-  name = 'Tailor Reward Token'
+  symbol = 'token20222',
+  name = 'Compressed TOKEN-2022 Token'
 }: CompressedTokenMinterProps) {
   const wallet = useWallet();
   const { cluster } = useCluster();
-  const { mintToken2022, isLoading, error: mintError } = useTokenMinter();
-  const [success, setSuccess] = useState(false);
+  const { mintToken2022, isLoading, error } = useTokenMinter();
   const [mintAddress, setMintAddress] = useState<string | null>(null);
-  const [txId, setTxId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<'idle' | 'minting' | 'success' | 'error'>('idle');
+  const [mintStage, setMintStage] = useState<string | null>(null);
 
-  const handleMintToken = async () => {
-    if (!wallet.publicKey || !wallet.connected) {
+  const handleMint = async () => {
+    if (!wallet.connected) {
       toast.error('Please connect your wallet first');
       return;
     }
 
     try {
-      setError(null);
+      setStatus('minting');
+      setMintStage('Initializing TOKEN-2022 mint...');
+      console.log('Starting TOKEN-2022 mint process');
       
       const result = await mintToken2022({
         decimals,
@@ -46,170 +47,140 @@ export function CompressedTokenMinter({
         metadata: {
           name,
           symbol,
-          additionalMetadata: [["app", "Tailor Platform"]]
+          uri: `https://token-metadata.solana.com/${wallet.publicKey?.toString()}/token.json`,
+          additionalMetadata: [
+            ['created_on', new Date().toISOString()],
+            ['cluster', cluster.network || 'unknown'],
+            ['type', 'token2022-compressed']
+          ]
         }
       });
-      
+
       if (result) {
+        console.log('Mint successful:', result);
         setMintAddress(result.mintAddress);
-        setTxId(result.txId);
-        setSuccess(true);
-        
-        // Notify parent component if callback provided
+        setStatus('success');
         if (onSuccess) {
           onSuccess(result.mintAddress);
         }
-        
-        toast.success('TOKEN-2022 compressed token created successfully!');
+        toast.success('Token minted successfully');
       } else {
-        setError(mintError || 'Failed to mint token');
-        toast.error('Failed to create token');
+        setStatus('error');
+        toast.error('Failed to mint token. See console for details.');
       }
     } catch (err) {
-      console.error('Error minting token:', err);
-      setError(err instanceof Error ? err.message : 'Failed to mint token');
-      toast.error('Failed to create token');
+      console.error('Token minting error:', err);
+      setStatus('error');
+      toast.error('Error minting token');
     }
   };
 
-  // Get network display name
-  const getNetworkDisplayName = () => {
-    const network = cluster.network || '';
-    if (network.includes('mainnet')) return 'Mainnet';
-    if (network.includes('devnet')) return 'Devnet';
-    if (network.includes('testnet')) return 'Testnet';
-    return 'Custom Network';
-  };
-
   return (
-    <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
-      <div className="flex items-center mb-6">
-        <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center mr-3">
-          <Coins className="h-5 w-5 text-purple-500" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold">Create TOKEN-2022 Reward Token</h2>
-          <p className="text-sm text-gray-400">Network: {getNetworkDisplayName()}</p>
-        </div>
+    <div className="bg-gray-900 rounded-lg p-5 shadow-lg w-full max-w-md mx-auto">
+      <div className="flex items-center mb-4">
+        <Coins className="h-6 w-6 text-purple-500 mr-2" />
+        <h2 className="text-xl font-semibold text-white">Mint Compressed TOKEN-2022</h2>
       </div>
-
+      
       <div className="space-y-4">
-        <p className="text-gray-400">
-          Create a TOKEN-2022 compressed token on Solana to use as rewards for your customers. 
-          These tokens can be distributed as part of your reward program.
-        </p>
-
-        {!success ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Token Name
-                </label>
-                <p className="text-gray-400">{name}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Token Symbol
-                </label>
-                <p className="text-gray-400">{symbol}</p>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Decimals
-                </label>
-                <p className="text-gray-400">{decimals}</p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Initial Supply
-                </label>
-                <p className="text-gray-400">{initialSupply.toLocaleString()}</p>
-              </div>
-            </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Token Name
+          </label>
+          <div className="bg-gray-800 p-2 rounded text-gray-100">
+            {name}
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Symbol
+          </label>
+          <div className="bg-gray-800 p-2 rounded text-gray-100">
+            {symbol}
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Initial Supply
+          </label>
+          <div className="bg-gray-800 p-2 rounded text-gray-100">
+            {initialSupply.toLocaleString()} tokens
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">
+            Decimals
+          </label>
+          <div className="bg-gray-800 p-2 rounded text-gray-100">
+            {decimals}
+          </div>
+        </div>
+        
+        <div className="pt-3">
+          <Button
+            onClick={handleMint}
+            disabled={isLoading || !wallet.connected || status === 'success'}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition-colors"
+          >
+            {isLoading ? (
+              <span className="flex items-center">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {mintStage || 'Minting TOKEN-2022...'}
+              </span>
+            ) : status === 'success' ? (
+              <span className="flex items-center">
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Token Minted
+              </span>
+            ) : (
+              <span className="flex items-center">
+                <Coins className="mr-2 h-4 w-4" />
+                Mint TOKEN-2022
+              </span>
+            )}
+          </Button>
+        </div>
+        
+        {wallet.connected ? (
+          <div className="text-green-500 text-sm flex items-center">
+            <CheckCircle2 className="h-3 w-3 mr-1" />
+            Wallet connected: {wallet.publicKey?.toString().slice(0, 5)}...{wallet.publicKey?.toString().slice(-5)}
           </div>
         ) : (
-          <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
-            <div className="flex items-center mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-500 mr-2" />
-              <h3 className="font-medium text-green-500">TOKEN-2022 Token Created Successfully</h3>
-            </div>
-            <div className="mt-2 space-y-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-400">
-                  Mint Address
-                </label>
-                <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-green-400 break-all">{mintAddress}</code>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400">
-                  Transaction ID
-                </label>
-                <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-blue-400 break-all">{txId}</code>
-                </div>
-              </div>
-            </div>
+          <div className="text-amber-500 text-sm">
+            Please connect your wallet to mint tokens
           </div>
         )}
 
         {error && (
-          <div className="bg-red-900/20 border border-red-800 rounded-lg p-4">
+          <div className="mt-4 p-3 bg-red-500/20 border border-red-500 rounded-md">
             <div className="flex items-start">
-              <AlertCircle className="h-5 w-5 text-red-500 mr-2 mt-0.5" />
+              <AlertCircle className="text-red-500 mr-2 h-5 w-5 mt-0.5" />
               <div>
-                <h3 className="font-medium text-red-500">Error Creating Token</h3>
-                <p className="text-sm text-red-400 mt-1">{error}</p>
+                <h4 className="text-red-500 font-medium">Error Minting Token</h4>
+                <p className="text-red-300 text-sm break-all">{error}</p>
               </div>
             </div>
           </div>
         )}
 
-        {!wallet.connected && (
-          <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-            <p className="text-sm text-gray-400">Please connect your wallet to create a token.</p>
+        {status === 'success' && (
+          <div className="bg-green-900/20 border border-green-800 rounded-lg p-4">
+            <div className="flex items-start">
+              <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 mt-0.5" />
+              <div>
+                <h3 className="font-medium text-green-500">Token Created Successfully</h3>
+                <p className="text-sm text-green-400 mt-1">Mint Address:</p>
+                <div className="bg-gray-800 rounded p-2 mt-1 text-xs text-gray-300 break-all">
+                  {mintAddress}
+                </div>
+              </div>
+            </div>
           </div>
         )}
-
-        <div className="mt-6">
-          {!success ? (
-            <Button
-              onClick={handleMintToken}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-              disabled={isLoading || !wallet.connected}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Creating TOKEN-2022 Token...
-                </>
-              ) : (
-                <>
-                  <Coins className="h-4 w-4 mr-2" />
-                  Mint TOKEN-2022 Reward Token
-                </>
-              )}
-            </Button>
-          ) : (
-            <Button
-              onClick={() => {
-                setSuccess(false);
-                setMintAddress(null);
-                setTxId(null);
-              }}
-              className="w-full bg-cyan-600 hover:bg-cyan-700 text-white"
-            >
-              Create Another Token
-            </Button>
-          )}
-        </div>
       </div>
     </div>
   );

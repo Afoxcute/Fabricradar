@@ -91,8 +91,15 @@ export function useTokenMinter() {
         mintLen + metadataLen
       );
 
+      // First get a recent blockhash
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+
       // Create a transaction for initializing the mint and metadata
-      const mintTransaction = new Transaction().add(
+      const mintTransaction = new Transaction({
+        feePayer: wallet.publicKey,
+        blockhash,
+        lastValidBlockHeight
+      }).add(
         SystemProgram.createAccount({
           fromPubkey: wallet.publicKey,
           newAccountPubkey: mint.publicKey,
@@ -126,14 +133,22 @@ export function useTokenMinter() {
       );
 
       // Sign and send the transaction
+      console.log("Signing mint transaction with blockhash:", blockhash);
       const signedTransaction = await wallet.signTransaction(mintTransaction);
       signedTransaction.partialSign(mint);
       
       const txId = await connection.sendRawTransaction(signedTransaction.serialize());
-      await connection.confirmTransaction(txId, 'confirmed');
+      console.log("Mint transaction sent, waiting for confirmation...");
+      await connection.confirmTransaction({
+        signature: txId,
+        blockhash,
+        lastValidBlockHeight
+      }, 'confirmed');
+      console.log("Mint transaction confirmed:", txId);
 
       // Register the mint with the Compressed-Token program
-      await createTokenPool(
+      console.log("Creating token pool for TOKEN-2022 mint");
+      const tokenPoolTxId = await createTokenPool(
         rpc,
         {
           publicKey: wallet.publicKey,
@@ -143,8 +158,10 @@ export function useTokenMinter() {
         undefined,
         TOKEN_2022_PROGRAM_ID
       );
+      console.log("Token pool created with txId:", tokenPoolTxId);
 
       // Create an Associated Token Account for the wallet
+      console.log("Creating associated token account...");
       const ata = await getOrCreateAssociatedTokenAccount(
         connection,
         {
@@ -158,10 +175,14 @@ export function useTokenMinter() {
         undefined,
         TOKEN_2022_PROGRAM_ID
       );
+      console.log("Associated token account created:", ata.address.toString());
+
+      // Calculate mint amount based on supply and decimals
+      const mintAmount = initialSupply * Math.pow(10, decimals);
+      console.log(`Minting ${initialSupply} tokens (${mintAmount} raw amount)...`);
 
       // Mint tokens to the wallet's token account
-      const mintAmount = initialSupply * Math.pow(10, decimals);
-      await mintTo(
+      const mintToTxId = await mintTo(
         connection,
         {
           publicKey: wallet.publicKey,
@@ -175,8 +196,10 @@ export function useTokenMinter() {
         undefined,
         TOKEN_2022_PROGRAM_ID
       );
+      console.log("Tokens minted successfully with txId:", mintToTxId);
 
       // Compress tokens
+      console.log("Compressing tokens...");
       const compressedTokenTxId = await compress(
         rpc,
         {
@@ -192,6 +215,7 @@ export function useTokenMinter() {
         ata.address,
         wallet.publicKey
       );
+      console.log("Tokens compressed successfully with txId:", compressedTokenTxId);
 
       return {
         mintAddress: mint.publicKey.toString(),

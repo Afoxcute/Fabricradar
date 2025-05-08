@@ -2,7 +2,7 @@ import { createTRPCRouter, publicProcedure } from "../../../server/api/trpc";
 import { z } from "zod";
 import { AuthService } from "../../../services/AuthService";
 import { TRPCError } from "@trpc/server";
-import { JsonValue, JsonObject, JsonArray } from "@/types/json";
+import type { Prisma } from "@prisma/client";
 
 // AccountType string literal type matching the Prisma schema enum
 type AccountTypeValue = "USER" | "TAILOR";

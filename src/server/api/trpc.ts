@@ -11,7 +11,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "../../../src/server/db";
-// We don't need to import PrismaClient again, we can get the type from the db import
+import { PrismaClient } from "@prisma/client";
 
 /**
  * 1. CONTEXT
@@ -49,7 +49,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
 // Context type with user
 type Context = {
-  db: any; // Use 'any' to avoid compatibility issues with different Prisma versions
+  db: PrismaClient;
   user: {
     id: number;
     accountType: string;

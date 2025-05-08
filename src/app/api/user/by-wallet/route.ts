@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 
-// Mark this route as dynamic since it uses request.nextUrl.searchParams
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;

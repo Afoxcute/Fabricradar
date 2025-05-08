@@ -448,18 +448,6 @@ export default function OrderModal({
   // Get available rewards that can be applied to this order
   const { data: rewardsData, isLoading: isLoadingRewards } = api.rewards.getAvailableRewards.useQuery();
   
-  // Define interface for reward object
-  interface Reward {
-    id: number;
-    name: string;
-    description: string;
-    type: 'DISCOUNT' | 'FREE_ITEM' | 'POINTS' | 'PRIORITY';
-    value: number;
-    minSpend?: number | null;
-    tailorId: number;
-    isActive: boolean;
-  }
-  
   const availableRewards = React.useMemo(() => {
     if (!rewardsData?.rewards) return [];
     
@@ -467,7 +455,7 @@ export default function OrderModal({
     // 1. Are active
     // 2. Meet the minimum spend requirement if it exists
     // 3. Are from the current tailor (if tailorId is provided)
-    return rewardsData.rewards.filter((reward: Reward) => {
+    return rewardsData.rewards.filter(reward => {
       const priceValue = parseFloat(formData.usdcAmount);
       const meetsMinSpend = !reward.minSpend || priceValue >= reward.minSpend;
       const isFromTailor = !tailorId || reward.tailorId === tailorId;
@@ -477,7 +465,7 @@ export default function OrderModal({
   }, [rewardsData, formData.usdcAmount, tailorId]);
 
   // Apply a reward to the current order
-  const applyReward = (reward: Reward) => {
+  const applyReward = (reward: any) => {
     let appliedPrice = parseFloat(formData.usdcAmount);
     
     // Apply discount if the reward is a discount type
@@ -788,7 +776,7 @@ export default function OrderModal({
                 </div>
               ) : availableRewards.length > 0 ? (
                 <div className="space-y-3">
-                  {availableRewards.map((reward: Reward) => (
+                  {availableRewards.map(reward => (
                     <div 
                       key={reward.id} 
                       className="bg-gray-900 border border-gray-700 rounded-lg p-3 cursor-pointer hover:border-cyan-700 transition-all"

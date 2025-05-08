@@ -1,10 +1,9 @@
-import { db } from "../server/db";
+import type { PrismaClient } from "@prisma/client";
 
-// Use a type that works with any Prisma client structure
 export class BaseService {
-  protected readonly db: any; // Use 'any' to avoid type conflicts with different Prisma versions
+  protected readonly db: PrismaClient;
 
-  constructor(db: any) { // Use 'any' for parameter type to avoid circular reference
+  constructor(db: PrismaClient) {
     this.db = db;
   }
 }

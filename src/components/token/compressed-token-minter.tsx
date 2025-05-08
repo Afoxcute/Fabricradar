@@ -27,7 +27,7 @@ interface CompressedTokenMinterProps {
 export function CompressedTokenMinter({
   onSuccess,
   decimals = 9,
-  initialSupply = 1000000000, // 1 billion
+  initialSupply = 5, // Changed from 1000000000 to just 5 tokens
   symbol = 'REWARD',
   name = 'Tailor Reward Token'
 }: CompressedTokenMinterProps) {
@@ -112,7 +112,7 @@ export function CompressedTokenMinter({
         wallet.publicKey,
         mintAmount
       );
-      console.log(`Minted ${initialSupply} tokens to ${ata.address.toBase58()}`);
+      console.log(`Minted ${initialSupply} tokens to ${ata.address.toBase58()}`); // Just minting 5 tokens now
       console.log(`Mint transaction: ${mintToTxId}`);
 
       // Save mint address and transaction ID

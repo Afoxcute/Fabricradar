@@ -47,6 +47,11 @@ export function CompressedTokenMinter({
         console.log(`Minting progress: ${stage}`);
       };
       
+      toast('Please approve all signing requests in your wallet popup', {
+        icon: '🔑',
+        duration: 4000
+      });
+      
       const result = await mintToken2022({
         decimals,
         initialSupply,
@@ -70,15 +75,15 @@ export function CompressedTokenMinter({
         if (onSuccess) {
           onSuccess(result.mintAddress);
         }
-        toast.success('Token minted successfully');
+        toast.success(`${initialSupply} ${symbol} tokens minted successfully`);
       } else {
         setStatus('error');
-        toast.error('Failed to mint token. See console for details.');
+        toast.error('Failed to mint token. Check console for details.');
       }
     } catch (err) {
       console.error('Token minting error:', err);
       setStatus('error');
-      toast.error('Error minting token');
+      toast.error('Error minting token. Try again later.');
     }
   };
 
@@ -133,9 +138,11 @@ export function CompressedTokenMinter({
             className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded transition-colors"
           >
             {isLoading ? (
-              <span className="flex items-center">
+              <span className="flex items-center justify-center">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {mintStage || 'Minting TOKEN-2022...'}
+                <span className="text-sm">
+                  {mintStage || 'Minting TOKEN-2022...'}
+                </span>
               </span>
             ) : status === 'success' ? (
               <span className="flex items-center">
@@ -145,12 +152,24 @@ export function CompressedTokenMinter({
             ) : (
               <span className="flex items-center">
                 <Coins className="mr-2 h-4 w-4" />
-                Mint TOKEN-2022
+                Mint {symbol} TOKEN-2022
               </span>
             )}
           </Button>
         </div>
         
+        {isLoading && (
+          <div className="mt-4 bg-blue-900/20 border border-blue-800 rounded p-3">
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium text-blue-400">{mintStage || 'Processing...'}</p>
+              <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                <div className="bg-blue-500 h-full rounded-full animate-pulse"></div>
+              </div>
+              <p className="text-xs text-gray-400">Keep your wallet app open and approve all signature requests</p>
+            </div>
+          </div>
+        )}
+
         {wallet.connected ? (
           <div className="text-green-500 text-sm flex items-center">
             <CheckCircle2 className="h-3 w-3 mr-1" />

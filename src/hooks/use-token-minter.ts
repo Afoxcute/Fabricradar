@@ -21,6 +21,7 @@ import {
   pack,
   TokenMetadata,
 } from "@solana/spl-token-metadata";
+import { useSolanaWallets } from '@privy-io/react-auth/solana';
 
 type TokenMetadataInput = {
   name: string;
@@ -43,6 +44,7 @@ type MintResult = {
 
 export function useTokenMinter() {
   const wallet = useWallet();
+  const { wallets, ready: walletsReady } = useSolanaWallets();
   const { connection } = useConnection();
   const { cluster } = useCluster();
   const [isLoading, setIsLoading] = useState(false);
@@ -51,6 +53,14 @@ export function useTokenMinter() {
   const mintToken2022 = async (options: TokenMintOptions): Promise<MintResult | null> => {
     if (!wallet.publicKey || !wallet.connected) {
       setError('Wallet not connected');
+      return null;
+    }
+    
+    // Get the actual Privy wallet
+    const privyWallet = wallets && wallets.length > 0 ? wallets[0] : null;
+    
+    if (!privyWallet) {
+      setError('No Privy wallet available');
       return null;
     }
 
@@ -101,7 +111,7 @@ export function useTokenMinter() {
       const mintLamports = await connection.getMinimumBalanceForRentExemption(
         mintLen + metadataLen
       );
-
+ 
       // First get a recent blockhash
       updateProgress('Getting recent blockhash...');
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
@@ -145,13 +155,19 @@ export function useTokenMinter() {
         })
       );
 
-      // Sign and send the transaction
-      updateProgress('Signing transaction...');
-      console.log("Signing mint transaction with blockhash:", blockhash);
-      const signedTransaction = await wallet.signTransaction(mintTransaction);
-      signedTransaction.partialSign(mint);
+      // Sign and send the transaction - Use Privy's direct wallet hook for proper signing
+      updateProgress('Requesting transaction signature...');
+      console.log("Requesting signature for mint transaction with blockhash:", blockhash);
+      
+      // Let the mint keypair sign first
+      mintTransaction.partialSign(mint);
+      
+      // Use the Privy wallet to sign 
+      const signedTransaction = await privyWallet.signTransaction(mintTransaction);
       
       updateProgress('Sending transaction...');
+      console.log("Transaction signed, now sending to network");
+      
       const txId = await connection.sendRawTransaction(signedTransaction.serialize(), {
         skipPreflight: false,
         preflightCommitment: 'confirmed',
@@ -180,7 +196,9 @@ export function useTokenMinter() {
           rpc,
           {
             publicKey: wallet.publicKey,
-            signTransaction: wallet.signTransaction.bind(wallet)
+            signTransaction: async (tx: any) => {
+              return await privyWallet.signTransaction(tx);
+            }
           } as any,
           mint.publicKey,
           undefined,
@@ -201,7 +219,9 @@ export function useTokenMinter() {
           connection,
           {
             publicKey: wallet.publicKey,
-            signTransaction: wallet.signTransaction.bind(wallet)
+            signTransaction: async (tx: any) => {
+              return await privyWallet.signTransaction(tx);
+            }
           } as any,
           mint.publicKey,
           wallet.publicKey,
@@ -227,7 +247,9 @@ export function useTokenMinter() {
           connection,
           {
             publicKey: wallet.publicKey,
-            signTransaction: wallet.signTransaction.bind(wallet)
+            signTransaction: async (tx: any) => {
+              return await privyWallet.signTransaction(tx);
+            }
           } as any,
           mint.publicKey,
           ata.address,
@@ -265,13 +287,17 @@ export function useTokenMinter() {
           rpc,
           {
             publicKey: wallet.publicKey,
-            signTransaction: wallet.signTransaction.bind(wallet)
+            signTransaction: async (tx: any) => {
+              return await privyWallet.signTransaction(tx);
+            }
           } as any,
           mint.publicKey,
           mintAmount,
           {
             publicKey: wallet.publicKey,
-            signTransaction: wallet.signTransaction.bind(wallet)
+            signTransaction: async (tx: any) => {
+              return await privyWallet.signTransaction(tx);
+            }
           } as any,
           ata.address,
           wallet.publicKey

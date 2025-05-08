@@ -179,7 +179,7 @@ export function useTokenMinter() {
         const tokenPoolTxId = await createTokenPool(
           rpc,
           {
-            publicKey: wallet.publicKey,
+            publicKey: PublicKey,
             signTransaction: wallet.signTransaction.bind(wallet)
           } as any,
           mint.publicKey,

@@ -19,9 +19,9 @@ interface CompressedTokenMinterProps {
 export function CompressedTokenMinter({
   onSuccess,
   decimals = 9,
-  initialSupply = 1000000000, // 1 billion
-  symbol = 'token20222',
-  name = 'Compressed TOKEN-2022 Token'
+  initialSupply = 5, // Changed from 1 billion to 5
+  symbol = 'frr',
+  name = 'Fabricradar'
 }: CompressedTokenMinterProps) {
   const wallet = useWallet();
   const { cluster } = useCluster();
@@ -41,6 +41,12 @@ export function CompressedTokenMinter({
       setMintStage('Initializing TOKEN-2022 mint...');
       console.log('Starting TOKEN-2022 mint process');
       
+      // Progress listener for token minting process
+      const updateProgress = (stage: string) => {
+        setMintStage(stage);
+        console.log(`Minting progress: ${stage}`);
+      };
+      
       const result = await mintToken2022({
         decimals,
         initialSupply,
@@ -53,7 +59,8 @@ export function CompressedTokenMinter({
             ['cluster', cluster.network || 'unknown'],
             ['type', 'token2022-compressed']
           ]
-        }
+        },
+        onProgress: updateProgress
       });
 
       if (result) {

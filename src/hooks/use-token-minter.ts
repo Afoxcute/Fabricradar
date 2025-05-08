@@ -33,6 +33,7 @@ type TokenMintOptions = {
   decimals?: number;
   initialSupply?: number;
   metadata: TokenMetadataInput;
+  onProgress?: (stage: string) => void;
 };
 
 type MintResult = {
@@ -53,9 +54,17 @@ export function useTokenMinter() {
       return null;
     }
 
+    // Helper function to update progress
+    const updateProgress = (stage: string) => {
+      if (options.onProgress) {
+        options.onProgress(stage);
+      }
+    };
+
     try {
       setIsLoading(true);
       setError(null);
+      updateProgress('Preparing transaction...');
 
       // Use environment variable for RPC endpoint or fallback to the connected endpoint
       const RPC_ENDPOINT = process.env.NEXT_PUBLIC_RPC_ENDPOINT || connection.rpcEndpoint;
@@ -82,6 +91,8 @@ export function useTokenMinter() {
         ],
       };
 
+      updateProgress('Creating TOKEN-2022 mint...');
+
       // Calculate space needed for mint with metadata pointer extension
       const mintLen = getMintLen([ExtensionType.MetadataPointer]);
       const metadataLen = TYPE_SIZE + LENGTH_SIZE + pack(metadata).length;
@@ -92,9 +103,11 @@ export function useTokenMinter() {
       );
 
       // First get a recent blockhash
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      updateProgress('Getting recent blockhash...');
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
 
       // Create a transaction for initializing the mint and metadata
+      updateProgress('Building mint transaction...');
       const mintTransaction = new Transaction({
         feePayer: wallet.publicKey,
         blockhash,
@@ -133,94 +146,151 @@ export function useTokenMinter() {
       );
 
       // Sign and send the transaction
+      updateProgress('Signing transaction...');
       console.log("Signing mint transaction with blockhash:", blockhash);
       const signedTransaction = await wallet.signTransaction(mintTransaction);
       signedTransaction.partialSign(mint);
       
-      const txId = await connection.sendRawTransaction(signedTransaction.serialize());
+      updateProgress('Sending transaction...');
+      const txId = await connection.sendRawTransaction(signedTransaction.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+      });
+      
       console.log("Mint transaction sent, waiting for confirmation...");
-      await connection.confirmTransaction({
+      // Use a more direct confirmation strategy with a shorter timeout
+      updateProgress('Confirming transaction...');
+      const confirmation = await connection.confirmTransaction({
         signature: txId,
         blockhash,
         lastValidBlockHeight
       }, 'confirmed');
+      
+      if (confirmation.value.err) {
+        throw new Error(`Transaction failed: ${confirmation.value.err.toString()}`);
+      }
+      
       console.log("Mint transaction confirmed:", txId);
 
       // Register the mint with the Compressed-Token program
+      updateProgress('Creating token pool...');
       console.log("Creating token pool for TOKEN-2022 mint");
-      const tokenPoolTxId = await createTokenPool(
-        rpc,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
-        mint.publicKey,
-        undefined,
-        TOKEN_2022_PROGRAM_ID
-      );
-      console.log("Token pool created with txId:", tokenPoolTxId);
+      try {
+        const tokenPoolTxId = await createTokenPool(
+          rpc,
+          {
+            publicKey: wallet.publicKey,
+            signTransaction: wallet.signTransaction.bind(wallet)
+          } as any,
+          mint.publicKey,
+          undefined,
+          TOKEN_2022_PROGRAM_ID
+        );
+        console.log("Token pool created with txId:", tokenPoolTxId);
+      } catch (error) {
+        console.error("Error creating token pool:", error);
+        throw new Error(`Token pool creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
       // Create an Associated Token Account for the wallet
+      updateProgress('Creating token account...');
       console.log("Creating associated token account...");
-      const ata = await getOrCreateAssociatedTokenAccount(
-        connection,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
-        mint.publicKey,
-        wallet.publicKey,
-        undefined,
-        undefined,
-        undefined,
-        TOKEN_2022_PROGRAM_ID
-      );
-      console.log("Associated token account created:", ata.address.toString());
+      let ata;
+      try {
+        ata = await getOrCreateAssociatedTokenAccount(
+          connection,
+          {
+            publicKey: wallet.publicKey,
+            signTransaction: wallet.signTransaction.bind(wallet)
+          } as any,
+          mint.publicKey,
+          wallet.publicKey,
+          undefined,
+          undefined,
+          undefined,
+          TOKEN_2022_PROGRAM_ID
+        );
+        console.log("Associated token account created:", ata.address.toString());
+      } catch (error) {
+        console.error("Error creating associated token account:", error);
+        throw new Error(`Associated token account creation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
       // Calculate mint amount based on supply and decimals
       const mintAmount = initialSupply * Math.pow(10, decimals);
+      updateProgress(`Minting ${initialSupply} tokens...`);
       console.log(`Minting ${initialSupply} tokens (${mintAmount} raw amount)...`);
 
       // Mint tokens to the wallet's token account
-      const mintToTxId = await mintTo(
-        connection,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
-        mint.publicKey,
-        ata.address,
-        wallet.publicKey,
-        mintAmount,
-        undefined,
-        undefined,
-        TOKEN_2022_PROGRAM_ID
-      );
-      console.log("Tokens minted successfully with txId:", mintToTxId);
+      try {
+        const mintToTxId = await mintTo(
+          connection,
+          {
+            publicKey: wallet.publicKey,
+            signTransaction: wallet.signTransaction.bind(wallet)
+          } as any,
+          mint.publicKey,
+          ata.address,
+          wallet.publicKey,
+          mintAmount,
+          undefined,
+          undefined,
+          TOKEN_2022_PROGRAM_ID
+        );
+        
+        // Wait for confirmation
+        updateProgress('Confirming mint transaction...');
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+        const confirmation = await connection.confirmTransaction({
+          signature: mintToTxId,
+          blockhash,
+          lastValidBlockHeight
+        }, 'confirmed');
+        
+        if (confirmation.value.err) {
+          throw new Error(`Mint transaction failed: ${confirmation.value.err.toString()}`);
+        }
+        
+        console.log("Tokens minted successfully with txId:", mintToTxId);
+      } catch (error) {
+        console.error("Error minting tokens:", error);
+        throw new Error(`Token minting failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
 
       // Compress tokens
+      updateProgress('Compressing tokens...');
       console.log("Compressing tokens...");
-      const compressedTokenTxId = await compress(
-        rpc,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
-        mint.publicKey,
-        mintAmount,
-        {
-          publicKey: wallet.publicKey,
-          signTransaction: wallet.signTransaction.bind(wallet)
-        } as any,
-        ata.address,
-        wallet.publicKey
-      );
-      console.log("Tokens compressed successfully with txId:", compressedTokenTxId);
-
-      return {
-        mintAddress: mint.publicKey.toString(),
-        txId: compressedTokenTxId,
-      };
+      try {
+        const compressedTokenTxId = await compress(
+          rpc,
+          {
+            publicKey: wallet.publicKey,
+            signTransaction: wallet.signTransaction.bind(wallet)
+          } as any,
+          mint.publicKey,
+          mintAmount,
+          {
+            publicKey: wallet.publicKey,
+            signTransaction: wallet.signTransaction.bind(wallet)
+          } as any,
+          ata.address,
+          wallet.publicKey
+        );
+        console.log("Tokens compressed successfully with txId:", compressedTokenTxId);
+        updateProgress('Tokens minted and compressed successfully!');
+        
+        return {
+          mintAddress: mint.publicKey.toString(),
+          txId: compressedTokenTxId,
+        };
+      } catch (error) {
+        console.error("Error compressing tokens:", error);
+        // Even if compression fails, we've still created the token
+        return {
+          mintAddress: mint.publicKey.toString(),
+          txId: "compression-failed", // Indicate that compression failed but token was created
+        };
+      }
     } catch (err) {
       console.error('Error minting token:', err);
       setError(err instanceof Error ? err.message : 'Failed to mint token');

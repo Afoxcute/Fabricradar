@@ -65,105 +65,70 @@ export function CompressedTokenMinter({
       // We need to create an adapter between Privy wallet and the mint function
       const walletAdapter = {
         publicKey: wallet.publicKey,
-        signTransaction: wallet.signTransaction ? wallet.signTransaction.bind(wallet) : undefined
+        signTransaction: wallet.signTransaction.bind(wallet)
       };
-
-      if (!walletAdapter.signTransaction) {
-        throw new Error('Wallet does not support transaction signing');
-      }
 
       // STEP 1: Create an SPL token mint (regular SPL token, not compressed yet)
       console.log('Step 1: Creating SPL token mint...');
-      let mint;
-      try {
-        mint = await createMint(
-          connection,
-          walletAdapter as any,
-          wallet.publicKey,
-          wallet.publicKey, // Freeze authority (can be null)
-          decimals
-        );
-        console.log(`SPL token mint created with address: ${mint.toBase58()}`);
-        setMintAddress(mint.toBase58());
-      } catch (err) {
-        console.error('Error creating SPL token mint:', err);
-        throw new Error(`Failed to create SPL token mint: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      const mint = await createMint(
+        connection,
+        walletAdapter as any,
+        wallet.publicKey,
+        wallet.publicKey, // Freeze authority (can be null)
+        decimals
+      );
       
       // STEP 2: Register the mint for compression
       setStep('registering-compression');
       console.log('Step 2: Registering mint for compression...');
-      let registerTxId;
-      try {
-        registerTxId = await createTokenPool(
-          rpc,
-          walletAdapter as any,
-          mint
-        );
-        console.log(`Mint registered for compression. Transaction: ${registerTxId}`);
-        setPoolTxId(registerTxId);
-      } catch (err) {
-        console.error('Error registering for compression:', err);
-        throw new Error(`Failed to register for compression: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      const registerTxId = await createTokenPool(
+        rpc,
+        walletAdapter as any,
+        mint
+      );
+      console.log(`Mint registered for compression. Transaction: ${registerTxId}`);
+      setPoolTxId(registerTxId);
 
       // STEP 3: Create an associated token account for the wallet
       setStep('minting-supply');
       console.log('Step 3: Creating associated token account...');
-      let ata;
-      try {
-        ata = await getOrCreateAssociatedTokenAccount(
-          connection,
-          walletAdapter as any,
-          mint,
-          wallet.publicKey
-        );
-        console.log(`Associated token account created: ${ata.address.toBase58()}`);
-      } catch (err) {
-        console.error('Error creating token account:', err);
-        throw new Error(`Failed to create token account: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      const ata = await getOrCreateAssociatedTokenAccount(
+        connection,
+        walletAdapter as any,
+        mint,
+        wallet.publicKey
+      );
+      console.log(`Associated token account created: ${ata.address.toBase58()}`);
 
       // STEP 4: Mint initial supply to the wallet
       console.log('Step 4: Minting initial supply...');
-      let mintToTxId;
-      try {
-        const mintAmount = initialSupply * Math.pow(10, decimals);
-        mintToTxId = await mintTo(
-          connection,
-          walletAdapter as any,
-          mint,
-          ata.address,
-          wallet.publicKey,
-          mintAmount
-        );
-        console.log(`Minted ${initialSupply} tokens to ${ata.address.toBase58()}`); // Just minting 5 tokens now
-        console.log(`Mint transaction: ${mintToTxId}`);
-        setTxId(mintToTxId);
-      } catch (err) {
-        console.error('Error minting tokens:', err);
-        throw new Error(`Failed to mint tokens: ${err instanceof Error ? err.message : String(err)}`);
-      }
+      const mintAmount = initialSupply * Math.pow(10, decimals);
+      const mintToTxId = await mintTo(
+        connection,
+        walletAdapter as any,
+        mint,
+        ata.address,
+        wallet.publicKey,
+        mintAmount
+      );
+      console.log(`Minted ${initialSupply} tokens to ${ata.address.toBase58()}`); // Just minting 5 tokens now
+      console.log(`Mint transaction: ${mintToTxId}`);
 
-      // Process completed successfully
+      // Save mint address and transaction ID
+      setMintAddress(mint.toBase58());
+      setTxId(mintToTxId);
       setSuccess(true);
 
       // Notify parent component if callback provided
-      if (onSuccess && mintAddress) {
-        onSuccess(mintAddress);
+      if (onSuccess) {
+        onSuccess(mint.toBase58());
       }
 
       toast.success('Compressed token created successfully!');
     } catch (err) {
       console.error('Error minting token:', err);
-      setError(err instanceof Error ? err.message : String(err));
-      toast.error(`Failed to create token: ${err instanceof Error ? err.message : String(err)}`);
-      
-      // Even if there was an error, we might have completed some steps
-      // Set success to true if we at least created the mint
-      if (mintAddress) {
-        setSuccess(true);
-      }
+      setError(err instanceof Error ? err.message : 'Failed to mint token');
+      toast.error('Failed to create token');
     } finally {
       setIsLoading(false);
       setStep('idle');
@@ -269,7 +234,7 @@ export function CompressedTokenMinter({
                   Mint Address
                 </label>
                 <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-green-400">{mintAddress || 'Not available'}</code>
+                  <code className="text-sm text-green-400">{mintAddress}</code>
                 </div>
               </div>
               <div>
@@ -277,7 +242,7 @@ export function CompressedTokenMinter({
                   Compression Registration
                 </label>
                 <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-blue-400">{poolTxId || 'Not available'}</code>
+                  <code className="text-sm text-blue-400">{poolTxId}</code>
                 </div>
               </div>
               <div>
@@ -285,7 +250,7 @@ export function CompressedTokenMinter({
                   Mint Transaction
                 </label>
                 <div className="bg-gray-800 p-2 rounded overflow-x-auto">
-                  <code className="text-sm text-blue-400">{txId || 'Not available'}</code>
+                  <code className="text-sm text-blue-400">{txId}</code>
                 </div>
               </div>
             </div>

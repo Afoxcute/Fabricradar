@@ -52,7 +52,7 @@ export default function TailorLayout({
           >
             <TailorNav />
             <div className="w-full h-full overflow-y-auto">
-              <div className="px-6">{children}</div>
+              <div className="px-6 py-5">{children}</div>
             </div>
           </div>
         </div>

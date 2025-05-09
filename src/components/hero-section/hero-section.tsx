@@ -5,8 +5,12 @@ import { useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
 import { ChevronRight, Sparkles } from 'lucide-react';
+import { usePrivy } from '@privy-io/react-auth';
+import Link from 'next/link';
 
 const HeroSection = () => {
+  const { ready, authenticated, login } = usePrivy();
+  const disableLogin = !ready || (ready && authenticated);
   const heroImageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,21 +96,27 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-wrap gap-4 mt-4">
-              <Button
-                size="lg"
-                className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-none group transition-all duration-300"
-              >
-                <span>Explore Designs</span>
-                <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <Link href="/products">
+                <Button
+                  size="lg"
+                  className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-none group transition-all duration-300"
+                >
+                  <span>Explore Designs</span>
+                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
 
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-cyan-700 text-cyan-400 hover:bg-cyan-950/50 hover:text-cyan-300"
-              >
-                Connect Wallet
-              </Button>
+              {!authenticated && (
+                <Button
+                  variant="outline"
+                  className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+                  onClick={login}
+                  disabled={disableLogin}
+                >
+                  Connect Wallet
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>

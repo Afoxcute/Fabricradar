@@ -23,15 +23,22 @@ import toast from 'react-hot-toast';
 export default function ProductDetail({ params }: { params: { id: string } }) {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const { user } = useAuth();
-  
+
   // Fetch design data based on the ID
-  const { data: designData, isLoading, error } = api.designs.getDesignById.useQuery({
-    designId: parseInt(params.id)
-  }, {
-    enabled: Boolean(params.id) && /^\d+$/.test(params.id),
-    staleTime: 30000, // 30 seconds
-    retry: 2
-  });
+  const {
+    data: designData,
+    isLoading,
+    error,
+  } = api.designs.getDesignById.useQuery(
+    {
+      designId: parseInt(params.id),
+    },
+    {
+      enabled: Boolean(params.id) && /^\d+$/.test(params.id),
+      staleTime: 30000, // 30 seconds
+      retry: 2,
+    }
+  );
 
   // Handle the case where we're fetching a design that doesn't exist
   if (error) {
@@ -45,7 +52,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
   type DesignWithImages = typeof design & {
     images?: string[] | null;
   };
-  
+
   // Use the extended type
   const designWithImages = design as DesignWithImages;
 
@@ -55,90 +62,95 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
       toast.error('Please sign in to place an order');
       return;
     }
-    
+
     if (!user.walletAddress) {
       toast.error('Please connect your wallet to place an order');
       return;
     }
-    
+
     setShowOrderModal(true);
   };
 
   // Fallback if design isn't loaded yet
-  const product = designWithImages ? {
-    id: designWithImages.id,
-    name: designWithImages.title,
-    price: designWithImages.price,
-    eth: designWithImages.price,
-    priceChange: '+1.6%',
-    description: designWithImages.description,
-    images: designWithImages.images 
-      ? [...designWithImages.images] 
-      : designWithImages.imageUrl 
-        ? [designWithImages.imageUrl]
-        : ['/product3.jpeg?height=600&width=450'],
-    creator: {
-      name: designWithImages.tailor ? `${designWithImages.tailor.firstName || ''} ${designWithImages.tailor.lastName || ''}`.trim() || 'Anonymous Designer' : 'Anonymous Designer',
-      avatar: '/placeholder.svg?height=40&width=40',
-      rating: 4.8,
-      reviews: 23,
-      projectsCompleted: 32,
-      uniqueDesigns: 60,
-    },
-    reviews: [
-      {
-        text: '"The tailor brought my dream outfit to life! The attention to detail was extraordinary, an NFT, but wearing it in real life was a whole new level. The stitching, fit, and fabric were perfect. So glad I found this on Fabricradar!"',
-        author: '@mark_glow',
-        avatar: '/placeholder.svg?height=30&width=30',
-      },
-      {
-        text: '"Absolutely blown away by the quality and craftsmanship of this piece. The design was unique, and the finished outfit got me compliments all night at a wedding. 10/10, would recommend!"',
-        author: '@fashiontrends',
-        avatar: '/placeholder.svg?height=30&width=30',
-      },
-      {
-        text: '"What I love about this design is the attention to detail. The piece I bought was elegant and classic—and the tailoring was flawless. They\'re truly setting the bar for fashion in Web3!"',
-        author: '@mia_love',
-        avatar: '/placeholder.svg?height=30&width=30',
-      },
-    ],
-  } : {
-    id: params.id,
-    name: 'Loading Design...',
-    price: 0,
-    eth: 0,
-    priceChange: '+0.0%',
-    description: 'Loading design details...',
-    images: [
-      '/placeholder.svg?height=600&width=450',
-      '/placeholder.svg?height=150&width=100',
-      '/placeholder.svg?height=150&width=100',
-      '/placeholder.svg?height=150&width=100',
-    ],
-    creator: {
-      name: 'Unknown Designer',
-      avatar: '/placeholder.svg?height=40&width=40',
-      rating: 0,
-      reviews: 0,
-      projectsCompleted: 0,
-      uniqueDesigns: 0,
-    },
-    reviews: [],
-  };
+  const product = designWithImages
+    ? {
+        id: designWithImages.id,
+        name: designWithImages.title,
+        price: designWithImages.price,
+        eth: designWithImages.price,
+        priceChange: '+1.6%',
+        description: designWithImages.description,
+        images: designWithImages.images
+          ? [...designWithImages.images]
+          : designWithImages.imageUrl
+            ? [designWithImages.imageUrl]
+            : ['/product3.jpeg?height=600&width=450'],
+        creator: {
+          name: designWithImages.tailor
+            ? `${designWithImages.tailor.firstName || ''} ${designWithImages.tailor.lastName || ''}`.trim() ||
+              'Anonymous Designer'
+            : 'Anonymous Designer',
+          avatar: '/placeholder.svg?height=40&width=40',
+          rating: 4.8,
+          reviews: 23,
+          projectsCompleted: 32,
+          uniqueDesigns: 60,
+        },
+        reviews: [
+          {
+            text: '"The tailor brought my dream outfit to life! The attention to detail was extraordinary, an NFT, but wearing it in real life was a whole new level. The stitching, fit, and fabric were perfect. So glad I found this on Fabricradar!"',
+            author: '@mark_glow',
+            avatar: '/placeholder.svg?height=30&width=30',
+          },
+          {
+            text: '"Absolutely blown away by the quality and craftsmanship of this piece. The design was unique, and the finished outfit got me compliments all night at a wedding. 10/10, would recommend!"',
+            author: '@fashiontrends',
+            avatar: '/placeholder.svg?height=30&width=30',
+          },
+          {
+            text: '"What I love about this design is the attention to detail. The piece I bought was elegant and classic—and the tailoring was flawless. They\'re truly setting the bar for fashion in Web3!"',
+            author: '@mia_love',
+            avatar: '/placeholder.svg?height=30&width=30',
+          },
+        ],
+      }
+    : {
+        id: params.id,
+        name: 'Loading Design...',
+        price: 0,
+        eth: 0,
+        priceChange: '+0.0%',
+        description: 'Loading design details...',
+        images: [
+          '/placeholder.svg?height=600&width=450',
+          '/placeholder.svg?height=150&width=100',
+          '/placeholder.svg?height=150&width=100',
+          '/placeholder.svg?height=150&width=100',
+        ],
+        creator: {
+          name: 'Unknown Designer',
+          avatar: '/placeholder.svg?height=40&width=40',
+          rating: 0,
+          reviews: 0,
+          projectsCompleted: 0,
+          uniqueDesigns: 0,
+        },
+        reviews: [],
+      };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       {/* Order Modal */}
       {designWithImages && (
-      <OrderModal
-        isOpen={showOrderModal}
-        onClose={() => setShowOrderModal(false)}
-        productName={product.name}
+        <OrderModal
+          isOpen={showOrderModal}
+          onClose={() => setShowOrderModal(false)}
+          productName={product.name}
           designId={designWithImages.id}
           tailorId={designWithImages.tailorId}
           price={designWithImages.price}
           designDescription={designWithImages.description}
-      />
+        />
       )}
 
       {/* Stars/particles background effect */}
@@ -172,7 +184,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
       <Header />
 
       {/* Back button and creator info */}
-      <div className="container mx-auto mt-8">
+      <div className="container mx-auto mt-8 px-6">
         <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
           <Link
             href="/"
@@ -226,7 +238,7 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
       </div>
 
       {/* Product Display */}
-      <div className="container mx-auto mt-8">
+      <div className="container mx-auto mt-8 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Product Images */}
           <div className="flex gap-4">
@@ -289,20 +301,20 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
                 <Download className="h-4 w-4" />
               </Button>
 
-              <Button
+              {/* <Button
                 variant="outline"
                 className="border-gray-600 text-white hover:bg-gray-800 flex items-center gap-2"
               >
                 <span>Chat with tailor</span>
                 <MessageCircle className="h-4 w-4" />
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
       </div>
 
       {/* Description Section */}
-      <div className="container mx-auto mt-16">
+      {/* <div className="container mx-auto mt-16">
         <h2 className="text-2xl font-bold mb-6">Description</h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -326,10 +338,10 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Client Reviews */}
-      <div className="container mx-auto mt-16">
+      {/* <div className="container mx-auto mt-16">
         <h2 className="text-2xl font-bold mb-6">Client&apos;s Reviews</h2>
 
         <div className="bg-gray-900/30 backdrop-blur-sm rounded-xl p-8 relative">
@@ -359,14 +371,14 @@ export default function ProductDetail({ params }: { params: { id: string } }) {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-      </div>
+      </div> */}
 
       {/* Chat Interface */}
       <div className="container mx-auto mt-16 mb-16">
-        <ChatInterface
+        {/* <ChatInterface
           productName={product.name}
           designerName={product.creator.name}
-        />
+        /> */}
       </div>
 
       {/* Footer */}

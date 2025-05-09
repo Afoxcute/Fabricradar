@@ -12,31 +12,22 @@ interface Design {
 }
 
 interface DesignFormSectionProps {
-  showForm: boolean;
   isEditing: boolean;
   designToEdit: Design | null;
   onSuccess: () => void;
 }
 
 const DesignFormSection: React.FC<DesignFormSectionProps> = ({
-  showForm,
   isEditing,
   designToEdit,
   onSuccess,
 }) => {
-  if (!showForm) return null;
-
   return (
-    <div className="mb-8 bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">
-        {isEditing ? 'Edit Design' : 'Create New Design'}
-      </h2>
-      <DesignForm
-        onSuccess={onSuccess}
-        designToEdit={designToEdit || null}
-        isEditing={isEditing}
-      />
-    </div>
+    <DesignForm
+      onSuccess={onSuccess}
+      designToEdit={designToEdit || null}
+      isEditing={isEditing}
+    />
   );
 };
 

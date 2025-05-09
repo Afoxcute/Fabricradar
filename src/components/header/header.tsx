@@ -2,7 +2,15 @@
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
-import { ChevronRight, Copy, Check, Loader2, Wallet, Award, User } from 'lucide-react';
+import {
+  ChevronRight,
+  Copy,
+  Check,
+  Loader2,
+  Wallet,
+  Award,
+  User,
+} from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
 import Image from 'next/image';
@@ -22,31 +30,32 @@ const Header = () => {
   const router = useRouter();
   const disableLogin = !ready || (ready && authenticated);
   const [copied, setCopied] = useState(false);
-  
+
   // Create a state to safely store the PublicKey for the balance query
-  const [publicKeyForBalance, setPublicKeyForBalance] = useState<PublicKey | null>(null);
-  
+  const [publicKeyForBalance, setPublicKeyForBalance] =
+    useState<PublicKey | null>(null);
+
   // Update the publicKeyForBalance when wallet.publicKey changes
   useEffect(() => {
     setPublicKeyForBalance(wallet.publicKey);
   }, [wallet.publicKey]);
-  
+
   // Fetch balances with our useGetAllBalances hook
-  const { data: balances, isLoading: isLoadingBalances } = useGetAllBalances({ 
-    address: publicKeyForBalance
+  const { data: balances, isLoading: isLoadingBalances } = useGetAllBalances({
+    address: publicKeyForBalance,
   });
-  
+
   // Format the wallet address for display using the utility function
-  const formattedAddress = wallet.publicKey 
+  const formattedAddress = wallet.publicKey
     ? shortenAddress(wallet.publicKey.toString(), 4, 4)
     : '';
-    
+
   // Function to copy wallet address to clipboard
   const handleCopyWalletAddress = () => {
     if (wallet.publicKey) {
       copyToClipboard(wallet.publicKey.toString());
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
     }
   };
 
@@ -56,17 +65,19 @@ const Header = () => {
   };
 
   return (
-    <header className="max-w-[1440px] mx-auto py-4 flex items-center justify-between px-4">
-      <div className="flex items-center gap-2">
-        <Image
-          src="/placeholder.svg"
-          alt="Logo"
-          width={32}
-          height={32}
-          className="w-8 h-8"
-        />
-        <span className="font-bold text-lg">Fabricradar</span>
-      </div>
+    <header className="px-6 mx-auto py-4 flex items-center justify-between">
+      <Link href="/">
+        <div className="flex items-center gap-2">
+          <Image
+            src="/placeholder.svg"
+            alt="Logo"
+            width={32}
+            height={32}
+            className="w-8 h-8"
+          />
+          <span className="font-bold text-lg">Fabricradar</span>
+        </div>
+      </Link>
       <div className="flex items-center gap-6">
         <nav className="hidden md:flex items-center gap-6">
           <Link
@@ -97,30 +108,32 @@ const Header = () => {
             </Link>
           )}
         </nav>
-        
+
         {authenticated && wallet.connected && wallet.publicKey ? (
           <div className="flex items-center gap-2">
             {/* Wallet Balance Display */}
             <div className="text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-                {isLoadingBalances ? (
+              {isLoadingBalances ? (
                 <div className="flex items-center">
                   <Loader2 className="h-3 w-3 animate-spin mr-2" />
                   <span>Loading...</span>
                 </div>
-                ) : (
+              ) : (
                 <div className="flex items-center gap-2">
-                    {balances && (
-                      <>
-                        <span>{balances.sol.toFixed(2)} SOL</span>
-                        {balances.usdc > 0 && (
-                          <span className="text-blue-300">{balances.usdc.toFixed(2)} USDC</span>
-                        )}
-                      </>
+                  {balances && (
+                    <>
+                      <span>{balances.sol.toFixed(2)} SOL</span>
+                      {balances.usdc > 0 && (
+                        <span className="text-blue-300">
+                          {balances.usdc.toFixed(2)} USDC
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
               )}
-                  </div>
-                )}
-              </div>
-            
+            </div>
+
             {/* Fund Wallet Button (Mobile) */}
             <Button
               variant="outline"
@@ -130,10 +143,10 @@ const Header = () => {
             >
               <Wallet className="h-4 w-4" />
             </Button>
-            
+
             {/* Order Notifications */}
             <OrderNotifications />
-            
+
             {/* Auth Navigation */}
             <AuthNav />
           </div>

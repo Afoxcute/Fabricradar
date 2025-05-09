@@ -4,7 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/trpc/react';
 import { useAuth } from '@/providers/auth-provider';
 import DesignCard from './design-card';
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2, RefreshCw, Scissors } from 'lucide-react';
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+  Scissors,
+} from 'lucide-react';
 
 // Define the Design type based on the props in DesignCard
 interface Design {
@@ -31,11 +38,11 @@ interface DesignListProps {
   onEditDesign?: (design: Design) => void;
 }
 
-export default function DesignList({ 
-  tailorId, 
-  showActions = false, 
+export default function DesignList({
+  tailorId,
+  showActions = false,
   limit = 12,
-  onEditDesign
+  onEditDesign,
 }: DesignListProps) {
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -43,19 +50,19 @@ export default function DesignList({
   const [currentCursor, setCurrentCursor] = useState<number | null>(null);
   const [cursors, setCursors] = useState<(number | null)[]>([null]); // Track pagination history
   const [currentPage, setCurrentPage] = useState(0);
-  
+
   // Query designs based on whether we need all designs or just one tailor's designs
-  const designsQuery = tailorId 
-    ? api.designs.getTailorDesigns.useQuery({ 
-        tailorId, 
-        limit, 
-        cursor: currentCursor 
+  const designsQuery = tailorId
+    ? api.designs.getTailorDesigns.useQuery({
+        tailorId,
+        limit,
+        cursor: currentCursor,
       })
-    : api.designs.getAllDesigns.useQuery({ 
-        limit, 
-        cursor: currentCursor 
+    : api.designs.getAllDesigns.useQuery({
+        limit,
+        cursor: currentCursor,
       });
-  
+
   // Delete mutation
   const deleteMutation = api.designs.deleteDesign.useMutation({
     onMutate: () => {
@@ -73,7 +80,7 @@ export default function DesignList({
       setIsDeleting(false);
     },
   });
-  
+
   // Handle pagination
   useEffect(() => {
     if (designsQuery.data?.nextCursor !== undefined) {
@@ -98,13 +105,17 @@ export default function DesignList({
       setCurrentPage(newPage);
     }
   };
-  
+
   const handleDelete = (designId: number) => {
-    if (confirm('Are you sure you want to delete this design?\nThis action cannot be undone.')) {
+    if (
+      confirm(
+        'Are you sure you want to delete this design?\nThis action cannot be undone.'
+      )
+    ) {
       deleteMutation.mutate({ designId });
     }
   };
-  
+
   const handleEdit = (design: Design) => {
     // If onEditDesign is provided, call it with the design
     if (onEditDesign) {
@@ -114,15 +125,15 @@ export default function DesignList({
       alert(`Edit design ${design.id} (Edit functionality to be implemented)`);
     }
   };
-  
+
   // Check if user is the owner of designs
   const canManageDesigns = tailorId && user ? user.id === tailorId : false;
   // Ensure this is explicitly a boolean value
   const showActionsAdjusted: boolean = Boolean(showActions && canManageDesigns);
-  
+
   // Count the total designs
   const totalDesigns = designsQuery.data?.designs.length || 0;
-  
+
   return (
     <div>
       {/* Loading state */}
@@ -132,7 +143,7 @@ export default function DesignList({
           <span className="ml-2 text-gray-400">Loading designs...</span>
         </div>
       )}
-      
+
       {/* Error state */}
       {designsQuery.error && (
         <div className="bg-red-900/30 border border-red-800 text-red-500 px-4 py-3 rounded-lg flex items-start gap-2 my-4">
@@ -143,7 +154,7 @@ export default function DesignList({
           </div>
         </div>
       )}
-      
+
       {/* Designs grid */}
       {designsQuery.data?.designs && designsQuery.data.designs.length > 0 ? (
         <>
@@ -158,37 +169,40 @@ export default function DesignList({
               />
             ))}
           </div>
-          
+
           {/* Pagination controls */}
           <div className="mt-8 flex items-center justify-between">
             <div className="text-sm text-gray-400">
               {totalDesigns > 0 && (
                 <>
-                  Showing {totalDesigns} designs {currentPage > 0 ? `(page ${currentPage + 1})` : ''}
+                  Showing {totalDesigns} designs{' '}
+                  {currentPage > 0 ? `(page ${currentPage + 1})` : ''}
                 </>
               )}
             </div>
-            
+
             <div className="flex items-center gap-2">
               <button
                 onClick={goToPrevPage}
                 disabled={currentPage === 0 || designsQuery.isLoading}
                 className={`p-2 rounded-lg border ${
-                  currentPage === 0 
-                    ? 'border-gray-700 text-gray-600 cursor-not-allowed' 
+                  currentPage === 0
+                    ? 'border-gray-700 text-gray-600 cursor-not-allowed'
                     : 'border-gray-700 text-gray-300 hover:bg-gray-800'
                 }`}
                 aria-label="Previous page"
               >
                 <ChevronLeft size={18} />
               </button>
-              
+
               <button
                 onClick={goToNextPage}
-                disabled={!designsQuery.data?.nextCursor || designsQuery.isLoading}
+                disabled={
+                  !designsQuery.data?.nextCursor || designsQuery.isLoading
+                }
                 className={`p-2 rounded-lg border ${
-                  !designsQuery.data?.nextCursor 
-                    ? 'border-gray-700 text-gray-600 cursor-not-allowed' 
+                  !designsQuery.data?.nextCursor
+                    ? 'border-gray-700 text-gray-600 cursor-not-allowed'
                     : 'border-gray-700 text-gray-300 hover:bg-gray-800'
                 }`}
                 aria-label="Next page"
@@ -196,15 +210,20 @@ export default function DesignList({
                 <ChevronRight size={18} />
               </button>
             </div>
-            
+
             <button
               onClick={() => designsQuery.refetch()}
               disabled={designsQuery.isRefetching}
               className="flex items-center gap-2 text-cyan-500 hover:text-cyan-400 px-4 py-2 rounded-lg border border-gray-800 hover:border-cyan-900 transition-colors"
               aria-label="Refresh designs"
             >
-              <RefreshCw size={16} className={designsQuery.isRefetching ? 'animate-spin' : ''} />
-              <span>{designsQuery.isRefetching ? 'Refreshing...' : 'Refresh'}</span>
+              <RefreshCw
+                size={16}
+                className={designsQuery.isRefetching ? 'animate-spin' : ''}
+              />
+              <span>
+                {designsQuery.isRefetching ? 'Refreshing...' : 'Refresh'}
+              </span>
             </button>
           </div>
         </>
@@ -214,15 +233,19 @@ export default function DesignList({
           <div className="text-center py-16 bg-gray-900/30 rounded-xl border border-gray-800">
             <div className="max-w-md mx-auto">
               <Scissors className="w-12 h-12 text-gray-600 mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold text-white mb-2">No designs found</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">
+                No designs found
+              </h3>
               <p className="text-gray-400 mb-6">
-                {tailorId 
-                  ? "You haven't created any designs yet. Create your first design to showcase your work." 
-                  : "No designs are available at the moment."}
+                {tailorId
+                  ? "You haven't created any designs yet. Create your first design to showcase your work."
+                  : 'No designs are available at the moment.'}
               </p>
               {tailorId && (
                 <button
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  onClick={() =>
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                  }
                   className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white transition-colors"
                 >
                   Create a Design
@@ -232,7 +255,7 @@ export default function DesignList({
           </div>
         )
       )}
-      
+
       {/* Delete error */}
       {deleteError && (
         <div className="bg-red-900/30 border border-red-800 text-red-500 px-4 py-3 rounded-lg flex items-start gap-2 mt-4">
@@ -240,7 +263,7 @@ export default function DesignList({
           <span>{deleteError}</span>
         </div>
       )}
-      
+
       {/* Delete loading state overlay */}
       {isDeleting && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -252,4 +275,4 @@ export default function DesignList({
       )}
     </div>
   );
-} 
+}

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   createContext,
@@ -6,13 +6,16 @@ import {
   useState,
   useEffect,
   ReactNode,
-} from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { api } from "../trpc/react";
-import toast from "react-hot-toast";
-import { ClientTRPCErrorHandler } from "@/lib/utils";
-import { useWallet } from "@/components/solana/privy-solana-adapter";
-import { isProfileComplete, debugProfileStatus } from "@/utils/user-profile-utils";
+} from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { api } from '../trpc/react';
+import toast from 'react-hot-toast';
+import { ClientTRPCErrorHandler } from '@/lib/utils';
+import { useWallet } from '@/components/solana/privy-solana-adapter';
+import {
+  isProfileComplete,
+  debugProfileStatus,
+} from '@/utils/user-profile-utils';
 
 interface User {
   id: number;
@@ -22,7 +25,7 @@ interface User {
   lastName?: string | null;
   middleName?: string | null;
   walletAddress?: string | null;
-  accountType?: "USER" | "TAILOR" | null;
+  accountType?: 'USER' | 'TAILOR' | null;
 }
 
 interface AuthContextType {
@@ -31,7 +34,10 @@ interface AuthContextType {
   login: (identifier: string, otp: string) => Promise<void>;
   logout: () => void;
   refreshUserData: (userId: number) => Promise<User | null>;
-  associateWalletWithUser: (userId: number, walletAddress: string) => Promise<User | null>;
+  associateWalletWithUser: (
+    userId: number,
+    walletAddress: string
+  ) => Promise<User | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,13 +69,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const getUserById = async (userId: number) => {
     try {
       // Use traditional fetch API call to the tRPC endpoint
-      const response = await fetch(`/api/trpc/users.getUserById?input=${encodeURIComponent(JSON.stringify({ userId }))}`);
+      const response = await fetch(
+        `/api/trpc/users.getUserById?input=${encodeURIComponent(JSON.stringify({ userId }))}`
+      );
       const data = await response.json();
-      
+
       if (data.result?.data) {
         return data.result.data;
       }
-      
+
       throw new Error(data.error?.message || 'Failed to fetch user data');
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -80,33 +88,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Function to fetch the latest user data from server
   const refreshUserData = async (userId: number) => {
     if (!userId) return null;
-    
+
     try {
       setIsLoading(true);
-      
+
       const fetchedUser = await getUserById(userId);
-      
+
       if (fetchedUser) {
-        console.log("Successfully refreshed user data:", debugProfileStatus(fetchedUser));
+        console.log(
+          'Successfully refreshed user data:',
+          debugProfileStatus(fetchedUser)
+        );
         // Update localStorage and state with fresh data
-        const existingData = localStorage.getItem("auth_user");
+        const existingData = localStorage.getItem('auth_user');
         if (existingData) {
           // Merge with existing data to preserve client-side fields
           const existingUser = JSON.parse(existingData);
           const mergedUser = { ...existingUser, ...fetchedUser };
-          localStorage.setItem("auth_user", JSON.stringify(mergedUser));
+          localStorage.setItem('auth_user', JSON.stringify(mergedUser));
           setUser(mergedUser);
           return mergedUser;
         } else {
-          localStorage.setItem("auth_user", JSON.stringify(fetchedUser));
+          localStorage.setItem('auth_user', JSON.stringify(fetchedUser));
           setUser(fetchedUser);
           return fetchedUser;
         }
       }
-      
+
       return null;
     } catch (error) {
-      console.error("Error refreshing user data:", error);
+      console.error('Error refreshing user data:', error);
       return null;
     } finally {
       setIsLoading(false);
@@ -121,113 +132,134 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // If wallet is connected, prioritize finding a user by wallet address
         if (connected && publicKey) {
           const walletAddressStr = publicKey.toString();
-          console.log("Wallet connected, checking for a user with this wallet address first");
-          
+          console.log(
+            'Wallet connected, checking for a user with this wallet address first'
+          );
+
           try {
             // Use direct API endpoint to find a user with this wallet
             const apiUrl = `/api/user/by-wallet?walletAddress=${encodeURIComponent(walletAddressStr)}`;
-            console.log("Checking for user with wallet address:", apiUrl);
-            
+            console.log('Checking for user with wallet address:', apiUrl);
+
             const response = await fetch(apiUrl);
-            
+
             if (response.ok) {
               const data = await response.json();
-              
+
               if (data.success && data.user) {
-                console.log("Found user with connected wallet, using this data", debugProfileStatus(data.user));
+                console.log(
+                  'Found user with connected wallet, using this data',
+                  debugProfileStatus(data.user)
+                );
                 // Found a user with this wallet - update localStorage and state
-                localStorage.setItem("auth_user", JSON.stringify(data.user));
+                localStorage.setItem('auth_user', JSON.stringify(data.user));
                 setUser(data.user);
                 setIsLoading(false);
                 return; // Exit early - we've found our user
               } else {
-                console.log("No user found with this wallet address, checking localStorage");
+                console.log(
+                  'No user found with this wallet address, checking localStorage'
+                );
               }
             } else {
-              console.log("API error or no user found with wallet:", response.status);
+              console.log(
+                'API error or no user found with wallet:',
+                response.status
+              );
             }
           } catch (error) {
-            console.error("Error checking wallet user:", error);
+            console.error('Error checking wallet user:', error);
           }
         }
-        
+
         // If we get here, either no wallet is connected, or no user was found with the wallet
         // Check localStorage as fallback
-        const storedUser = localStorage.getItem("auth_user");
+        const storedUser = localStorage.getItem('auth_user');
         if (storedUser) {
           try {
             const parsedUser = JSON.parse(storedUser);
-            
+
             // If wallet is connected, ensure we're not using mismatched data
             if (connected && publicKey) {
               const walletAddressStr = publicKey.toString();
-              
+
               // If stored user has a different wallet, clear it and return null
               // This prevents mixing profiles between different wallets
-              if (parsedUser.walletAddress && parsedUser.walletAddress !== walletAddressStr) {
-                console.log("Stored user has different wallet address, clearing local storage");
-                localStorage.removeItem("auth_user");
+              if (
+                parsedUser.walletAddress &&
+                parsedUser.walletAddress !== walletAddressStr
+              ) {
+                console.log(
+                  'Stored user has different wallet address, clearing local storage'
+                );
+                localStorage.removeItem('auth_user');
                 setUser(null);
                 setIsLoading(false);
                 return;
               }
-              
+
               // If we get here, either the wallet matches or user has no wallet yet
-              console.log("Using stored user data or associating wallet", debugProfileStatus(parsedUser));
+              console.log(
+                'Using stored user data or associating wallet',
+                debugProfileStatus(parsedUser)
+              );
               setUser(parsedUser);
-              
+
               // If user has no wallet address yet, associate this one
               if (!parsedUser.walletAddress && parsedUser.id) {
-                console.log("User has no wallet, associating current wallet");
+                console.log('User has no wallet, associating current wallet');
                 associateWalletWithUser(parsedUser.id, walletAddressStr);
               }
             } else {
               // No wallet connected, just use stored user
-              console.log("No wallet connected, using stored user data", debugProfileStatus(parsedUser));
+              console.log(
+                'No wallet connected, using stored user data',
+                debugProfileStatus(parsedUser)
+              );
               setUser(parsedUser);
             }
           } catch (error) {
-            console.error("Failed to parse stored user", error);
-            localStorage.removeItem("auth_user");
+            console.error('Failed to parse stored user', error);
+            localStorage.removeItem('auth_user');
             setUser(null);
           }
         } else {
           // No stored user
-          console.log("No stored user data");
+          console.log('No stored user data');
           setUser(null);
         }
       } catch (error) {
-        console.error("Error loading user data:", error);
+        console.error('Error loading user data:', error);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-    
+
     loadUserData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, publicKey]);
 
   // Function to handle login
   const login = async (identifier: string, otp: string) => {
     setIsLoading(true);
-    
+
     try {
       const userData = await loginMutation.mutateAsync({
         identifier,
         otp,
       });
-      
+
       if (userData) {
         // Store user data in localStorage and state
-        localStorage.setItem("auth_user", JSON.stringify(userData));
+        localStorage.setItem('auth_user', JSON.stringify(userData));
         setUser(userData);
       } else {
-        throw new Error("Login failed. Please try again.");
+        throw new Error('Login failed. Please try again.');
       }
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Login failed. Please try again.");
+      console.error('Login error:', error);
+      toast.error('Login failed. Please try again.');
       throw error;
     } finally {
       setIsLoading(false);
@@ -237,51 +269,54 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Function to handle logout
   const logout = () => {
     // Clear user data
-    localStorage.removeItem("auth_user");
+    localStorage.removeItem('auth_user');
     setUser(null);
-    
+
     // Set a flag in sessionStorage to indicate the user just logged out
-    sessionStorage.setItem("just_logged_out", "true");
-    
+    sessionStorage.setItem('just_logged_out', 'true');
+
     // Disconnect wallet to prevent profile completion redirect
     try {
       if (disconnect) {
         disconnect();
       }
     } catch (error) {
-      console.error("Error disconnecting wallet during logout:", error);
+      console.error('Error disconnecting wallet during logout:', error);
     }
-    
+
     // Navigate to home page unless already there
-    if (pathname !== "/") {
-      router.push("/");
+    if (pathname !== '/') {
+      router.push('/');
     }
   };
 
   // Function to associate wallet address with user
-  const associateWalletWithUser = async (userId: number, walletAddress: string) => {
+  const associateWalletWithUser = async (
+    userId: number,
+    walletAddress: string
+  ) => {
     if (!userId) return null;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Use the mutation to update the user
       const userData = await updateUserMutation.mutateAsync({
         userId,
-        walletAddress
+        walletAddress,
       });
-      
+
       if (userData) {
-        console.log("Successfully associated wallet with user:", userData);
+        console.log('Successfully associated wallet with user:', userData);
         // Update localStorage and state with the updated user
-        localStorage.setItem("auth_user", JSON.stringify(userData));
+        localStorage.setItem('auth_user', JSON.stringify(userData));
         setUser(userData);
         return userData;
       }
-      
+
       return null;
     } catch (error) {
-      console.error("Error associating wallet with user:", error);
+      console.error('Error associating wallet with user:', error);
       return null;
     } finally {
       setIsLoading(false);
@@ -289,7 +324,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, refreshUserData, associateWalletWithUser }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        login,
+        logout,
+        refreshUserData,
+        associateWalletWithUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -299,7 +343,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}

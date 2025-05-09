@@ -45,10 +45,13 @@ export default function TailorLayout({
       ) : (
         <div className="h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
           <BackgroundEffect />
-          <div className="w-full grid grid-cols-[256px,1fr] h-screen overflow-hidden">
+          <Header />
+          <div
+            className="w-full grid grid-cols-[256px,1fr] overflow-hidden"
+            style={{ height: 'calc(100vh - 66px)' }}
+          >
             <TailorNav />
-            <div className="w-full h-screen overflow-y-auto">
-              <Header />
+            <div className="w-full h-full overflow-y-auto">
               <div className="px-6">{children}</div>
             </div>
           </div>

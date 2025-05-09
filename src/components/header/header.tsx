@@ -65,7 +65,7 @@ const Header = () => {
   };
 
   return (
-    <header className="px-6 mx-auto py-4 flex items-center justify-between">
+    <header className="px-6 mx-auto py-4 flex items-center justify-between h-[66px] bg-gray-800/40 backdrop-blur-sm">
       <Link href="/">
         <div className="flex items-center gap-2">
           <Image

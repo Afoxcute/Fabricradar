@@ -222,7 +222,7 @@ export default function OrderDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
       <div className="flex">
-        <div className="ml-64 flex-1 p-8 relative z-10">
+        <div className="flex-1 p-8 relative z-10">
           <div className="mb-6">
             <Link
               href="/tailor/orders"

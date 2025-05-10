@@ -36,6 +36,7 @@ interface DesignListProps {
   showActions?: boolean;
   limit?: number;
   onEditDesign?: (design: Design) => void;
+  createDesign: () => void;
 }
 
 export default function DesignList({
@@ -43,6 +44,7 @@ export default function DesignList({
   showActions = false,
   limit = 12,
   onEditDesign,
+  createDesign,
 }: DesignListProps) {
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -243,9 +245,7 @@ export default function DesignList({
               </p>
               {tailorId && (
                 <button
-                  onClick={() =>
-                    window.scrollTo({ top: 0, behavior: 'smooth' })
-                  }
+                  onClick={createDesign}
                   className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg text-white transition-colors"
                 >
                   Create a Design

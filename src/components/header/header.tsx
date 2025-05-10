@@ -10,6 +10,7 @@ import {
   Wallet,
   Award,
   User,
+  ChevronDown,
 } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useWallet } from '../solana/privy-solana-adapter';
@@ -22,6 +23,12 @@ import { shortenAddress, copyToClipboard } from '@/lib/utils';
 import { useAuth } from '@/providers/auth-provider';
 import { AuthNav } from '../user-profile/auth-nav';
 import { OrderNotifications } from '../notifications/order-notifications';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 const Header = () => {
   const { ready, authenticated, login } = usePrivy();
@@ -110,46 +117,64 @@ const Header = () => {
         </nav>
 
         {authenticated && wallet.connected && wallet.publicKey ? (
-          <div className="flex items-center gap-2">
-            {/* Wallet Balance Display */}
-            <div className="text-sm bg-gray-800/50 rounded-lg px-3 py-2">
-              {isLoadingBalances ? (
-                <div className="flex items-center">
-                  <Loader2 className="h-3 w-3 animate-spin mr-2" />
-                  <span>Loading...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {balances && (
-                    <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 bg-gray-800/50 hover:bg-gray-700/50 text-white"
+              >
+                <Wallet className="h-5 w-5" />
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-72 bg-gray-800 border-gray-700 text-white"
+            >
+              {/* Wallet Balance */}
+              <DropdownMenuItem className="flex flex-col items-start">
+                <span className="text-sm font-medium">Wallet Balance</span>
+                {isLoadingBalances ? (
+                  <div className="flex items-center text-sm mt-1">
+                    <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  balances && (
+                    <div className="flex flex-col mt-1">
                       <span>{balances.sol.toFixed(2)} SOL</span>
                       {balances.usdc > 0 && (
                         <span className="text-blue-300">
                           {balances.usdc.toFixed(2)} USDC
                         </span>
                       )}
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+                    </div>
+                  )
+                )}
+              </DropdownMenuItem>
 
-            {/* Fund Wallet Button (Mobile) */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="md:hidden text-cyan-400 border-cyan-400/50 hover:bg-cyan-400/10"
-              onClick={navigateToFundWallet}
-            >
-              <Wallet className="h-4 w-4" />
-            </Button>
+              {/* Fund Wallet */}
+              <DropdownMenuItem
+                className="hover:bg-gray-700 focus:bg-gray-700 cursor-pointer"
+                onClick={navigateToFundWallet}
+              >
+                <Wallet className="h-4 w-4 mr-2" />
+                Fund Wallet
+              </DropdownMenuItem>
 
-            {/* Order Notifications */}
-            <OrderNotifications />
+              {/* Order Notifications */}
+              <div className="flex items-center gap-1">
+                <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
+                  <OrderNotifications />
+                </DropdownMenuItem>
 
-            {/* Auth Navigation */}
-            <AuthNav />
-          </div>
+                {/* Auth Navigation */}
+                <DropdownMenuItem className="hover:bg-gray-700 focus:bg-gray-700">
+                  <AuthNav />
+                </DropdownMenuItem>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
           <Button
             variant="outline"

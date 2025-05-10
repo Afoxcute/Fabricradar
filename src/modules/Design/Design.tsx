@@ -72,6 +72,13 @@ const Design = () => {
             tailorId={user.id}
             showActions={true}
             onEditDesign={editModal}
+            createDesign={() => {
+              setModal((prev) => ({
+                ...prev,
+                show: true,
+                type: 'create',
+              }));
+            }}
           />
         )}
       </div>

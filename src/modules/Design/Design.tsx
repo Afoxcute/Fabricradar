@@ -35,6 +35,13 @@ const Design = () => {
     }));
   };
 
+  const designSucess = () => {
+    handleDesignSuccess();
+    setTimeout(() => {
+      closeModal();
+    }, 2000);
+  };
+
   const editModal = (design: DesignTy) => {
     console.log(design, 'Design');
     setModal((prev) => ({
@@ -77,7 +84,7 @@ const Design = () => {
         <DesignFormSection
           isEditing={modal.type === 'edit' ? true : false}
           designToEdit={modal.data ?? null}
-          onSuccess={handleDesignSuccess}
+          onSuccess={designSucess}
         />
       </CustomModal>
     </div>

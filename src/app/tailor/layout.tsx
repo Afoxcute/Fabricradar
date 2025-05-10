@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/providers/auth-provider';
 import { redirect } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 import Header from '@/components/header/header';
 import { TailorNav } from '@/components/tailor/tailor-nav';
@@ -47,12 +47,13 @@ export default function TailorLayout({
           <BackgroundEffect />
           <Header />
           <div
-            className="w-full grid grid-cols-[256px,1fr] overflow-hidden"
+            className="w-full grid lg:grid-cols-[256px,1fr] grid-cols-1 overflow-hidden"
             style={{ height: 'calc(100vh - 66px)' }}
           >
+            {/* Navigation collapses for smaller screens */}
             <TailorNav />
             <div className="w-full h-full overflow-y-auto">
-              <div className="px-6 py-5">{children}</div>
+              <div className="px-4 sm:px-6 py-5">{children}</div>
             </div>
           </div>
         </div>

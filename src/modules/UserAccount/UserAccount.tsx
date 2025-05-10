@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
@@ -20,6 +21,7 @@ function UserAccount() {
   const [activeTab, setActiveTab] = useState<
     'orders' | 'profile' | 'wallet' | 'rewards' | 'dashboard'
   >('dashboard');
+  const [isSidebarOpen, setSidebarOpen] = useState(false); // Sidebar state for responsiveness
 
   if (!user) {
     return (
@@ -50,10 +52,16 @@ function UserAccount() {
       <BackgroundEffect />
       <Header />
       <div
-        className="grid grid-cols-[256px,1fr]"
+        className="grid lg:grid-cols-[256px,1fr] grid-cols-1 overflow-hidden"
         style={{ height: 'calc(100vh - 66px)' }}
       >
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Sidebar */}
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          isSidebarOpen={isSidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
         <div className="w-full h-full overflow-y-auto px-5 py-4">
           {activeTab === 'orders' && <OrdersTab />}
           {activeTab === 'rewards' && <RewardsTab />}

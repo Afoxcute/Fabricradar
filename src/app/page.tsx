@@ -16,7 +16,7 @@ import Link from 'next/link';
 
 export default function Page() {
   return (
-    <div className="min-h-screen px-5  bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
+    <div className="min-h-screen md:px-5 px-3  bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       <BackgroundEffect />
       <Header />
       <HeroSection />

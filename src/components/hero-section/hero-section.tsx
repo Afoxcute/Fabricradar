@@ -6,10 +6,12 @@ import { Button } from '../ui/button';
 import { motion } from 'framer-motion';
 import { ChevronRight, Sparkles } from 'lucide-react';
 import { usePrivy } from '@privy-io/react-auth';
+import { useAuth } from '@/providers/auth-provider';
 import Link from 'next/link';
 
 const HeroSection = () => {
   const { ready, authenticated, login } = usePrivy();
+  const { user } = useAuth();
   const disableLogin = !ready || (ready && authenticated);
   const heroImageRef = useRef<HTMLDivElement>(null);
 
@@ -77,11 +79,11 @@ const HeroSection = () => {
               </span>
             </div>
 
-            <h3 className="font-adLamDisplay md:text-[32px] text-2xl text-cyan-400 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            <h3 className="font-adLamDisplay md:text-[32px] md:text-2xl text-xl text-cyan-400 bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
               Powered by Web3.
             </h3>
 
-            <h1 className="font-adLamDisplay md:text-[66px] md:leading-[80px] text-5xl leading-[45px] relative">
+            <h1 className="font-adLamDisplay md:text-[66px] md:leading-[80px] md:text-5xl text-3xl leading-[35px] relative">
               <span className="bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                 Empowering Tailors.
                 <br />
@@ -90,21 +92,33 @@ const HeroSection = () => {
               <div className="absolute -right-8 -top-8 w-20 h-20 bg-cyan-500/10 rounded-full blur-xl"></div>
             </h1>
 
-            <p className="text-[#D8EFF5] text-lg max-w-xl">
+            <p className="text-[#D8EFF5] md:text-lg text-base max-w-xl">
               Discover, own, and showcase exclusive tailor-made designs in a
               decentralized fashion marketplace.
             </p>
 
-            <div className="flex flex-wrap gap-4 mt-4">
-              <Link href="/products">
-                <Button
-                  size="lg"
-                  className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-none group transition-all duration-300"
-                >
-                  <span>Explore Designs</span>
-                  <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+            <div className="grid sm:grid-cols-2 grid-cols-1 items-center z-30 gap-2">
+              {user?.accountType === 'TAILOR' ? (
+                <Link href="/tailor/dashboard" className="w-full flex">
+                  <Button
+                    size="default"
+                    className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-none group transition-all duration-300 w-full"
+                  >
+                    <span>View Dashboard</span>
+                    <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/products" className="w-full flex">
+                  <Button
+                    size="default"
+                    className="bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-none group transition-all duration-300 w-full"
+                  >
+                    <span>Explore Designs</span>
+                    <ChevronRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              )}
 
               {!authenticated && (
                 <Button

@@ -1,16 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { UserProfileForm, UserProfileFormValues } from "@/components/user-profile/user-profile-form";
-import { useAuth } from "@/providers/auth-provider";
-import { useWallet } from "@/components/solana/privy-solana-adapter";
-import BackgroundEffect from "@/components/background-effect/background-effect";
-import { ArrowLeft } from "lucide-react";
-import Header from "@/components/header/header";
-import Footer from "@/components/footer/footer";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  UserProfileForm,
+  UserProfileFormValues,
+} from '@/components/user-profile/user-profile-form';
+import { useAuth } from '@/providers/auth-provider';
+import { useWallet } from '@/components/solana/privy-solana-adapter';
+import BackgroundEffect from '@/components/background-effect/background-effect';
+import { ArrowLeft } from 'lucide-react';
+import Header from '@/components/header/header';
+import Footer from '@/components/footer/footer';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
   const { user, refreshUserData } = useAuth();
@@ -22,7 +25,7 @@ export default function ProfilePage() {
     if (user?.id) {
       await refreshUserData(user.id);
       setIsSuccess(true);
-      
+
       // Reset success message after 3 seconds
       setTimeout(() => setIsSuccess(false), 3000);
     }
@@ -35,31 +38,31 @@ export default function ProfilePage() {
   // Convert user data to the format expected by UserProfileForm
   const getUserFormValues = (): Partial<UserProfileFormValues> | undefined => {
     if (!user) return undefined;
-    
+
     return {
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || undefined,
       phone: user.phone || undefined,
-      walletAddress: user.walletAddress || undefined
+      walletAddress: user.walletAddress || undefined,
     };
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative overflow-hidden">
       <BackgroundEffect />
-      
+
       <Header />
-      
+
       <div className="container mx-auto py-8 px-4">
-        <button 
+        <button
           onClick={handleBack}
           className="flex items-center mb-6 text-gray-400 hover:text-white transition-colors"
         >
           <ArrowLeft className="mr-2 h-5 w-5" />
           <span>Back</span>
         </button>
-        
+
         <div className="max-w-xl mx-auto">
           <div className="bg-gray-900/30 backdrop-blur-sm p-6 rounded-xl shadow-lg">
             {isSuccess && (
@@ -67,19 +70,21 @@ export default function ProfilePage() {
                 Profile updated successfully!
               </div>
             )}
-            
-            <UserProfileForm 
-              initialValues={getUserFormValues()} 
+
+            <UserProfileForm
+              initialValues={getUserFormValues()}
               walletAddress={publicKey?.toString()}
               onSuccess={handleProfileSuccess}
             />
           </div>
-          
+
           {/* Orders Link */}
           {user && (
             <div className="mt-6 bg-gray-900/30 backdrop-blur-sm p-6 rounded-xl shadow-lg">
               <h3 className="text-lg font-semibold mb-3">Your Orders</h3>
-              <p className="text-gray-400 mb-4">Track your orders and view your measurements</p>
+              <p className="text-gray-400 mb-4">
+                Track your orders and view your measurements
+              </p>
               <Link href="/orders">
                 <Button className="w-full bg-cyan-600 hover:bg-cyan-700">
                   View My Orders
@@ -89,8 +94,8 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );
-} 
+}

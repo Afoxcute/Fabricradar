@@ -72,7 +72,8 @@ const Header = () => {
   };
 
   return (
-    <header className="px-6 mx-auto py-4 flex items-center justify-between h-[66px] bg-gray-800/40 backdrop-blur-sm">
+    <header className="md:px-6 px-2 mx-auto py-4 flex items-center justify-between h-[66px] bg-gray-800/40 backdrop-blur-sm">
+      {/* Logo Section */}
       <Link href="/">
         <div className="flex items-center gap-2">
           <Image
@@ -82,10 +83,14 @@ const Header = () => {
             height={32}
             className="w-8 h-8"
           />
-          <span className="font-bold text-lg">Fabricradar</span>
+          <span className="font-bold text-lg hidden sm:block">Fabricradar</span>
+          <span className="font-bold text-lg sm:hidden">FR</span>
         </div>
       </Link>
+
+      {/* Navigation and Button Section */}
       <div className="flex items-center gap-6">
+        {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-6">
           <Link
             href="#"
@@ -116,6 +121,7 @@ const Header = () => {
           )}
         </nav>
 
+        {/* Wallet/Connect Button */}
         {authenticated && wallet.connected && wallet.publicKey ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -178,11 +184,12 @@ const Header = () => {
         ) : (
           <Button
             variant="outline"
-            className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10"
+            className="border-cyan-400 text-cyan-400 hover:bg-cyan-400/10 text-xs md:text-base ml-auto"
             onClick={login}
             disabled={disableLogin}
           >
-            Connect Wallet
+            <span className="hidden sm:block">Connect Wallet</span>
+            <span className="sm:hidden">Connect</span>
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         )}

@@ -14,7 +14,7 @@ import {
   Search,
   RefreshCw,
   ExternalLink,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,17 +52,17 @@ interface CustomerOrdersProps {
   compact?: boolean;
 }
 
-export function CustomerOrders({ 
-  limit = 10, 
-  showSearch = true, 
+export function CustomerOrders({
+  limit = 10,
+  showSearch = true,
   showFilters = true,
-  compact = false
+  compact = false,
 }: CustomerOrdersProps) {
   const { user } = useAuth();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
-  
+
   // Fetch user's orders
   const { data, isLoading, refetch } = api.orders.getCustomerOrders.useQuery(
     { userId: user?.id || 0, limit },
@@ -72,24 +72,27 @@ export function CustomerOrders({
   // Filter orders based on search term and status filter
   const filteredOrders = React.useMemo(() => {
     if (!data?.orders) return [];
-    
+
     return data.orders.filter((order: Order) => {
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch =
+        searchTerm === '' ||
         order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (order.description && order.description.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-      const matchesStatus = statusFilter === null || order.status === statusFilter;
-      
+        (order.description &&
+          order.description.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchesStatus =
+        statusFilter === null || order.status === statusFilter;
+
       return matchesSearch && matchesStatus;
     });
   }, [data?.orders, searchTerm, statusFilter]);
-  
+
   // Status badge component for consistent styling
   const StatusBadge = ({ status }: { status: string }) => {
     let color;
     let icon;
     let label;
-    
+
     switch (status) {
       case 'PENDING':
         color = 'bg-yellow-600/20 text-yellow-400 border-yellow-600/40';
@@ -116,7 +119,7 @@ export function CustomerOrders({
         icon = <AlertCircle className="h-3 w-3 mr-1" />;
         label = status;
     }
-    
+
     return (
       <Badge variant="outline" className={`${color} flex items-center`}>
         {icon}
@@ -124,18 +127,20 @@ export function CustomerOrders({
       </Badge>
     );
   };
-  
+
   if (!user) {
     return (
       <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-6 text-center">
         <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-        <p className="text-amber-400 font-medium mb-2">Authentication Required</p>
+        <p className="text-amber-400 font-medium mb-2">
+          Authentication Required
+        </p>
         <p className="text-gray-400 mb-4">Please sign in to view your orders</p>
         <Button onClick={() => router.push('/auth/signin')}>Sign In</Button>
       </div>
     );
   }
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -144,17 +149,17 @@ export function CustomerOrders({
       </div>
     );
   }
-  
+
   // Format date to a readable format
   const formatDate = (dateString: string | Date) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric'
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
     });
   };
-  
+
   return (
     <div className="space-y-6">
       {(showSearch || showFilters) && (
@@ -172,15 +177,17 @@ export function CustomerOrders({
               />
             </div>
           )}
-          
+
           {/* Status Filter */}
           {showFilters && (
-            <div className="flex space-x-2 overflow-x-auto pb-1">
+            <div className="flex space-x-2 overflow-x-auto pb-1 w-full">
               <Button
                 size="sm"
                 variant={statusFilter === null ? 'default' : 'outline'}
                 onClick={() => setStatusFilter(null)}
-                className={statusFilter === null ? 'bg-cyan-600 hover:bg-cyan-700' : ''}
+                className={
+                  statusFilter === null ? 'bg-cyan-600 hover:bg-cyan-700' : ''
+                }
               >
                 All
               </Button>
@@ -188,7 +195,11 @@ export function CustomerOrders({
                 size="sm"
                 variant={statusFilter === 'PENDING' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('PENDING')}
-                className={statusFilter === 'PENDING' ? 'bg-yellow-600 hover:bg-yellow-700' : ''}
+                className={
+                  statusFilter === 'PENDING'
+                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                    : ''
+                }
               >
                 <Clock className="h-4 w-4 mr-1" />
                 Pending
@@ -197,7 +208,11 @@ export function CustomerOrders({
                 size="sm"
                 variant={statusFilter === 'ACCEPTED' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('ACCEPTED')}
-                className={statusFilter === 'ACCEPTED' ? 'bg-cyan-600 hover:bg-cyan-700' : ''}
+                className={
+                  statusFilter === 'ACCEPTED'
+                    ? 'bg-cyan-600 hover:bg-cyan-700'
+                    : ''
+                }
               >
                 <Clock className="h-4 w-4 mr-1" />
                 In Progress
@@ -206,7 +221,11 @@ export function CustomerOrders({
                 size="sm"
                 variant={statusFilter === 'COMPLETED' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('COMPLETED')}
-                className={statusFilter === 'COMPLETED' ? 'bg-green-600 hover:bg-green-700' : ''}
+                className={
+                  statusFilter === 'COMPLETED'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : ''
+                }
               >
                 <CheckCircle className="h-4 w-4 mr-1" />
                 Completed
@@ -215,19 +234,23 @@ export function CustomerOrders({
                 size="sm"
                 variant={statusFilter === 'REJECTED' ? 'default' : 'outline'}
                 onClick={() => setStatusFilter('REJECTED')}
-                className={statusFilter === 'REJECTED' ? 'bg-red-600 hover:bg-red-700' : ''}
+                className={
+                  statusFilter === 'REJECTED'
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : ''
+                }
               >
                 <XCircle className="h-4 w-4 mr-1" />
                 Rejected
               </Button>
             </div>
           )}
-          
+
           {/* Refresh Button */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => refetch()} 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
             className="text-gray-400 border-gray-700 hover:bg-gray-800 md:ml-auto flex-shrink-0"
           >
             <RefreshCw size={14} className="mr-1" />
@@ -235,54 +258,59 @@ export function CustomerOrders({
           </Button>
         </div>
       )}
-      
+
       {/* Order List */}
       {filteredOrders.length === 0 ? (
         <div className="bg-gray-800/40 backdrop-blur-sm rounded-xl p-8 text-center">
           <Package className="h-10 w-10 text-gray-500 mx-auto mb-3" />
           <h3 className="text-lg font-medium mb-2">No Orders Found</h3>
           <p className="text-gray-400 mb-4">
-            {searchTerm || statusFilter 
-              ? "No orders match your current filters. Try adjusting your search or filter criteria."
+            {searchTerm || statusFilter
+              ? 'No orders match your current filters. Try adjusting your search or filter criteria.'
               : "You haven't placed any orders yet."}
           </p>
-          <Button className="bg-cyan-600 hover:bg-cyan-700" onClick={() => router.push('/')}>
+          <Button
+            className="bg-cyan-600 hover:bg-cyan-700"
+            onClick={() => router.push('/')}
+          >
             Browse Designs
           </Button>
         </div>
       ) : (
         <div className="space-y-4">
           {filteredOrders.map((order: Order) => (
-            <div 
-              key={order.id} 
+            <div
+              key={order.id}
               className="bg-gray-800/40 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div className="p-4 md:p-6">
+              <div className="p-2 md:p-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-lg">{order.orderNumber}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {order.orderNumber}
+                      </h3>
                       <StatusBadge status={order.status} />
                     </div>
-                    
+
                     <div className="flex items-center gap-3 text-sm text-gray-400">
                       <div className="flex items-center">
                         <Calendar className="h-3.5 w-3.5 mr-1" />
                         {formatDate(order.createdAt)}
                       </div>
-                      
+
                       <div className="hidden md:block">•</div>
-                      
+
                       <div>${order.price.toFixed(2)}</div>
                     </div>
-                    
+
                     {order.description && !compact && (
                       <p className="text-sm text-gray-300 mt-2 max-w-3xl line-clamp-1 md:line-clamp-2">
                         {order.description}
                       </p>
                     )}
                   </div>
-                  
+
                   <Link href={`/orders/${order.id}`}>
                     <Button className="w-full md:w-auto bg-cyan-600 hover:bg-cyan-700 flex items-center gap-1">
                       <span>{compact ? 'Details' : 'View Details'}</span>
@@ -293,10 +321,10 @@ export function CustomerOrders({
               </div>
             </div>
           ))}
-          
+
           {data?.nextCursor && !compact && (
             <div className="text-center pt-2">
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => router.push('/orders')}
                 className="border-cyan-500/30 text-cyan-400 hover:bg-cyan-950/20"
@@ -309,4 +337,4 @@ export function CustomerOrders({
       )}
     </div>
   );
-} 
+}

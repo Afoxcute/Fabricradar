@@ -15,12 +15,12 @@ const SummaryCard: React.FC<SummaryCardProps> = ({
   valueColor = 'text-white',
 }) => {
   return (
-    <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
+    <div className="bg-gray-900/60 backdrop-blur-sm border border-gray-800 rounded-xl md:p-6 p-3">
       <h3 className="text-gray-400 mb-2">{title}</h3>
       {isLoading ? (
         <Spin size="small" />
       ) : (
-        <p className={`text-3xl font-bold ${valueColor}`}>
+        <p className={`md:text-3xl text-2xl font-bold ${valueColor}`}>
           {typeof value === 'number' ? value.toFixed(2) : value}
         </p>
       )}

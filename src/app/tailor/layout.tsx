@@ -45,7 +45,9 @@ export default function TailorLayout({
       ) : (
         <div className="h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
           <BackgroundEffect />
-          <Header />
+          <div className="w-full pl-[50px] bg-gray-800/40">
+            <Header />
+          </div>
           <div
             className="w-full grid lg:grid-cols-[256px,1fr] grid-cols-1 overflow-hidden"
             style={{ height: 'calc(100vh - 66px)' }}

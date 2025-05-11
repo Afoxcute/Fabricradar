@@ -16,7 +16,9 @@ const DesignHeader: React.FC<DesignHeaderProps> = ({
   return (
     <div className="mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
       <div>
-        <h1 className="text-3xl font-bold text-white">My Designs</h1>
+        <h1 className="md:text-3xl text-2xl font-bold text-white">
+          My Designs
+        </h1>
         <p className="text-gray-400 mt-2">
           Create and manage your design portfolio
         </p>

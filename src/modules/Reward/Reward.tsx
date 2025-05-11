@@ -195,8 +195,8 @@ function TailorRewardsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-start mb-8">
-        <div>
+      <div className="flex justify-between items-start mb-8 flex-wrap">
+        <div className="w-full max-w-[400px] gap-3">
           <h1 className="text-3xl font-bold text-white mb-2">
             Customer Rewards
           </h1>

@@ -47,7 +47,13 @@ interface Reward {
   };
 }
 
-const DashboardTab = () => {
+interface IDashboardTab {
+  setActiveTab: (
+    tab: 'orders' | 'profile' | 'wallet' | 'rewards' | 'dashboard'
+  ) => void;
+}
+
+const DashboardTab = ({ setActiveTab }: IDashboardTab) => {
   const router = useRouter();
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState<'orders' | 'rewards'>(
@@ -94,7 +100,9 @@ const DashboardTab = () => {
     <div className="w-full">
       {/* Dashboard Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Customer Dashboard</h1>
+        <h1 className="md:text-3xl text-2xl font-bold mb-2">
+          Customer Dashboard
+        </h1>
         <p className="text-gray-400">
           Welcome back, {user.firstName || 'valued customer'}! Manage your
           orders and rewards.
@@ -110,12 +118,12 @@ const DashboardTab = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400">Your Orders</p>
-              <Link
-                href="/orders"
-                className="text-xl font-semibold text-white hover:text-cyan-400 transition-colors"
+              <button
+                onClick={() => setActiveTab('orders')}
+                className="md:text-xl text-lg font-semibold text-white hover:text-cyan-400 transition-colors"
               >
                 View All Orders
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -127,12 +135,12 @@ const DashboardTab = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400">Available Rewards</p>
-              <Link
-                href="/rewards"
-                className="text-xl font-semibold text-white hover:text-purple-400 transition-colors"
+              <button
+                onClick={() => setActiveTab('rewards')}
+                className="md:text-xl text-lg font-semibold text-white hover:text-purple-400 transition-colors"
               >
                 Browse Rewards
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -144,12 +152,12 @@ const DashboardTab = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400">Account Settings</p>
-              <Link
-                href="/account"
-                className="text-xl font-semibold text-white hover:text-green-400 transition-colors"
+              <button
+                onClick={() => setActiveTab('profile')}
+                className="md:text-xl text-lg font-semibold text-white hover:text-green-400 transition-colors"
               >
                 Manage Profile
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -199,7 +207,9 @@ const DashboardTab = () => {
         {activeSection === 'orders' ? (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Recent Orders</h2>
+              <h2 className="md:text-xl text-base font-semibold">
+                Recent Orders
+              </h2>
               <Link href="/orders">
                 <Button
                   variant="outline"
@@ -215,7 +225,9 @@ const DashboardTab = () => {
         ) : (
           <div>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Available Rewards</h2>
+              <h2 className="md:text-xl text-base font-semibold ">
+                Available Rewards
+              </h2>
               <Link href="/rewards">
                 <Button
                   variant="outline"

@@ -50,7 +50,9 @@ function UserAccount() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#050b18] to-[#0a1428] text-white relative">
       <BackgroundEffect />
-      <Header />
+      <div className="w-full pl-[50px] bg-gray-800/40">
+        <Header />
+      </div>
       <div
         className="grid lg:grid-cols-[256px,1fr] grid-cols-1 overflow-hidden"
         style={{ height: 'calc(100vh - 66px)' }}
@@ -67,7 +69,9 @@ function UserAccount() {
           {activeTab === 'rewards' && <RewardsTab />}
           {activeTab === 'profile' && <ProfileTab />}
           {activeTab === 'wallet' && <WalletTab />}
-          {activeTab === 'dashboard' && <DashboardTab />}
+          {activeTab === 'dashboard' && (
+            <DashboardTab setActiveTab={setActiveTab} />
+          )}
         </div>
       </div>
     </div>

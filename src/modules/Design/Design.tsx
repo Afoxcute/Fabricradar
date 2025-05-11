@@ -62,7 +62,9 @@ const Design = () => {
       />
 
       <div className="mt-6">
-        <h2 className="text-2xl font-semibold mb-4">Your Design Collection</h2>
+        <h2 className="md:text-2xl text-xl font-semibold mb-4">
+          Your Design Collection
+        </h2>
         <p className="text-gray-400 mb-6">
           These designs are visible to customers on the platform.
         </p>

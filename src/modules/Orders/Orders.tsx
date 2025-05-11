@@ -32,8 +32,8 @@ function TailorOrdersPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Manage Orders</h1>
+    <div className="container mx-auto md:p-6 p-3">
+      <h1 className="md:text-2xl text-xl font-bold mb-6">Manage Orders</h1>
 
       <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 

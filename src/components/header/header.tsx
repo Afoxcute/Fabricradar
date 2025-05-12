@@ -77,11 +77,11 @@ const Header = () => {
       <Link href="/">
         <div className="flex items-center gap-2">
           <Image
-            src="/placeholder.svg"
+            src="/fabricRadarlogo.png"
             alt="Logo"
-            width={32}
-            height={32}
-            className="w-8 h-8"
+            width={64}
+            height={64}
+            className="w-16 h-16"
           />
           <span className="font-bold text-lg hidden sm:block">Fabricradar</span>
           <span className="font-bold text-lg sm:hidden">FR</span>

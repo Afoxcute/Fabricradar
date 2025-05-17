@@ -337,7 +337,7 @@ export const TokenTransferDialog = ({
             <div className="bg-amber-900/20 border border-amber-800 text-amber-500 px-3 py-2 rounded-lg flex items-start text-sm">
               <AlertCircle className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
               <div>
-                <p>Some customers don't have a linked wallet address and won't receive tokens.</p>
+                <p>Some customers don&apos;t have a linked wallet address and won&apos;t receive tokens.</p>
               </div>
             </div>
           )}

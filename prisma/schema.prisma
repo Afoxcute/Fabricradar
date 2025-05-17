@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+  seed      = "ts-node prisma/seed.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Define AccountType enum
+enum AccountType {
+  USER
+  TAILOR
+}
+
+// Define OrderStatus enum
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  REJECTED
+}
+
+// Define RewardType enum
+enum RewardType {
+  DISCOUNT
+  FREE_ITEM
+  POINTS
+  PRIORITY
+}
+
+// Define TailorToken model to track minted tokens
+model TailorToken {
+  id             Int       @id @default(autoincrement())
+  mintAddress    String    @unique
+  name           String
+  symbol         String
+  decimals       Int       @default(9)
+  initialSupply  Float
+  tailorId       Int
+  tailor         User      @relation(fields: [tailorId], references: [id])
+  txSignature    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  @@index([tailorId], name: "token_tailor_idx")
+}
+
+model User {
+  id              Int                @id @default(autoincrement())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  email           String?            @unique
+  firstName       String?
+  middleName      String?
+  lastName        String?
+  phone           String?            @unique
+  walletAddress   String?            @unique
+  accountType     AccountType        @default(USER)
+  OTPVerification OTPVerification?
+  orders          Order[]            // Relation to orders
+  designs         Design[]           // Relation to designs
+  chatMessages    OrderChatMessage[] // Relation to chat messages
+  rewards         Reward[]           // Relation to rewards
+  tokens          TailorToken[]      // Relation to minted tokens
+  
+  @@index([phone], map: "phone_idx")
+  @@index([email], map: "email_idx")
+  @@index([walletAddress], map: "wallet_idx")
+}
+
+model OTPVerification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  otpCode   String
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Order {
+  id                 Int                @id @default(autoincrement())
+  orderNumber        String             @unique
+  customerName       String
+  userId             Int                // Customer user ID
+  tailorId           Int                // Tailor user ID
+  status             OrderStatus        @default(PENDING)
+  price              Float
+  txHash             String?
+  description        String?
+  measurements       Json?
+  progress           Json?              // Track progress milestones
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id])
+  designId           Int?               // Reference to the design
+  isAccepted         Boolean            @default(false)
+  acceptanceDeadline DateTime?          // 48-hour deadline for tailor to accept
+  acceptedAt         DateTime?          // When the tailor accepted the order
+  chatMessages       OrderChatMessage[] // Relation to chat messages
+  
+  @@index([status], name: "status_idx")
+  @@index([tailorId], name: "tailor_idx")
+  @@index([isAccepted], name: "accepted_idx")
+  @@index([acceptanceDeadline], name: "deadline_idx")
+}
+
+model Design {
+  id               Int      @id @default(autoincrement())
+  title            String
+  description      String
+  price            Float
+  imageUrl         String?  // Legacy field - use 'images' instead
+  images           Json?    // Array of image URLs
+  averageTimeline  String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  tailorId         Int      // Tailor user ID
+  tailor           User     @relation(fields: [tailorId], references: [id])
+  
+  @@index([tailorId], name: "design_tailor_idx")
+}
+
+model Waitlist {
+  id        Int      @id @default(autoincrement())
+  contact   String
+  name      String
+  isEmail   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Define MessageType enum
+enum MessageType {
+  CUSTOMER
+  TAILOR
+  SYSTEM
+}
+
+model OrderChatMessage {
+  id        Int         @id @default(autoincrement())
+  orderId   Int         // Order ID
+  userId    Int         // User ID of the sender
+  userType  MessageType // Type of sender (CUSTOMER, TAILOR, SYSTEM)
+  message   String      // Message content
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  order     Order       @relation(fields: [orderId], references: [id])
+  user      User        @relation(fields: [userId], references: [id])
+  
+  @@index([orderId], name: "message_order_idx")
+  @@index([userId], name: "message_user_idx")
+}
+
+// Define Reward model for tailor rewards
+model Reward {
+  id               Int        @id @default(autoincrement())
+  name             String
+  description      String
+  type             RewardType
+  value            Float      // Percentage for discount, number of items for free items, points value
+  minSpend         Float?     // Minimum spend required (optional)
+  startDate        DateTime
+  endDate          DateTime
+  isActive         Boolean    @default(true)
+  imageUrl         String?    // Optional image URL
+  redemptionCount  Int        @default(0)
+  maxRedemptions   Int?       // Maximum number of redemptions (optional)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  tailorId         Int        // Tailor user ID
+  tailor           User       @relation(fields: [tailorId], references: [id])
+  
+  @@index([tailorId], name: "reward_tailor_idx")
+  @@index([type], name: "reward_type_idx")
+  @@index([isActive], name: "reward_active_idx")
+}
